@@ -1,0 +1,34 @@
+# Node / TypeScript
+node_modules/
+dist/
+build/
+*.log
+*.tsbuildinfo
+.npm/
+.pnpm-store/
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# AWS CDK
+cdk.out/
+cdk.context.json
+.aws-sam/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Claude / Spec Kit local state (keep committed:
+#   .claude/skills, .claude/agents, .specify/, CLAUDE.md)
+.claude/settings.local.json
+.claude/.credentials*
