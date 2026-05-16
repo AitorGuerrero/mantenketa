@@ -103,6 +103,25 @@
 - **[Entity 1]**: [What it represents, key attributes without implementation]
 - **[Entity 2]**: [What it represents, relationships to other entities]
 
+## Offline Behavior *(mandatory — Constitution Principle I)*
+
+<!--
+  ACTION REQUIRED: Answer all three questions. A spec that omits this section
+  MUST NOT be merged (see project constitution).
+-->
+
+**What data is readable offline?**
+[List entities/views the user can access without connectivity, e.g., "All
+maintenance items and their history cached from last sync."]
+
+**What writes are queued locally?**
+[List operations that are stored locally and synced later, e.g., "Mark-done,
+snooze, create item."]
+
+**Conflict-resolution rule on sync:**
+[Define the strategy per entity, e.g., "Last-write-wins by updatedAt timestamp;
+concurrent deletes take precedence over concurrent edits."]
+
 ## Success Criteria *(mandatory)*
 
 <!--
