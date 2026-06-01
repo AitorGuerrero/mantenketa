@@ -1,26 +1,39 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: (template, unpublished) → 1.0.0
-Added sections: all (initial adoption)
+Version change: 1.0.0 → 2.0.0
+Bump rationale: MAJOR — backward-incompatible stack change. AWS (CDK, Lambda,
+  DynamoDB, Cognito, S3, CloudFront) is removed entirely and replaced by
+  Supabase (backend) + Cloudflare Pages (frontend hosting). Principles II, V,
+  and VI are redefined; the Technology Stack section is rewritten.
+
+Modified principles:
+  - Principle II:  One Language, One Type System → relaxed to permit SQL
+      (migrations + RLS) within Supabase boundaries; app code stays TypeScript
+  - Principle V:   Cheap by Default → rewritten around Supabase + Cloudflare
+      free/usage tiers (AWS allowed/forbidden lists removed)
+  - Principle VI:  Single Deployable Environment → reframed around Supabase
+      projects + Cloudflare Pages environments (AWS "stages" removed)
+
+Unchanged principles (stack-agnostic):
   - Principle I:   Offline-First
-  - Principle II:  One Language, One Type System
   - Principle III: Spec Before Code (NON-NEGOTIABLE)
   - Principle IV:  Test-First for Domain Logic (NON-NEGOTIABLE)
-  - Principle V:   Cheap by Default
-  - Principle VI:  Single Deployable Environment
   - Principle VII: Simplicity Over Framework Magic
-  - Technology Stack
-  - Governance
-Removed sections: N/A (first version)
-Modified principles: N/A (first version)
+
+Other changes:
+  - Technology Stack: rewritten (Supabase + Cloudflare Pages); package manager
+      changed from npm workspaces to pnpm workspaces
+Added sections: none
+Removed sections: none
 
 Templates:
   - .specify/templates/plan-template.md  — ✅ no change needed; "Constitution
-      Check" gate is already generic and picks up principles from this file
-  - .specify/templates/spec-template.md  — ⚠ UPDATED: added mandatory
-      "Offline Behavior" section (required by Principle I)
+      Check" gate is generic and reads principles from this file
+  - .specify/templates/spec-template.md  — ✅ no change needed; mandatory
+      "Offline Behavior" section still required (Principle I unchanged)
   - .specify/templates/tasks-template.md — ✅ no change needed
+  - No AWS-specific references found in any template or doc
 
 Deferred TODOs: none
 -->
@@ -47,17 +60,22 @@ Wi-Fi. Offline-first is a core user promise, not a nice-to-have.
 
 ### II. One Language, One Type System
 
-TypeScript is the only language used across frontend, Lambda functions, and
-CDK infrastructure. All shared domain types (entities, API request/response
-shapes, event payloads) MUST live in `packages/shared` and be imported by all
-other packages. Duplicate type definitions across packages are PROHIBITED.
-`any` is PROHIBITED outside verified external-library boundaries; every
-exception MUST carry an inline comment explaining why a safe type is
-impossible.
+TypeScript is the language of all application code: the React frontend and all
+Supabase Edge Functions. SQL is permitted ONLY within Supabase database
+boundaries — schema migrations and Row-Level Security (RLS) policies — and MUST
+live under a versioned `supabase/migrations` directory. All shared domain types
+(entities, API request/response shapes, event payloads) MUST live in
+`packages/shared` and be imported by both frontend and Edge Functions; database
+row types MUST be generated from the Supabase schema, never hand-duplicated.
+Duplicate type definitions across packages are PROHIBITED. `any` is PROHIBITED
+outside verified external-library boundaries; every exception MUST carry an
+inline comment explaining why a safe type is impossible.
 
-**Rationale**: A single type system eliminates the class of bugs where
-frontend and backend silently diverge on the same domain concept. Shared
-types are the contract; drift is caught at compile time.
+**Rationale**: A single application language eliminates the class of bugs where
+frontend and backend silently diverge on the same domain concept. SQL is
+unavoidable for Postgres migrations and RLS, but it is confined to a single
+versioned boundary so the contract stays explicit and reviewable. Generated row
+types keep the database the single source of truth.
 
 ### III. Spec Before Code (NON-NEGOTIABLE)
 
@@ -76,8 +94,9 @@ traceable regardless of urgency.
 Unit tests MUST be written and confirmed failing before implementation code
 is added for: recurrence calculation, overdue detection, and state transition
 logic. The Red step of Red–Green–Refactor is non-negotiable for these areas.
-UI components and CDK infrastructure code are exempt from test-first but MUST
-still have tests before a feature is considered complete.
+UI components and Supabase configuration (migrations, RLS policies, Edge
+Functions) are exempt from test-first but MUST still have tests — including RLS
+policy tests that prove access rules — before a feature is considered complete.
 
 **Rationale**: Recurrence and overdue logic are the core value of the app;
 correctness bugs here directly harm users. Test-first ensures the behaviour
@@ -86,24 +105,31 @@ implementation is written.
 
 ### V. Cheap by Default
 
-Only pay-per-request services are permitted in the MVP:
-**Allowed**: Lambda, DynamoDB (on-demand), API Gateway HTTP API, S3, CloudFront.
-**Forbidden**: RDS, EC2, Fargate, NAT Gateway, Elasticache, provisioned
-DynamoDB capacity, and any service with a minimum hourly charge.
+The MVP MUST run within free or usage-based tiers with no fixed monthly floor.
+**Allowed**: Supabase (Postgres, Auth, Storage, Realtime, Edge Functions),
+Cloudflare Pages, and other services billed per-use or offering a permanent
+free tier sufficient for a single household.
+**Forbidden**: dedicated/always-on compute, reserved or provisioned capacity,
+managed services with a minimum monthly charge, and any paid add-on not
+required to ship the MVP.
 
-A service not in the allowed list requires a written ADR explaining why no
-allowed alternative exists and estimating monthly cost at expected scale.
+A service not in the allowed category, or any move to a paid Supabase /
+Cloudflare plan, requires a written ADR explaining why no free-tier or
+usage-based alternative exists and estimating monthly cost at expected scale.
 
 **Rationale**: Mantenketa is a personal/family app. Running cost should be
-effectively zero at low usage. Every forbidden service would add a fixed
-monthly floor regardless of traffic.
+effectively zero at low usage. Every always-on or minimum-charge service would
+add a fixed monthly floor regardless of traffic.
 
 ### VI. Single Deployable Environment
 
-Only a `dev` stage exists. A `prod` stage is introduced only when a second
-household begins using the app. Until that threshold is crossed, investing in
-multi-environment infrastructure (blue/green, canary, prod-specific alarms)
-is PROHIBITED.
+Only a single environment exists: one Supabase project and one Cloudflare Pages
+production deployment fed from the main branch. A separate production/staging
+environment is introduced only when a second household begins using the app.
+Until that threshold is crossed, investing in multi-environment infrastructure
+(parallel Supabase projects, blue/green, canary, environment-specific alarms)
+is PROHIBITED. Cloudflare Pages preview deployments for pull requests are
+permitted because they are free and require no extra infrastructure.
 
 **Rationale**: Premature environment complexity adds maintenance overhead
 with no user-facing benefit while the app has a single household as its
@@ -125,15 +151,17 @@ clever indirection.
 
 These choices are binding for all features unless amended via governance.
 
-**Frontend**: Vite · React · TypeScript (strict) · Vitest · Playwright
+**Frontend**: Vite · React · TypeScript (strict) · Vitest · Playwright, hosted
+on **Cloudflare Pages** (production from main; PR preview deployments allowed)
 
-**Backend**: AWS CDK (TypeScript) · Lambda (Node.js, esbuild) · DynamoDB
-(on-demand) · API Gateway v2 HTTP API · Cognito · S3 · CloudFront
+**Backend**: **Supabase** — Postgres (schema + RLS), Auth, Storage, Realtime,
+and Edge Functions (TypeScript/Deno). Database migrations and RLS policies live
+under `supabase/migrations`; row types are generated from the schema.
 
 **Shared**: `packages/shared` workspace — domain types, Zod schemas, utility
-functions used by both frontend and backend
+functions used by both frontend and Edge Functions
 
-**Package manager**: npm workspaces
+**Package manager**: pnpm workspaces
 
 Deviations from this list require a written ADR and a constitution amendment.
 
@@ -160,4 +188,4 @@ All PRs and spec reviews MUST verify compliance with each Core Principle.
 Violations caught at review rather than at the Constitution Check gate are
 process failures and MUST be noted for retrospective discussion.
 
-**Version**: 1.0.0 | **Ratified**: 2026-05-16 | **Last Amended**: 2026-05-16
+**Version**: 2.0.0 | **Ratified**: 2026-05-16 | **Last Amended**: 2026-06-01
