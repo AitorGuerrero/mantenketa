@@ -1,41 +1,33 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.0.0 → 2.0.0
-Bump rationale: MAJOR — backward-incompatible stack change. AWS (CDK, Lambda,
-  DynamoDB, Cognito, S3, CloudFront) is removed entirely and replaced by
-  Supabase (backend) + Cloudflare Pages (frontend hosting). Principles II, V,
-  and VI are redefined; the Technology Stack section is rewritten.
+Version change: 2.0.0 → 2.1.0
+Bump rationale: MINOR — new principle added (VIII. Tenant-Ready Data Model).
+  No existing principle redefined or removed.
 
-Modified principles:
-  - Principle II:  One Language, One Type System → relaxed to permit SQL
-      (migrations + RLS) within Supabase boundaries; app code stays TypeScript
-  - Principle V:   Cheap by Default → rewritten around Supabase + Cloudflare
-      free/usage tiers (AWS allowed/forbidden lists removed)
-  - Principle VI:  Single Deployable Environment → reframed around Supabase
-      projects + Cloudflare Pages environments (AWS "stages" removed)
+Added principles:
+  - Principle VIII: Tenant-Ready Data Model — every persisted entity carries an
+      owner/space identifier from its first migration, even while V1 has no auth
 
-Unchanged principles (stack-agnostic):
-  - Principle I:   Offline-First
-  - Principle III: Spec Before Code (NON-NEGOTIABLE)
-  - Principle IV:  Test-First for Domain Logic (NON-NEGOTIABLE)
-  - Principle VII: Simplicity Over Framework Magic
-
-Other changes:
-  - Technology Stack: rewritten (Supabase + Cloudflare Pages); package manager
-      changed from npm workspaces to pnpm workspaces
-Added sections: none
-Removed sections: none
+Unchanged principles:
+  - I. Offline-First; II. One Language, One Type System; III. Spec Before Code;
+    IV. Test-First for Domain Logic; V. Cheap by Default; VI. Single Deployable
+    Environment; VII. Simplicity Over Framework Magic
 
 Templates:
   - .specify/templates/plan-template.md  — ✅ no change needed; "Constitution
       Check" gate is generic and reads principles from this file
-  - .specify/templates/spec-template.md  — ✅ no change needed; mandatory
-      "Offline Behavior" section still required (Principle I unchanged)
+  - .specify/templates/spec-template.md  — ✅ no change needed
   - .specify/templates/tasks-template.md — ✅ no change needed
-  - No AWS-specific references found in any template or doc
 
 Deferred TODOs: none
+
+----------------------------------------------------------------------
+Prior amendment — 1.0.0 → 2.0.0 (MAJOR): removed AWS (CDK, Lambda, DynamoDB,
+  Cognito, S3, CloudFront) entirely; replaced by Supabase backend + Cloudflare
+  Pages hosting. Redefined Principles II (SQL allowed within supabase/migrations),
+  V (cheap-by-default around free/usage tiers), VI (single Supabase project +
+  Cloudflare Pages deploy); rewrote Technology Stack; npm → pnpm workspaces.
 -->
 
 # Mantenketa Constitution
@@ -147,6 +139,22 @@ with the two use sites named.
 opaque layer is a future debugging burden. Readable, explicit code outlasts
 clever indirection.
 
+### VIII. Tenant-Ready Data Model
+
+Every persisted entity MUST carry an owner identifier column (`owner_id` /
+`space_id`) from its FIRST migration, even though V1 ships with no
+authentication. In V1 the column MAY be populated with a single default owner
+value, but it MUST NOT be nullable-by-omission and MUST NOT be added
+retroactively after rows already exist. Multi-tenant isolation in V2 MUST be
+enforced through Postgres RLS policies keyed on this column (per Principle II),
+never in application code alone.
+
+**Rationale**: V1 has no auth, but V2 requires SSO and per-user/household
+spaces. Retrofitting ownership onto an existing dataset is a costly, error-prone
+migration with no safe automatic backfill. The column is effectively free to
+add up front and makes the V2 transition a near no-op. RLS — not app code — is
+the enforcement boundary because the database is the single source of truth.
+
 ## Technology Stack
 
 These choices are binding for all features unless amended via governance.
@@ -188,4 +196,4 @@ All PRs and spec reviews MUST verify compliance with each Core Principle.
 Violations caught at review rather than at the Constitution Check gate are
 process failures and MUST be noted for retrospective discussion.
 
-**Version**: 2.0.0 | **Ratified**: 2026-05-16 | **Last Amended**: 2026-06-01
+**Version**: 2.1.0 | **Ratified**: 2026-05-16 | **Last Amended**: 2026-06-01
