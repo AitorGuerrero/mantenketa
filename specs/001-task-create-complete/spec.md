@@ -8,6 +8,13 @@
 
 **Input**: User description: "I want to create a task with a name and a date. Then when the date arrives, I want to mark the task as done."
 
+## Clarifications
+
+### Session 2026-06-02
+
+- Q: Can a completed task be reverted to outstanding? → A: Yes — completion can be toggled both ways; reverting clears the completion date.
+- Q: What is the default ordering of the task list? → A: Outstanding tasks first, sorted by date ascending (soonest at top); completed tasks shown below.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Create a task and see it in the list (Priority: P1)
@@ -31,6 +38,7 @@ other story implemented.
 2. **Given** the user is creating a task, **When** they leave the name blank and try to save, **Then** the task is not created and they are told a name is required.
 3. **Given** the user is creating a task, **When** they do not pick a date and try to save, **Then** the task is not created and they are told a date is required.
 4. **Given** several tasks exist, **When** the user opens the app, **Then** they see all their tasks, each showing its name, date, and whether it is done.
+5. **Given** several outstanding tasks with different dates, **When** the user views the list, **Then** outstanding tasks appear first ordered by date ascending (soonest at top), with completed tasks shown below.
 
 ---
 
@@ -52,6 +60,7 @@ it is shown as completed and distinguished from outstanding tasks.
 1. **Given** an outstanding task, **When** the user marks it done, **Then** the task is shown as completed and distinguished from outstanding tasks in the list.
 2. **Given** a task already marked done, **When** the user views it, **Then** it is clearly shown as completed and is not offered for completion again.
 3. **Given** an outstanding task, **When** the user marks it done, **Then** the completion is recorded with the date it was completed.
+4. **Given** a completed task, **When** the user reverts it to outstanding, **Then** it is shown as outstanding again and its completion date is cleared.
 
 ---
 
@@ -70,16 +79,17 @@ it is shown as completed and distinguished from outstanding tasks.
 - **FR-002**: System MUST reject task creation when the name is empty and inform the user a name is required.
 - **FR-003**: System MUST reject task creation when no date is provided and inform the user a date is required.
 - **FR-004**: System MUST persist created tasks so they remain available across sessions and devices for the same household.
-- **FR-005**: System MUST display the list of tasks, showing each task's name, date, and completion state.
+- **FR-005**: System MUST display the list of tasks showing each task's name, date, and completion state, ordered with outstanding tasks first sorted by date ascending (soonest first) and completed tasks shown below.
 - **FR-006**: Users MUST be able to mark an outstanding task as done.
 - **FR-007**: System MUST record the date a task was completed when it is marked done.
 - **FR-008**: System MUST treat marking a task done as idempotent — completing an already-completed task has no further effect.
 - **FR-009**: System MUST visibly distinguish outstanding tasks from completed tasks in the list.
-- **FR-010**: System MUST associate every task with an owner identifier so tasks can later be isolated per household/user without re-modelling existing data (Constitution Principle VIII). In this version a single default owner is used.
+- **FR-010**: Users MUST be able to revert a completed task to outstanding; doing so MUST clear its completion date.
+- **FR-011**: System MUST associate every task with an owner identifier so tasks can later be isolated per household/user without re-modelling existing data (Constitution Principle VIII). In this version a single default owner is used.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Task**: A single thing to be done on a given day. Attributes: name (free text, required), date (the day it is scheduled, required), completion state (outstanding or done), completion date (the day it was marked done, set only when done), owner identifier (which household/user it belongs to).
+- **Task**: A single thing to be done on a given day. Attributes: name (free text, required), date (the day it is scheduled, required), completion state (outstanding or done), completion date (the day it was marked done — set when done, cleared when reverted to outstanding), owner identifier (which household/user it belongs to).
 
 ## Offline Behavior *(mandatory — Constitution Principle I)*
 
@@ -92,11 +102,11 @@ Creating a task and marking a task done are both performed locally and queued
 for sync; they take effect in the local view immediately.
 
 **Conflict-resolution rule on sync:**
-Per task, last-write-wins by the most recent change timestamp, with one
-exception: a "mark done" always takes precedence over a concurrent edit of the
-same task, so a completion is never lost on sync. Since this version has a single
-owner, true concurrent conflicts are expected to be rare (same user on two
-devices).
+Per task, last-write-wins by the most recent change timestamp. Because completion
+can be toggled both ways (done ↔ outstanding), the most recent change to a task's
+completion state wins on sync — there is no special precedence for "done". Since
+this version has a single owner, true concurrent conflicts are expected to be rare
+(same user on two devices).
 
 ## Success Criteria *(mandatory)*
 
