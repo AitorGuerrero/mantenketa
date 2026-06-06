@@ -34,7 +34,9 @@
 - Scope confirmed with user: create + list + mark-done. Due/overdue highlighting,
   edit/delete, recurring tasks, reminders, and auth/multi-user are explicitly
   out of scope (recorded in Assumptions).
-- Offline Behavior section completed per Constitution Principle I.
-- Owner identifier requirement (FR-010) added per Constitution Principle VIII
-  (tenant-ready data model) even though V1 has no auth.
-- All items pass on first validation iteration.
+- Offline Behavior section completed per Constitution Principle I (Local-First):
+  local-only, no sync, no conflict resolution this phase.
+- Per Constitution v3.0.0 (local-only pivot), the app is single-person and
+  local-only; no owner identifier is stored (Principle VIII dormant until a
+  backend exists). Backend, sync, owner-id, and auth are deferred.
+- All items pass.
