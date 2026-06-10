@@ -18,16 +18,22 @@ describe('parseNewTask — validación de creación', () => {
     )
   })
 
-  it('rechaza la falta de fecha (FR-003)', () => {
-    expect(() => parseNewTask({ name: 'Cambiar filtro' })).toThrow(
-      'La fecha es obligatoria',
-    )
+  it('acepta la falta de fecha: la tarea es "para hacer ya" (FR-003)', () => {
+    const parsed = parseNewTask({ name: 'Cambiar filtro' })
+
+    expect(parsed).toEqual({ name: 'Cambiar filtro', taskDate: null })
   })
 
-  it('rechaza una fecha vacía (FR-003)', () => {
-    expect(() => parseNewTask({ name: 'Cambiar filtro', taskDate: '' })).toThrow(
-      'La fecha es obligatoria',
-    )
+  it('normaliza una fecha vacía a null (FR-003)', () => {
+    const parsed = parseNewTask({ name: 'Cambiar filtro', taskDate: '' })
+
+    expect(parsed).toEqual({ name: 'Cambiar filtro', taskDate: null })
+  })
+
+  it('rechaza una fecha con formato no válido', () => {
+    expect(() =>
+      parseNewTask({ name: 'Cambiar filtro', taskDate: 'mañana' }),
+    ).toThrow('La fecha no es válida')
   })
 
   it('acepta una entrada válida y recorta el nombre', () => {

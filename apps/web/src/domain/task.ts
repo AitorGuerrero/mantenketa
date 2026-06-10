@@ -15,18 +15,21 @@ export const TaskSchema = z.object({
     .string({ error: 'El nombre es obligatorio' })
     .trim()
     .min(1, 'El nombre es obligatorio'),
-  taskDate: z
-    .string({ error: 'La fecha es obligatoria' })
-    .regex(ISO_DATE, 'La fecha es obligatoria'),
+  // null ⇒ "para hacer ya" (FR-003): sin fecha, se ordena antes que las fechadas
+  taskDate: z.string().regex(ISO_DATE, 'La fecha no es válida').nullable(),
   completedAt: z.string().regex(ISO_DATE).nullable(),
   createdAt: z.string().min(1),
 })
 
 export type Task = z.infer<typeof TaskSchema>
 
-export const NewTaskInputSchema = TaskSchema.pick({
-  name: true,
-  taskDate: true,
+export const NewTaskInputSchema = z.object({
+  name: TaskSchema.shape.name,
+  // La fecha es opcional: ausente o vacía se normaliza a null ("hacer ya")
+  taskDate: z.preprocess(
+    (value) => (value === '' || value === undefined ? null : value),
+    TaskSchema.shape.taskDate,
+  ),
 })
 
 export type NewTaskInput = z.infer<typeof NewTaskInputSchema>

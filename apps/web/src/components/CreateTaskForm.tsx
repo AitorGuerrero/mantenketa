@@ -51,7 +51,7 @@ export function CreateTaskForm({ onCreate }: CreateTaskFormProps) {
         />
       </div>
       <div className="form-field">
-        <label htmlFor="task-date">Fecha</label>
+        <label htmlFor="task-date">Fecha (opcional)</label>
         <input
           id="task-date"
           type="date"

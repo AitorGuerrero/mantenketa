@@ -131,6 +131,11 @@ body {
   font-size: 0.9rem;
 }
 
+.task-date--now {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
 .task-state {
   font-size: 0.8rem;
   padding: 0.15rem 0.5rem;

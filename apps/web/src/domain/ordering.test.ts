@@ -57,6 +57,54 @@ describe('sortTasks (FR-005)', () => {
     expect(sorted.map((t) => t.name)).toEqual(['pendiente', 'hecha antes', 'hecha después'])
   })
 
+  it('las pendientes sin fecha ("hacer ya") van antes que las pendientes con fecha (FR-003)', () => {
+    const dated = makeTask({ name: 'con fecha', taskDate: '2026-06-12' })
+    const rightAway = makeTask({ name: 'hacer ya', taskDate: null })
+
+    const sorted = sortTasks([dated, rightAway])
+
+    expect(sorted.map((t) => t.name)).toEqual(['hacer ya', 'con fecha'])
+  })
+
+  it('dentro de las completadas, las sin fecha también van primero', () => {
+    const doneDated = makeTask({
+      name: 'hecha con fecha',
+      taskDate: '2026-05-01',
+      completedAt: '2026-05-02',
+    })
+    const doneRightAway = makeTask({
+      name: 'hecha sin fecha',
+      taskDate: null,
+      completedAt: '2026-05-03',
+    })
+    const outstanding = makeTask({ name: 'pendiente', taskDate: null })
+
+    const sorted = sortTasks([doneDated, doneRightAway, outstanding])
+
+    expect(sorted.map((t) => t.name)).toEqual([
+      'pendiente',
+      'hecha sin fecha',
+      'hecha con fecha',
+    ])
+  })
+
+  it('dos tareas sin fecha se desempatan por createdAt', () => {
+    const second = makeTask({
+      name: 'segunda',
+      taskDate: null,
+      createdAt: '2026-06-01T12:00:00.000Z',
+    })
+    const first = makeTask({
+      name: 'primera',
+      taskDate: null,
+      createdAt: '2026-06-01T08:00:00.000Z',
+    })
+
+    const sorted = sortTasks([second, first])
+
+    expect(sorted.map((t) => t.name)).toEqual(['primera', 'segunda'])
+  })
+
   it('desempata por createdAt cuando la fecha coincide', () => {
     const createdSecond = makeTask({
       name: 'creada segunda',

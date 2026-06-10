@@ -64,14 +64,20 @@ test('un nombre en blanco no crea la tarea y se informa al usuario (FR-002)', as
   await expect(page.getByRole('listitem')).toHaveCount(0)
 })
 
-test('sin fecha no se crea la tarea y se informa al usuario (FR-003)', async ({
+test('sin fecha la tarea se crea como "Hacer ya" y va antes que las pendientes con fecha (FR-003)', async ({
   page,
 }) => {
   await page.goto('/')
 
-  await page.getByLabel('Nombre').fill('Cambiar filtro')
-  await page.getByRole('button', { name: 'Añadir tarea' }).click()
+  await createTask(page, 'Tarea con fecha', '2026-06-12')
 
-  await expect(page.getByRole('alert')).toContainText('La fecha es obligatoria')
-  await expect(page.getByRole('listitem')).toHaveCount(0)
+  await page.getByLabel('Nombre').fill('Tarea urgente')
+  await page.getByRole('button', { name: 'Añadir tarea' }).click()
+  await expect(page.getByLabel('Nombre')).toHaveValue('')
+
+  const items = page.getByRole('listitem')
+  await expect(items).toHaveCount(2)
+  await expect(items.nth(0)).toContainText('Tarea urgente')
+  await expect(items.nth(0)).toContainText('Hacer ya')
+  await expect(items.nth(1)).toContainText('Tarea con fecha')
 })

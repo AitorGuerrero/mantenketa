@@ -33,9 +33,13 @@ function TaskItem({ task }: { task: Task }) {
         onChange={handleToggle}
       />
       <span className="task-name">{task.name}</span>
-      <time className="task-date" dateTime={task.taskDate}>
-        {formatDate(task.taskDate)}
-      </time>
+      {task.taskDate !== null ? (
+        <time className="task-date" dateTime={task.taskDate}>
+          {formatDate(task.taskDate)}
+        </time>
+      ) : (
+        <span className="task-date task-date--now">Hacer ya</span>
+      )}
       <span className="task-state">
         {done && task.completedAt !== null
           ? `Hecha el ${formatDate(task.completedAt)}`
