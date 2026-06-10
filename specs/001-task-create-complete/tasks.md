@@ -92,14 +92,14 @@ date cleared; both survive a reload.
 
 ### Tests for User Story 2 (write FIRST, ensure they FAIL) ⚠️
 
-- [ ] T018 [P] [US2] Failing unit test for completion transitions: `markDone` sets `completedAt=today` and is idempotent (FR-007, FR-008); `revert` clears `completedAt` (FR-010), in `apps/web/src/domain/completion.test.ts`
-- [ ] T019 [P] [US2] Failing Playwright e2e: mark done → moves to completed group (FR-009); revert → returns to outstanding; state persists after reload (SC-005), in `apps/web/tests/e2e/complete-and-revert.spec.ts`
+- [X] T018 [P] [US2] Failing unit test for completion transitions: `markDone` sets `completedAt=today` and is idempotent (FR-007, FR-008); `revert` clears `completedAt` (FR-010), in `apps/web/src/domain/completion.test.ts`
+- [X] T019 [P] [US2] Failing Playwright e2e: mark done → moves to completed group (FR-009); revert → returns to outstanding; state persists after reload (SC-005), in `apps/web/tests/e2e/complete-and-revert.spec.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T020 [US2] Implement pure completion-transition helpers (`markDone`, `revert` on a `Task`, idempotent) in `apps/web/src/domain/completion.ts` (makes T018 pass)
-- [ ] T021 [US2] Implement `markDone()` + `revert()` in `apps/web/src/data/taskRepository.ts` using the transition helpers (depends on T020, T014)
-- [ ] T022 [US2] Add done + revert controls and completed-vs-outstanding styling to `apps/web/src/components/TaskList.tsx` (FR-009; depends on T016)
+- [X] T020 [US2] Implement pure completion-transition helpers (`markDone`, `revert` on a `Task`, idempotent) in `apps/web/src/domain/completion.ts` (makes T018 pass)
+- [X] T021 [US2] Implement `markDone()` + `revert()` in `apps/web/src/data/taskRepository.ts` using the transition helpers (depends on T020, T014)
+- [X] T022 [US2] Add done + revert controls and completed-vs-outstanding styling to `apps/web/src/components/TaskList.tsx` (FR-009; depends on T016)
 
 **Checkpoint**: US1 + US2 both work; full create → list → done → revert loop complete.
 

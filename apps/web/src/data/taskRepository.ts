@@ -1,9 +1,18 @@
 import { liveQuery, type Observable } from 'dexie'
 
+import { markDone as toDone, revert as toOutstanding } from '../domain/completion'
 import { sortTasks } from '../domain/ordering'
 import { parseNewTask, type NewTaskInput, type Task } from '../domain/task'
 
 import { db } from './db'
+
+/** Día local en formato YYYY-MM-DD (la fecha de completado es un día natural). */
+function todayIsoDate(): string {
+  const now = new Date()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${String(now.getFullYear())}-${month}-${day}`
+}
 
 /**
  * Contrato de acceso a datos local (contracts/data-access.md).
@@ -55,12 +64,26 @@ export class DexieTaskRepository implements TaskRepository {
     return task
   }
 
-  markDone(_taskId: string): Promise<Task> {
-    throw new Error('Not implemented')
+  markDone(taskId: string): Promise<Task> {
+    return this.transition(taskId, (task) => toDone(task, todayIsoDate()))
   }
 
-  revert(_taskId: string): Promise<Task> {
-    throw new Error('Not implemented')
+  revert(taskId: string): Promise<Task> {
+    return this.transition(taskId, toOutstanding)
+  }
+
+  private transition(taskId: string, apply: (task: Task) => Task): Promise<Task> {
+    return db.transaction('rw', db.tasks, async () => {
+      const existing = await db.tasks.get(taskId)
+      if (!existing) {
+        throw new Error(`Tarea no encontrada: ${taskId}`)
+      }
+      const updated = apply(existing)
+      if (updated !== existing) {
+        await db.tasks.put(updated)
+      }
+      return updated
+    })
   }
 }
 

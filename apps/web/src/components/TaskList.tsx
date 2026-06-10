@@ -14,13 +14,30 @@ function formatDate(isoDate: string): string {
 
 function TaskItem({ task }: { task: Task }) {
   const done = isDone(task)
+
+  function handleToggle() {
+    void (done ? taskRepository.revert(task.id) : taskRepository.markDone(task.id))
+  }
+
   return (
     <li className={done ? 'task-item task-item--done' : 'task-item'}>
+      <input
+        type="checkbox"
+        className="task-toggle"
+        checked={done}
+        aria-label={task.name}
+        title={done ? 'Devolver a pendiente' : 'Marcar como hecha'}
+        onChange={handleToggle}
+      />
       <span className="task-name">{task.name}</span>
       <time className="task-date" dateTime={task.taskDate}>
         {formatDate(task.taskDate)}
       </time>
-      <span className="task-state">{done ? 'Hecha' : 'Pendiente'}</span>
+      <span className="task-state">
+        {done && task.completedAt !== null
+          ? `Hecha el ${formatDate(task.completedAt)}`
+          : 'Pendiente'}
+      </span>
     </li>
   )
 }
