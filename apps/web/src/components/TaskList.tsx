@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Aitor Guerrero
+
 import { useObservable } from 'dexie-react-hooks'
 
 import { taskRepository } from '../data/taskRepository'
@@ -45,9 +48,17 @@ function TaskItem({ task }: { task: Task }) {
 export function TaskList() {
   const tasks = useObservable(() => taskRepository.observeTasks(), [])
 
+  if (tasks === undefined) {
+    return null
+  }
+
+  if (tasks.length === 0) {
+    return <p className="empty-state">No hay tareas todavía</p>
+  }
+
   return (
     <ul className="task-list" aria-label="Lista de tareas">
-      {(tasks ?? []).map((task) => (
+      {tasks.map((task) => (
         <TaskItem key={task.id} task={task} />
       ))}
     </ul>

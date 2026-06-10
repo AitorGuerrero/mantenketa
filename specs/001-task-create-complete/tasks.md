@@ -109,10 +109,10 @@ date cleared; both survive a reload.
 
 **Purpose**: Finishing touches across stories
 
-- [ ] T023 [P] Add an empty-list state ("No tasks yet") to `apps/web/src/components/TaskList.tsx`
-- [ ] T024 [P] Add SPDX/AGPL copyright headers to source files and a visible "Source" link satisfying AGPL §13 (e.g. `apps/web/src/components/Footer.tsx`)
-- [ ] T025 [P] Add Cloudflare Pages SPA config (`apps/web/public/_redirects` with SPA fallback) and document build output dir
-- [ ] T026 Run quickstart.md end-to-end validation (all 5 verification steps) and confirm Vitest + Playwright suites pass
+- [X] T023 [P] Add an empty-list state ("No tasks yet") to `apps/web/src/components/TaskList.tsx`
+- [X] T024 [P] Add SPDX/AGPL copyright headers to source files and a visible "Source" link satisfying AGPL §13 (e.g. `apps/web/src/components/Footer.tsx`)
+- [X] T025 [P] Add Cloudflare Pages SPA config (`apps/web/public/_redirects` with SPA fallback) and document build output dir
+- [X] T026 Run quickstart.md end-to-end validation (all 5 verification steps) and confirm Vitest + Playwright suites pass
 
 ---
 

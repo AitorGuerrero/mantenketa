@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Aitor Guerrero
+
 import { z } from 'zod'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
