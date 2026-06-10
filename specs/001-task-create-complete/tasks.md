@@ -29,11 +29,11 @@ PWA under `apps/web`, local-only (Dexie/IndexedDB), pnpm. No backend.
 
 **Purpose**: Project initialization and tooling
 
-- [ ] T001 Scaffold the app: create `pnpm-workspace.yaml` (packages: `apps/*`) and an `apps/web` Vite + React + TypeScript project with strict `tsconfig.json` and `apps/web/vite.config.ts`
-- [ ] T002 Add dependencies and `apps/web/package.json` metadata including `"license": "AGPL-3.0-or-later"` — runtime: `react`, `react-dom`, `dexie`, `dexie-react-hooks`, `zod`, `vite-plugin-pwa`; dev: `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `@playwright/test`
-- [ ] T003 [P] Configure ESLint + Prettier (`apps/web/.eslintrc.cjs`, `apps/web/.prettierrc`) with TypeScript-strict rules and no-`any`
-- [ ] T004 [P] Configure test runners: `apps/web/vitest.config.ts` (jsdom env) and `apps/web/playwright.config.ts`
-- [ ] T005 [P] Configure `vite-plugin-pwa` in `apps/web/vite.config.ts` — web app manifest + precache the app shell (no runtime API caching; there is no API)
+- [X] T001 Scaffold the app: create `pnpm-workspace.yaml` (packages: `apps/*`) and an `apps/web` Vite + React + TypeScript project with strict `tsconfig.json` and `apps/web/vite.config.ts`
+- [X] T002 Add dependencies and `apps/web/package.json` metadata including `"license": "AGPL-3.0-or-later"` — runtime: `react`, `react-dom`, `dexie`, `dexie-react-hooks`, `zod`, `vite-plugin-pwa`; dev: `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `@playwright/test`
+- [X] T003 [P] Configure ESLint + Prettier (`apps/web/.eslintrc.cjs`, `apps/web/.prettierrc`) with TypeScript-strict rules and no-`any`
+- [X] T004 [P] Configure test runners: `apps/web/vitest.config.ts` (jsdom env) and `apps/web/playwright.config.ts`
+- [X] T005 [P] Configure `vite-plugin-pwa` in `apps/web/vite.config.ts` — web app manifest + precache the app shell (no runtime API caching; there is no API)
 
 ---
 
@@ -43,10 +43,10 @@ PWA under `apps/web`, local-only (Dexie/IndexedDB), pnpm. No backend.
 
 **⚠️ CRITICAL**: No user-story work can begin until this phase is complete
 
-- [ ] T006 [P] Define the `Task` type and `TaskSchema` (Zod) + `NewTaskInput` in `apps/web/src/domain/task.ts` per data-model.md (`id`, `name`, `taskDate`, `completedAt`, `createdAt`; no `ownerId`/`updatedAt` this phase)
-- [ ] T007 Set up the Dexie database in `apps/web/src/data/db.ts` — single `tasks` store keyed by `id`, indexes on `taskDate`, `completedAt`, `createdAt` (`db.version(1)`)
-- [ ] T008 Create the `TaskRepository` interface + class skeleton (methods stubbed) in `apps/web/src/data/taskRepository.ts` per contracts/data-access.md (depends on T006, T007)
-- [ ] T009 [P] App shell + root render + service-worker registration in `apps/web/src/main.tsx` and `apps/web/src/App.tsx`
+- [X] T006 [P] Define the `Task` type and `TaskSchema` (Zod) + `NewTaskInput` in `apps/web/src/domain/task.ts` per data-model.md (`id`, `name`, `taskDate`, `completedAt`, `createdAt`; no `ownerId`/`updatedAt` this phase)
+- [X] T007 Set up the Dexie database in `apps/web/src/data/db.ts` — single `tasks` store keyed by `id`, indexes on `taskDate`, `completedAt`, `createdAt` (`db.version(1)`)
+- [X] T008 Create the `TaskRepository` interface + class skeleton (methods stubbed) in `apps/web/src/data/taskRepository.ts` per contracts/data-access.md (depends on T006, T007)
+- [X] T009 [P] App shell + root render + service-worker registration in `apps/web/src/main.tsx` and `apps/web/src/App.tsx`
 
 **Checkpoint**: Foundation ready — user-story implementation can begin
 
