@@ -32,3 +32,8 @@ cdk.context.json
 #   .claude/skills, .claude/agents, .specify/, CLAUDE.md)
 .claude/settings.local.json
 .claude/.credentials*
+
+# Playwright / PWA dev artifacts
+test-results/
+playwright-report/
+dev-dist/
