@@ -10,8 +10,9 @@ tests depend on.
 import type { Task } from '../domain/task'
 
 export interface NewTaskInput {
-  name: string        // required, non-empty after trim (FR-002)
-  taskDate: string    // required, 'YYYY-MM-DD' (FR-003)
+  name: string                // required, non-empty after trim (FR-002)
+  taskDate?: string | null    // optional 'YYYY-MM-DD'; absent/empty ⇒ null =
+                              // "to do right away" (FR-003)
 }
 
 export interface TaskRepository {
@@ -45,11 +46,13 @@ export interface TaskRepository {
 ### Contract guarantees (verified by tests)
 
 - `createTask` with blank/whitespace `name` rejects and writes nothing (FR-002).
-- `createTask` with missing `taskDate` rejects and writes nothing (FR-003).
+- `createTask` with missing/empty `taskDate` persists the task with
+  `taskDate = null` ("to do right away") (FR-003).
 - After `createTask`, the task appears in `observeTasks()` immediately, with or
   without connectivity (SC-002).
-- `observeTasks()` ordering: all outstanding (sorted `taskDate` asc) precede all
-  completed (FR-005); covered by a unit test on the pure ordering function.
+- `observeTasks()` ordering: all outstanding precede all completed; within each
+  group dateless tasks first, then `taskDate` asc (FR-005); covered by a unit
+  test on the pure ordering function.
 - `markDone` twice ⇒ identical result, `completedAt` unchanged after first
   (FR-008).
 - `revert` after `markDone` ⇒ `completedAt === null` (FR-010).

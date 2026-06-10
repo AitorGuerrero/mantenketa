@@ -12,7 +12,7 @@ A single thing to be done on a given day. Stored only in the browser's IndexedDB
 |-------|-----------|----------|-------|
 | `id` | `string` (UUID) | yes | Client-generated (`crypto.randomUUID()`). Stable primary key. |
 | `name` | `string` | yes | Free text; non-empty after trim (FR-002). |
-| `taskDate` | `string` (`YYYY-MM-DD`) | yes | The day the task is scheduled (FR-003). Calendar day, no time-of-day. |
+| `taskDate` | `string \| null` (`YYYY-MM-DD`) | no | The day the task is scheduled. Calendar day, no time-of-day. `null` ⇒ "to do right away" (FR-003): no date is stored and the task sorts before date-bearing ones. |
 | `completedAt` | `string \| null` (`YYYY-MM-DD`) | no | The day it was marked done (FR-007). `null` ⇒ outstanding; non-null ⇒ done. Cleared on revert (FR-010). |
 | `createdAt` | `string` (ISO) | yes | Set at creation; stable tiebreak for ordering. |
 
@@ -27,7 +27,8 @@ represented solely by `completedAt`, so the date and the state can never disagre
 
 - `name` MUST be non-empty after trimming (FR-002) — enforced by the shared Zod
   schema before any write.
-- `taskDate` MUST be present (FR-003).
+- `taskDate` is OPTIONAL (FR-003): absent/empty input normalizes to `null`
+  ("to do right away"); when present it MUST be a valid `YYYY-MM-DD` day.
 - Marking done is **idempotent** (FR-008): if `completedAt` is already set,
   re-marking does not change it.
 - Reverting (FR-010) sets `completedAt = null`.
@@ -51,9 +52,11 @@ logic per Principle IV.
 
 ### Ordering (FR-005)
 
-Outstanding first (`completedAt === null`), then by `taskDate` ascending (soonest
-at top); completed below, also by `taskDate` ascending, with `createdAt` as the
-final tiebreak. Implemented as a pure sort function (unit-tested).
+Outstanding first (`completedAt === null`); within each group, dateless tasks
+(`taskDate === null`, "to do right away") come first, then by `taskDate`
+ascending (soonest at top); completed below with the same internal order;
+`createdAt` is the final tiebreak. Implemented as a pure sort function
+(unit-tested).
 
 ## Client schema (Dexie / IndexedDB)
 

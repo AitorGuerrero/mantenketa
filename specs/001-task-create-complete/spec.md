@@ -15,6 +15,10 @@
 - Q: Can a completed task be reverted to outstanding? → A: Yes — completion can be toggled both ways; reverting clears the completion date.
 - Q: What is the default ordering of the task list? → A: Outstanding tasks first, sorted by date ascending (soonest at top); completed tasks shown below.
 
+### Session 2026-06-11
+
+- Q: Is the task date mandatory? → A: No — the date is optional. A task created without a date is considered something to do **right away** ("hay que hacerla ya"): it is shown as such and ordered before any date-bearing outstanding task.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Create a task and see it in the list (Priority: P1)
@@ -36,9 +40,10 @@ other story implemented.
 
 1. **Given** an empty task list, **When** the user enters the name "Change filter" and the date 2026-06-15 and saves, **Then** a task "Change filter" dated 2026-06-15 appears in the list.
 2. **Given** the user is creating a task, **When** they leave the name blank and try to save, **Then** the task is not created and they are told a name is required.
-3. **Given** the user is creating a task, **When** they do not pick a date and try to save, **Then** the task is not created and they are told a date is required.
+3. **Given** the user is creating a task, **When** they do not pick a date and save, **Then** the task is created without a date, is presented as "to do right away", and appears before all date-bearing outstanding tasks.
 4. **Given** several tasks exist, **When** the user opens the app, **Then** they see all their tasks, each showing its name, date, and whether it is done.
 5. **Given** several outstanding tasks with different dates, **When** the user views the list, **Then** outstanding tasks appear first ordered by date ascending (soonest at top), with completed tasks shown below.
+6. **Given** outstanding tasks with and without a date, **When** the user views the list, **Then** the tasks without a date (to do right away) appear before the date-bearing ones.
 
 ---
 
@@ -66,6 +71,7 @@ it is shown as completed and distinguished from outstanding tasks.
 ### Edge Cases
 
 - What happens when the user creates a task with a date in the past? → Allowed; the date is stored and displayed as-is.
+- What happens when the user creates a task without a date? → Allowed; the task is stored with no date, shown as "to do right away", and ordered before date-bearing outstanding tasks. (A dateless task is NOT assigned today's date — it stays dateless.)
 - What happens when two tasks have the same name and date? → Both are kept as separate tasks; names are not required to be unique.
 - What happens when the user marks an already-completed task done again? → No effect; completion is idempotent.
 - How does the system handle a task created or completed with no connectivity? → The app is local-only, so every action is stored on the device and reflected immediately regardless of network state (see Offline Behavior).
@@ -75,11 +81,11 @@ it is shown as completed and distinguished from outstanding tasks.
 
 ### Functional Requirements
 
-- **FR-001**: Users MUST be able to create a task by providing a name and a date.
+- **FR-001**: Users MUST be able to create a task by providing a name and, optionally, a date.
 - **FR-002**: System MUST reject task creation when the name is empty and inform the user a name is required.
-- **FR-003**: System MUST reject task creation when no date is provided and inform the user a date is required.
+- **FR-003**: System MUST accept task creation without a date; such a task is considered "to do right away", MUST be visibly presented as such, and MUST be ordered before all date-bearing outstanding tasks.
 - **FR-004**: System MUST persist created tasks on the device so they remain available across app restarts and page reloads.
-- **FR-005**: System MUST display the list of tasks showing each task's name, date, and completion state, ordered with outstanding tasks first sorted by date ascending (soonest first) and completed tasks shown below.
+- **FR-005**: System MUST display the list of tasks showing each task's name, date (or its "right away" status), and completion state, ordered with outstanding tasks first — dateless ("right away") tasks at the top, then by date ascending (soonest first) — and completed tasks shown below using the same internal order.
 - **FR-006**: Users MUST be able to mark an outstanding task as done.
 - **FR-007**: System MUST record the date a task was completed when it is marked done.
 - **FR-008**: System MUST treat marking a task done as idempotent — completing an already-completed task has no further effect.
@@ -88,7 +94,7 @@ it is shown as completed and distinguished from outstanding tasks.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Task**: A single thing to be done on a given day. Attributes: name (free text, required), date (the day it is scheduled, required), completion state (outstanding or done), completion date (the day it was marked done — set when done, cleared when reverted to outstanding).
+- **Task**: A single thing to be done. Attributes: name (free text, required), date (the day it is scheduled — optional; absent means "to do right away"), completion state (outstanding or done), completion date (the day it was marked done — set when done, cleared when reverted to outstanding).
 
 ## Offline Behavior *(mandatory — Constitution Principle I)*
 

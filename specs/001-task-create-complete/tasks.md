@@ -116,6 +116,23 @@ date cleared; both survive a reload.
 
 ---
 
+## Phase 6: Amendment 2026-06-11 — Optional date ("hacer ya")
+
+**Purpose**: FR-001/FR-003/FR-005 amended — the date is optional; a dateless
+task is "to do right away" and sorts before date-bearing outstanding tasks.
+
+### Tests (write FIRST, ensure the domain ones FAIL) ⚠️
+
+- [ ] T027 [P] Update unit tests: `parseNewTask` accepts missing/empty date → `taskDate = null` (name still required) in `apps/web/src/domain/task.test.ts`; `sortTasks` places dateless tasks first within each group in `apps/web/src/domain/ordering.test.ts`
+- [ ] T028 [P] Update e2e: creating without a date succeeds, shows "Hacer ya", and sorts before dated outstanding tasks, in `apps/web/tests/e2e/create-and-list.spec.ts`
+
+### Implementation
+
+- [ ] T029 Make `taskDate` nullable in `TaskSchema`/`NewTaskInputSchema` (normalize ''/undefined → null) in `apps/web/src/domain/task.ts`; update `sortTasks` (null-first within group) in `apps/web/src/domain/ordering.ts`
+- [ ] T030 Update UI: date input optional ("Fecha (opcional)"), dateless tasks render "Hacer ya" in `apps/web/src/components/CreateTaskForm.tsx` + `apps/web/src/components/TaskList.tsx`; verify full suites pass
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
