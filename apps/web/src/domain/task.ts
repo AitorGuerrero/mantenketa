@@ -8,8 +8,13 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
  */
 export const TaskSchema = z.object({
   id: z.uuid(),
-  name: z.string().trim().min(1, 'El nombre es obligatorio'),
-  taskDate: z.string().regex(ISO_DATE, 'La fecha es obligatoria'),
+  name: z
+    .string({ error: 'El nombre es obligatorio' })
+    .trim()
+    .min(1, 'El nombre es obligatorio'),
+  taskDate: z
+    .string({ error: 'La fecha es obligatoria' })
+    .regex(ISO_DATE, 'La fecha es obligatoria'),
   completedAt: z.string().regex(ISO_DATE).nullable(),
   createdAt: z.string().min(1),
 })
@@ -22,6 +27,26 @@ export const NewTaskInputSchema = TaskSchema.pick({
 })
 
 export type NewTaskInput = z.infer<typeof NewTaskInputSchema>
+
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ValidationError'
+  }
+}
+
+/**
+ * Valida la entrada de creación (FR-002, FR-003). Devuelve la entrada
+ * normalizada (nombre recortado) o lanza ValidationError con el primer
+ * problema encontrado.
+ */
+export function parseNewTask(input: unknown): NewTaskInput {
+  const result = NewTaskInputSchema.safeParse(input)
+  if (!result.success) {
+    throw new ValidationError(result.error.issues[0]?.message ?? 'Entrada no válida')
+  }
+  return result.data
+}
 
 /** Derivado, no almacenado: el estado vive solo en completedAt. */
 export function isDone(task: Task): boolean {

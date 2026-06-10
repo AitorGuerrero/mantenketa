@@ -1,6 +1,9 @@
-import type { Observable } from 'dexie'
+import { liveQuery, type Observable } from 'dexie'
 
-import type { NewTaskInput, Task } from '../domain/task'
+import { sortTasks } from '../domain/ordering'
+import { parseNewTask, type NewTaskInput, type Task } from '../domain/task'
+
+import { db } from './db'
 
 /**
  * Contrato de acceso a datos local (contracts/data-access.md).
@@ -36,11 +39,20 @@ export interface TaskRepository {
 
 export class DexieTaskRepository implements TaskRepository {
   observeTasks(): Observable<Task[]> {
-    throw new Error('Not implemented')
+    return liveQuery(async () => sortTasks(await db.tasks.toArray()))
   }
 
-  createTask(_input: NewTaskInput): Promise<Task> {
-    throw new Error('Not implemented')
+  async createTask(input: NewTaskInput): Promise<Task> {
+    const parsed = parseNewTask(input)
+    const task: Task = {
+      id: crypto.randomUUID(),
+      name: parsed.name,
+      taskDate: parsed.taskDate,
+      completedAt: null,
+      createdAt: new Date().toISOString(),
+    }
+    await db.tasks.add(task)
+    return task
   }
 
   markDone(_taskId: string): Promise<Task> {

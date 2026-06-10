@@ -62,17 +62,17 @@ off) and confirm it appears immediately, correctly ordered, and survives a reloa
 
 ### Tests for User Story 1 (write FIRST, ensure they FAIL) ⚠️
 
-- [ ] T010 [P] [US1] Failing unit test for the ordering function (outstanding-first by `taskDate` asc, completed below, `createdAt` tiebreak — FR-005) in `apps/web/src/domain/ordering.test.ts`
-- [ ] T011 [P] [US1] Failing unit test for creation validation (blank/whitespace name rejected — FR-002; missing date rejected — FR-003) in `apps/web/src/domain/task.test.ts`
-- [ ] T012 [P] [US1] Failing Playwright e2e: create a task → appears immediately (also with network offline — SC-002) and ordering holds, in `apps/web/tests/e2e/create-and-list.spec.ts`
+- [X] T010 [P] [US1] Failing unit test for the ordering function (outstanding-first by `taskDate` asc, completed below, `createdAt` tiebreak — FR-005) in `apps/web/src/domain/ordering.test.ts`
+- [X] T011 [P] [US1] Failing unit test for creation validation (blank/whitespace name rejected — FR-002; missing date rejected — FR-003) in `apps/web/src/domain/task.test.ts`
+- [X] T012 [P] [US1] Failing Playwright e2e: create a task → appears immediately (also with network offline — SC-002) and ordering holds, in `apps/web/tests/e2e/create-and-list.spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Implement the pure ordering function `sortTasks()` in `apps/web/src/domain/ordering.ts` (makes T010 pass)
-- [ ] T014 [US1] Implement `createTask()` (client UUID, `completedAt=null`, `createdAt=now`, Zod validation) and `observeTasks()` (live query + `sortTasks`) in `apps/web/src/data/taskRepository.ts` (makes T011 pass; depends on T008, T013)
-- [ ] T015 [P] [US1] Build `CreateTaskForm` (name + date inputs, required-field messages — FR-002/FR-003) in `apps/web/src/components/CreateTaskForm.tsx`
-- [ ] T016 [P] [US1] Build `TaskList` using `useLiveQuery(observeTasks)` rendering each task's name, date, and completion state in order (FR-005) in `apps/web/src/components/TaskList.tsx`
-- [ ] T017 [US1] Compose `TasksPage` wiring the form + list in `apps/web/src/pages/TasksPage.tsx` (depends on T014, T015, T016)
+- [X] T013 [US1] Implement the pure ordering function `sortTasks()` in `apps/web/src/domain/ordering.ts` (makes T010 pass)
+- [X] T014 [US1] Implement `createTask()` (client UUID, `completedAt=null`, `createdAt=now`, Zod validation) and `observeTasks()` (live query + `sortTasks`) in `apps/web/src/data/taskRepository.ts` (makes T011 pass; depends on T008, T013)
+- [X] T015 [P] [US1] Build `CreateTaskForm` (name + date inputs, required-field messages — FR-002/FR-003) in `apps/web/src/components/CreateTaskForm.tsx`
+- [X] T016 [P] [US1] Build `TaskList` using `useLiveQuery(observeTasks)` rendering each task's name, date, and completion state in order (FR-005) in `apps/web/src/components/TaskList.tsx`
+- [X] T017 [US1] Compose `TasksPage` wiring the form + list in `apps/web/src/pages/TasksPage.tsx` (depends on T014, T015, T016)
 
 **Checkpoint**: US1 fully functional — create + list works and persists. MVP shippable.
 

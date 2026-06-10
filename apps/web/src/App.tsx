@@ -1,3 +1,5 @@
+import { TasksPage } from './pages/TasksPage'
+
 export default function App() {
   return (
     <main className="app">
@@ -5,6 +7,7 @@ export default function App() {
         <h1>Mantenketa</h1>
         <p className="app-subtitle">Tus tareas, en este dispositivo</p>
       </header>
+      <TasksPage />
     </main>
   )
 }
