@@ -110,7 +110,7 @@ default unit run.
 **Decision**: keep the single app `apps/web`; add a top-level `supabase/`
 directory (CLI config + `migrations/`). Generated DB types land in
 `apps/web/src/data/database.types.ts` (the one explicit boundary, Principle
-II). Runtime config via `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`
+II). Runtime config via `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY`
 (publishable values, safe in the client; `.env.example` committed). No
 `packages/shared` yet — still one consumer.
 

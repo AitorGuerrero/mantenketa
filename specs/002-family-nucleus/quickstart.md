@@ -18,7 +18,7 @@ Pages) · Dexie local store · **Supabase** (Postgres+RLS, Auth SSO, Realtime).
 
 ```bash
 VITE_SUPABASE_URL=...        # local: from `supabase start` output
-VITE_SUPABASE_ANON_KEY=...   # publishable anon key (safe in client)
+VITE_SUPABASE_PUBLISHABLE_KEY=...   # publishable key (sb_publishable_..., safe in client)
 ```
 
 No env vars ⇒ the app runs in pure local-only mode (feature 001 behavior).
@@ -62,6 +62,6 @@ pnpm --filter @mantenketa/web test:e2e    # Playwright (incl. two-context sharin
 ## 5. Deploy (single environment — Principle VI)
 
 - Cloudflare Pages: build `pnpm --filter @mantenketa/web build`, output
-  `apps/web/dist`, env vars `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`.
+  `apps/web/dist`, env vars `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY`.
 - Supabase production: `supabase db push` from `main`; enable the Google
   provider; add the Pages domain to Auth → URL configuration (redirect URLs).

@@ -23,7 +23,7 @@ credentials (see quickstart.md); local dev uses `supabase start` (Docker).
 
 ## Phase 1: Setup
 
-- [ ] T001 Add `@supabase/supabase-js` to `apps/web`; create `supabase/config.toml` via `supabase init`; add `apps/web/.env.example` (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) and ensure `.env*` stays gitignored
+- [ ] T001 Add `@supabase/supabase-js` to `apps/web`; create `supabase/config.toml` via `supabase init`; add `apps/web/.env.example` (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`) and ensure `.env*` stays gitignored
 - [ ] T002 [P] Add scripts: `test:rls` (Vitest, `tests/integration`, sequential) in `apps/web/package.json`; document type generation command in `apps/web/README.md` section
 - [ ] T003 [P] Create `apps/web/src/data/supabaseClient.ts` — `createClient` from env; exports `supabaseEnabled` flag (no env ⇒ pure local-only mode, FR-002)
 
