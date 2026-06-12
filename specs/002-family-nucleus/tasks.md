@@ -23,19 +23,19 @@ credentials (see quickstart.md); local dev uses `supabase start` (Docker).
 
 ## Phase 1: Setup
 
-- [ ] T001 Add `@supabase/supabase-js` to `apps/web`; create `supabase/config.toml` via `supabase init`; add `apps/web/.env.example` (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`) and ensure `.env*` stays gitignored
-- [ ] T002 [P] Add scripts: `test:rls` (Vitest, `tests/integration`, sequential) in `apps/web/package.json`; document type generation command in `apps/web/README.md` section
-- [ ] T003 [P] Create `apps/web/src/data/supabaseClient.ts` — `createClient` from env; exports `supabaseEnabled` flag (no env ⇒ pure local-only mode, FR-002)
+- [X] T001 Add `@supabase/supabase-js` to `apps/web`; create `supabase/config.toml` via `supabase init`; add `apps/web/.env.example` (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`) and ensure `.env*` stays gitignored
+- [X] T002 [P] Add scripts: `test:rls` (Vitest, `tests/integration`, sequential) in `apps/web/package.json`; document type generation command in `apps/web/README.md` section
+- [X] T003 [P] Create `apps/web/src/data/supabaseClient.ts` — `createClient` from env; exports `supabaseEnabled` flag (no env ⇒ pure local-only mode, FR-002)
 
 ---
 
 ## Phase 2: Foundational (blocks all stories)
 
-- [ ] T004 Migration `supabase/migrations/0001_family_nucleus.sql`: tables `profiles` (+ sign-up trigger from auth.users), `nuclei`, `memberships` (UNIQUE user_id), `invitations`, `tasks` (owner_id, nucleus_id, completed_by, updated_at) per data-model.md; LWW `BEFORE UPDATE` trigger on tasks
-- [ ] T005 Migration (same file): RLS policies for all five tables + RPCs `create_nucleus`, `accept_invitation`, `leave_nucleus` per contracts/backend.md (SECURITY DEFINER, pinned search_path, error codes)
+- [X] T004 Migration `supabase/migrations/0001_family_nucleus.sql`: tables `profiles` (+ sign-up trigger from auth.users), `nuclei`, `memberships` (UNIQUE user_id), `invitations`, `tasks` (owner_id, nucleus_id, completed_by, updated_at) per data-model.md; LWW `BEFORE UPDATE` trigger on tasks
+- [X] T005 Migration (same file): RLS policies for all five tables + RPCs `create_nucleus`, `accept_invitation`, `leave_nucleus` per contracts/backend.md (SECURITY DEFINER, pinned search_path, error codes)
 - [ ] T006 Generate `apps/web/src/data/database.types.ts` (`supabase gen types typescript --local`) and verify it compiles
-- [ ] T007 Extend `Task` domain type + Zod (`ownerId`, `nucleusId`, `completedBy`, `updatedAt`) in `apps/web/src/domain/task.ts`; every write path stamps `updatedAt`
-- [ ] T008 Dexie v2 in `apps/web/src/data/db.ts`: new indexes + `outbox`/`meta` stores + `upgrade()` backfilling existing rows per data-model.md
+- [X] T007 Extend `Task` domain type + Zod (`ownerId`, `nucleusId`, `completedBy`, `updatedAt`) in `apps/web/src/domain/task.ts`; every write path stamps `updatedAt`
+- [X] T008 Dexie v2 in `apps/web/src/data/db.ts`: new indexes + `outbox`/`meta` stores + `upgrade()` backfilling existing rows per data-model.md
 
 **Checkpoint**: schema + types ready locally and remotely
 
@@ -45,13 +45,13 @@ credentials (see quickstart.md); local dev uses `supabase start` (Docker).
 
 ### Tests first (must FAIL) ⚠️
 
-- [ ] T009 [P] [US1] Failing unit tests for `reconcile()` (LWW by updatedAt, id tiebreak, completion idempotence across replicas) in `apps/web/src/domain/reconcile.test.ts`
-- [ ] T010 [P] [US1] Failing unit tests for `adoptLocalTasks()` (stamps ownerless tasks only; preserves content; idempotent — FR-003/SC-001) in `apps/web/src/domain/adoption.test.ts`
+- [X] T009 [P] [US1] Failing unit tests for `reconcile()` (LWW by updatedAt, id tiebreak, completion idempotence across replicas) in `apps/web/src/domain/reconcile.test.ts`
+- [X] T010 [P] [US1] Failing unit tests for `adoptLocalTasks()` (stamps ownerless tasks only; preserves content; idempotent — FR-003/SC-001) in `apps/web/src/domain/adoption.test.ts`
 - [ ] T011 [P] [US1] Failing e2e: anonymous mode unaffected (feature 001 suite still green with no env); sign-in adopts local tasks (auth mocked/stubbed session) in `apps/web/tests/e2e/auth-adoption.spec.ts`
 
 ### Implementation
 
-- [ ] T012 [US1] Implement `reconcile()` and `adoptLocalTasks()` in `apps/web/src/domain/` (makes T009, T010 pass)
+- [X] T012 [US1] Implement `reconcile()` and `adoptLocalTasks()` in `apps/web/src/domain/` (makes T009, T010 pass)
 - [ ] T013 [US1] `AuthService` in `apps/web/src/auth/authService.ts`: `observeSession` (Dexie `meta` cache), `signInWithGoogle` (PKCE redirect), `signOut` with outbox warning (FR-005); first-sign-in adoption hook
 - [ ] T014 [US1] Sync engine in `apps/web/src/data/sync/`: outbox enqueue on every signed-in write (extend `taskRepository.ts`), FIFO flusher (session+online triggers), full pull on sign-in/reconnect feeding `reconcile`, Realtime `postgres_changes` subscription
 - [ ] T015 [P] [US1] `AuthMenu` component (Iniciar sesión con Google / sesión / Cerrar sesión with pending-changes warning) wired into `App.tsx` — UI in castellano
@@ -65,12 +65,12 @@ credentials (see quickstart.md); local dev uses `supabase start` (Docker).
 
 ### Tests first (must FAIL) ⚠️
 
-- [ ] T017 [P] [US2] Failing unit tests for `invitationState()` (pending/accepted/revoked/expired derivation — FR-010) in `apps/web/src/domain/invitation.test.ts`
+- [X] T017 [P] [US2] Failing unit tests for `invitationState()` (pending/accepted/revoked/expired derivation — FR-010) in `apps/web/src/domain/invitation.test.ts`
 - [ ] T018 [P] [US2] RLS/RPC integration tests: accept happy path, expired/revoked/already-used/already-in-nucleus errors, leave + last-member dissolution (guarantees 2, 4, 5) in `apps/web/tests/integration/rls-nucleus.test.ts`
 
 ### Implementation
 
-- [ ] T019 [US2] Implement `invitationState()` in `apps/web/src/domain/invitation.ts` (makes T017 pass)
+- [X] T019 [US2] Implement `invitationState()` in `apps/web/src/domain/invitation.ts` (makes T017 pass)
 - [ ] T020 [US2] `NucleusService` in `apps/web/src/data/nucleusService.ts` per contracts/client-services.md (RPC calls, typed errors, OfflineError when no connectivity, `meta` cache for `observeNucleus`)
 - [ ] T021 [P] [US2] Nucleus UI: `NucleusPanel` (crear núcleo, miembros, invitaciones pendientes con revocar, abandonar with FR-013 warning) in `apps/web/src/components/NucleusPanel.tsx`
 - [ ] T022 [P] [US2] Invitation accept route `/invitacion/:token` (path handling in `App.tsx`; `_redirects` already SPA-falls-back): sign-in-first flow, accept, per-cause error messages in castellano, in `apps/web/src/pages/InvitationPage.tsx`

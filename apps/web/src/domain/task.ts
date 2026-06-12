@@ -7,7 +7,8 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 /**
  * Forma canónica del dominio (Principio II: definida una sola vez).
- * Sin ownerId ni updatedAt en esta fase — local-only, una sola persona.
+ * Feature 002: ownerId (null solo en modo anónimo), nucleusId (null ⇒
+ * personal), completedBy y updatedAt (reloj LWW, lo sella cada escritura).
  */
 export const TaskSchema = z.object({
   id: z.uuid(),
@@ -18,10 +19,17 @@ export const TaskSchema = z.object({
   // null ⇒ "para hacer ya" (FR-003): sin fecha, se ordena antes que las fechadas
   taskDate: z.string().regex(ISO_DATE, 'La fecha no es válida').nullable(),
   completedAt: z.string().regex(ISO_DATE).nullable(),
+  completedBy: z.string().nullable(),
+  ownerId: z.string().nullable(),
+  nucleusId: z.string().nullable(),
   createdAt: z.string().min(1),
+  updatedAt: z.string().min(1),
 })
 
 export type Task = z.infer<typeof TaskSchema>
+
+export const TaskScopeSchema = z.enum(['personal', 'nucleus'])
+export type TaskScope = z.infer<typeof TaskScopeSchema>
 
 export const NewTaskInputSchema = z.object({
   name: TaskSchema.shape.name,
@@ -30,9 +38,19 @@ export const NewTaskInputSchema = z.object({
     (value) => (value === '' || value === undefined ? null : value),
     TaskSchema.shape.taskDate,
   ),
+  // Ámbito (FR-014): personal por defecto; 'nucleus' solo con núcleo activo
+  scope: TaskScopeSchema.default('personal'),
 })
 
-export type NewTaskInput = z.infer<typeof NewTaskInputSchema>
+/** Entrada tal y como la construye la UI (campos opcionales sin normalizar). */
+export interface NewTaskInput {
+  name: string
+  taskDate?: string | null
+  scope?: TaskScope
+}
+
+/** Entrada normalizada por parseNewTask (fecha → null, scope con defecto). */
+export type ParsedNewTask = z.infer<typeof NewTaskInputSchema>
 
 export class ValidationError extends Error {
   constructor(message: string) {
@@ -46,7 +64,7 @@ export class ValidationError extends Error {
  * normalizada (nombre recortado) o lanza ValidationError con el primer
  * problema encontrado.
  */
-export function parseNewTask(input: unknown): NewTaskInput {
+export function parseNewTask(input: unknown): ParsedNewTask {
   const result = NewTaskInputSchema.safeParse(input)
   if (!result.success) {
     throw new ValidationError(result.error.issues[0]?.message ?? 'Entrada no válida')

@@ -56,12 +56,19 @@ export class DexieTaskRepository implements TaskRepository {
 
   async createTask(input: NewTaskInput): Promise<Task> {
     const parsed = parseNewTask(input)
+    const now = new Date().toISOString()
     const task: Task = {
       id: crypto.randomUUID(),
       name: parsed.name,
       taskDate: parsed.taskDate,
       completedAt: null,
-      createdAt: new Date().toISOString(),
+      completedBy: null,
+      // ownerId se sella con la sesión (adopción/AuthService — US1) y
+      // nucleusId con el ámbito 'nucleus' (US3); en anónimo quedan null.
+      ownerId: null,
+      nucleusId: null,
+      createdAt: now,
+      updatedAt: now,
     }
     await db.tasks.add(task)
     return task
@@ -82,10 +89,13 @@ export class DexieTaskRepository implements TaskRepository {
         throw new Error(`Tarea no encontrada: ${taskId}`)
       }
       const updated = apply(existing)
-      if (updated !== existing) {
-        await db.tasks.put(updated)
+      if (updated === existing) {
+        return existing
       }
-      return updated
+      // Toda escritura sella el reloj LWW (contrato de sync, feature 002)
+      const stamped: Task = { ...updated, updatedAt: new Date().toISOString() }
+      await db.tasks.put(stamped)
+      return stamped
     })
   }
 }

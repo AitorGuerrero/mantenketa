@@ -14,7 +14,11 @@ function makeTask(overrides: Partial<Task>): Task {
     name: 'Tarea',
     taskDate: '2026-06-15',
     completedAt: null,
+    completedBy: null,
+    ownerId: null,
+    nucleusId: null,
     createdAt: '2026-06-01T10:00:00.000Z',
+    updatedAt: '2026-06-01T10:00:00.000Z',
     ...overrides,
   }
 }
