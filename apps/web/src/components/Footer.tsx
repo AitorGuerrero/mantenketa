@@ -7,7 +7,7 @@ import { useObservable } from 'dexie-react-hooks'
 import { db } from '../data/db'
 
 // URL pública del código fuente — requerida por AGPL §13 para usuarios en red.
-const SOURCE_URL = 'https://github.com/aitor.guerrero/mantenketa'
+const SOURCE_URL = 'https://github.com/AitorGuerrero/mantenketa'
 
 /** Cambios locales aún no subidos (outbox) — discreto, solo si hay alguno. */
 function PendingSyncBadge() {
