@@ -82,9 +82,9 @@ credentials (see quickstart.md); local dev uses `supabase start` (Docker).
 
 ## Phase 5: US3 — Share tasks with the nucleus (P3)
 
-- [ ] T024 [P] [US3] Failing e2e: nucleus task created in context A appears in context B ≤ 5 s; B completes → A sees completed + who (SC-003), in `apps/web/tests/e2e/nucleus-tasks.spec.ts`
-- [ ] T025 [US3] Scope selector in `CreateTaskForm.tsx` («Personal» / «Del núcleo», default personal, visible only with nucleus — FR-014); repository persists `nucleusId`
-- [ ] T026 [US3] `TaskList.tsx`: show completing member on nucleus tasks («Hecha el … por …»); `markDone` records `completedBy` (FR-016)
+- [X] T024 [P] [US3] Failing e2e: nucleus task created in context A appears in context B ≤ 5 s; B completes → A sees completed + who (SC-003), in `apps/web/tests/e2e/nucleus-tasks.spec.ts`
+- [X] T025 [US3] Scope selector in `CreateTaskForm.tsx` («Personal» / «Del núcleo», default personal, visible only with nucleus — FR-014); repository persists `nucleusId`
+- [X] T026 [US3] `TaskList.tsx`: show completing member on nucleus tasks («Hecha el … por …»); `markDone` records `completedBy` (FR-016)
 
 **Checkpoint**: full sharing loop converges across members
 

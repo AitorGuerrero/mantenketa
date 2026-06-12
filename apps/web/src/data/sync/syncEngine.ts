@@ -30,7 +30,7 @@ export function startSync(): void {
   subscribeSession((session) => {
     if (session) {
       void syncNow()
-      subscribeRealtime()
+      void subscribeRealtime()
     } else {
       teardown()
     }
@@ -42,7 +42,7 @@ export function startSync(): void {
 
   if (getCurrentSession()) {
     void syncNow()
-    subscribeRealtime()
+    void subscribeRealtime()
   }
 }
 
@@ -79,12 +79,38 @@ async function flushOutbox(): Promise<void> {
           await db.outbox.delete(entry.seq)
           continue
         }
-        const { error } = await supabase
+        const row = taskToRow(task, task.ownerId)
+        // UPDATE primero: un miembro puede actualizar tareas del núcleo de
+        // otro dueño, pero la política de INSERT (owner_id = auth.uid())
+        // rechazaría un upsert sobre ellas. Solo columnas mutables — la
+        // propiedad es inmutable (trigger immutable_ownership).
+        const updated = await supabase
           .from('tasks')
-          .upsert(taskToRow(task, task.ownerId))
-        if (error) {
+          .update({
+            name: task.name,
+            task_date: task.taskDate,
+            completed_at: task.completedAt,
+            completed_by: task.completedBy,
+            updated_at: task.updatedAt,
+          })
+          .eq('id', task.id)
+          .select('id')
+        if (updated.error) {
           // Sin red o rechazo transitorio: se reintenta en el próximo disparo
           return
+        }
+        if (updated.data.length === 0) {
+          // No existe aún (tarea propia recién creada): INSERT completo
+          const inserted = await supabase.from('tasks').insert(row)
+          if (inserted.error) {
+            if (inserted.error.code === '42501') {
+              // Fila ajena que ya no es visible (p. ej. núcleo disuelto):
+              // descartar para no bloquear la cola
+              await db.outbox.delete(entry.seq)
+              continue
+            }
+            return
+          }
         }
         await db.outbox.delete(entry.seq)
       }
@@ -127,8 +153,21 @@ async function applyRemote(row: TaskRow): Promise<void> {
   })
 }
 
-function subscribeRealtime(): void {
-  if (!supabase || channel) return
+let subscribing = false
+
+async function subscribeRealtime(): Promise<void> {
+  if (!supabase || channel || subscribing) return
+  subscribing = true
+  try {
+    // La suscripción postgres_changes se crea con el JWT vigente en ese
+    // momento: sin esto, un canal abierto antes de aplicarse la sesión queda
+    // filtrado por RLS como anónimo y no recibe ningún evento.
+    const { data } = await supabase.auth.getSession()
+    if (!data.session) return
+    await supabase.realtime.setAuth(data.session.access_token)
+  } finally {
+    subscribing = false
+  }
   channel = supabase
     .channel('tasks-sync')
     .on(

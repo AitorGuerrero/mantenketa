@@ -96,6 +96,13 @@ export function invitationUrl(token: string): string {
   return `${window.location.origin}/invitacion/${token}`
 }
 
+/** Id del núcleo actual según la caché local (para sellar tareas de ámbito núcleo). */
+export async function currentNucleusId(): Promise<string | null> {
+  const entry = await db.meta.get(NUCLEUS_KEY)
+  const view = (entry?.value as NucleusView | undefined) ?? null
+  return view?.id ?? null
+}
+
 /** Vista viva del núcleo, leída de la caché local (funciona offline). */
 export function observeNucleus(): Observable<NucleusView | null> {
   return liveQuery(async () => {

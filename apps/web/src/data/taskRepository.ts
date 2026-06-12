@@ -9,6 +9,7 @@ import { sortTasks } from '../domain/ordering'
 import { parseNewTask, type NewTaskInput, type Task } from '../domain/task'
 
 import { db } from './db'
+import { currentNucleusId } from './nucleusService'
 import { scheduleFlush } from './sync/syncEngine'
 
 /** Día local en formato YYYY-MM-DD (la fecha de completado es un día natural). */
@@ -59,16 +60,18 @@ export class DexieTaskRepository implements TaskRepository {
   async createTask(input: NewTaskInput): Promise<Task> {
     const parsed = parseNewTask(input)
     const now = new Date().toISOString()
+    // Ámbito fijo en la creación (FR-014); 'nucleus' exige núcleo en caché
+    const nucleusId =
+      parsed.scope === 'nucleus' ? await currentNucleusId() : null
     const task: Task = {
       id: crypto.randomUUID(),
       name: parsed.name,
       taskDate: parsed.taskDate,
       completedAt: null,
       completedBy: null,
-      // En anónimo ownerId queda null (modo local puro, FR-002);
-      // nucleusId se cablea con el selector de ámbito en US3 (T025).
+      // En anónimo ownerId queda null (modo local puro, FR-002)
       ownerId: getCurrentUserId(),
-      nucleusId: null,
+      nucleusId,
       createdAt: now,
       updatedAt: now,
     }
