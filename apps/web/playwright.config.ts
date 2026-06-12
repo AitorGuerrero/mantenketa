@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
+import { loadEnv } from 'vite'
+
+// Las pruebas de auth (lado node) necesitan las mismas variables que la app
+Object.assign(process.env, loadEnv('test', process.cwd(), ''))
 
 export default defineConfig({
   testDir: './tests/e2e',

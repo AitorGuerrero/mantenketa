@@ -47,7 +47,7 @@ credentials (see quickstart.md); local dev uses `supabase start` (Docker).
 
 - [X] T009 [P] [US1] Failing unit tests for `reconcile()` (LWW by updatedAt, id tiebreak, completion idempotence across replicas) in `apps/web/src/domain/reconcile.test.ts`
 - [X] T010 [P] [US1] Failing unit tests for `adoptLocalTasks()` (stamps ownerless tasks only; preserves content; idempotent — FR-003/SC-001) in `apps/web/src/domain/adoption.test.ts`
-- [ ] T011 [P] [US1] Failing e2e: anonymous mode unaffected (feature 001 suite still green with no env); sign-in adopts local tasks (auth mocked/stubbed session) in `apps/web/tests/e2e/auth-adoption.spec.ts` — PARTIAL: anonymous regression verified (7/7 e2e with client initialized); mocked-session adoption e2e pending
+- [X] T011 [P] [US1] Failing e2e: anonymous mode unaffected (feature 001 suite still green with no env); sign-in adopts local tasks (auth mocked/stubbed session) in `apps/web/tests/e2e/auth-adoption.spec.ts`
 
 ### Implementation
 
