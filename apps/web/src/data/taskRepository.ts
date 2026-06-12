@@ -3,11 +3,13 @@
 
 import { liveQuery, type Observable } from 'dexie'
 
+import { getCurrentUserId } from '../auth/sessionStore'
 import { markDone as toDone, revert as toOutstanding } from '../domain/completion'
 import { sortTasks } from '../domain/ordering'
 import { parseNewTask, type NewTaskInput, type Task } from '../domain/task'
 
 import { db } from './db'
+import { scheduleFlush } from './sync/syncEngine'
 
 /** Día local en formato YYYY-MM-DD (la fecha de completado es un día natural). */
 function todayIsoDate(): string {
@@ -63,27 +65,43 @@ export class DexieTaskRepository implements TaskRepository {
       taskDate: parsed.taskDate,
       completedAt: null,
       completedBy: null,
-      // ownerId se sella con la sesión (adopción/AuthService — US1) y
-      // nucleusId con el ámbito 'nucleus' (US3); en anónimo quedan null.
-      ownerId: null,
+      // En anónimo ownerId queda null (modo local puro, FR-002);
+      // nucleusId se cablea con el selector de ámbito en US3 (T025).
+      ownerId: getCurrentUserId(),
       nucleusId: null,
       createdAt: now,
       updatedAt: now,
     }
-    await db.tasks.add(task)
+    await db.transaction('rw', db.tasks, db.outbox, async () => {
+      await db.tasks.add(task)
+      await this.enqueuePush(task)
+    })
+    scheduleFlush()
     return task
   }
 
   markDone(taskId: string): Promise<Task> {
-    return this.transition(taskId, (task) => toDone(task, todayIsoDate()))
+    return this.transition(taskId, (task) => {
+      const done = toDone(task, todayIsoDate())
+      if (done === task) return task
+      // Quién la completó (FR-016) — null en modo anónimo
+      return { ...done, completedBy: getCurrentUserId() }
+    })
   }
 
   revert(taskId: string): Promise<Task> {
-    return this.transition(taskId, toOutstanding)
+    return this.transition(taskId, (task) => {
+      const outstanding = toOutstanding(task)
+      if (outstanding === task) return task
+      return { ...outstanding, completedBy: null }
+    })
   }
 
-  private transition(taskId: string, apply: (task: Task) => Task): Promise<Task> {
-    return db.transaction('rw', db.tasks, async () => {
+  private async transition(
+    taskId: string,
+    apply: (task: Task) => Task,
+  ): Promise<Task> {
+    const result = await db.transaction('rw', db.tasks, db.outbox, async () => {
       const existing = await db.tasks.get(taskId)
       if (!existing) {
         throw new Error(`Tarea no encontrada: ${taskId}`)
@@ -95,8 +113,17 @@ export class DexieTaskRepository implements TaskRepository {
       // Toda escritura sella el reloj LWW (contrato de sync, feature 002)
       const stamped: Task = { ...updated, updatedAt: new Date().toISOString() }
       await db.tasks.put(stamped)
+      await this.enqueuePush(stamped)
       return stamped
     })
+    scheduleFlush()
+    return result
+  }
+
+  /** Encola el push si la tarea tiene dueño (con sesión); anónimo no sube. */
+  private async enqueuePush(task: Task): Promise<void> {
+    if (task.ownerId === null) return
+    await db.outbox.add({ taskId: task.id, enqueuedAt: new Date().toISOString() })
   }
 }
 

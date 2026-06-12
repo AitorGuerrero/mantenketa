@@ -6,7 +6,17 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist', 'dev-dist', 'coverage', 'playwright-report', 'test-results'] },
+  {
+    ignores: [
+      'dist',
+      'dev-dist',
+      'coverage',
+      'playwright-report',
+      'test-results',
+      // generado por `supabase gen types` — no se edita ni se linta
+      'src/data/database.types.ts',
+    ],
+  },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

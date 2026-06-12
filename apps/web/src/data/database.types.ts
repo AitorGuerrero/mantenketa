@@ -6,19 +6,15 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type Database = {
+export interface Database {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
   graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
+    Tables: Record<never, never>
+    Views: Record<never, never>
     Functions: {
       graphql: {
         Args: {
@@ -30,12 +26,8 @@ export type Database = {
         Returns: Json
       }
     }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+    Enums: Record<never, never>
+    CompositeTypes: Record<never, never>
   }
   public: {
     Tables: {
@@ -222,21 +214,15 @@ export type Database = {
         ]
       }
     }
-    Views: {
-      [_ in never]: never
-    }
+    Views: Record<never, never>
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string }
       create_nucleus: { Args: { p_name: string }; Returns: string }
       leave_nucleus: { Args: never; Returns: undefined }
       my_nucleus_id: { Args: never; Returns: string }
     }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+    Enums: Record<never, never>
+    CompositeTypes: Record<never, never>
   }
 }
 

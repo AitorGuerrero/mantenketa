@@ -33,7 +33,7 @@ credentials (see quickstart.md); local dev uses `supabase start` (Docker).
 
 - [X] T004 Migration `supabase/migrations/0001_family_nucleus.sql`: tables `profiles` (+ sign-up trigger from auth.users), `nuclei`, `memberships` (UNIQUE user_id), `invitations`, `tasks` (owner_id, nucleus_id, completed_by, updated_at) per data-model.md; LWW `BEFORE UPDATE` trigger on tasks
 - [X] T005 Migration (same file): RLS policies for all five tables + RPCs `create_nucleus`, `accept_invitation`, `leave_nucleus` per contracts/backend.md (SECURITY DEFINER, pinned search_path, error codes)
-- [ ] T006 Generate `apps/web/src/data/database.types.ts` (`supabase gen types typescript --local`) and verify it compiles
+- [X] T006 Generate `apps/web/src/data/database.types.ts` (`supabase gen types typescript --local`) and verify it compiles
 - [X] T007 Extend `Task` domain type + Zod (`ownerId`, `nucleusId`, `completedBy`, `updatedAt`) in `apps/web/src/domain/task.ts`; every write path stamps `updatedAt`
 - [X] T008 Dexie v2 in `apps/web/src/data/db.ts`: new indexes + `outbox`/`meta` stores + `upgrade()` backfilling existing rows per data-model.md
 
@@ -47,15 +47,15 @@ credentials (see quickstart.md); local dev uses `supabase start` (Docker).
 
 - [X] T009 [P] [US1] Failing unit tests for `reconcile()` (LWW by updatedAt, id tiebreak, completion idempotence across replicas) in `apps/web/src/domain/reconcile.test.ts`
 - [X] T010 [P] [US1] Failing unit tests for `adoptLocalTasks()` (stamps ownerless tasks only; preserves content; idempotent — FR-003/SC-001) in `apps/web/src/domain/adoption.test.ts`
-- [ ] T011 [P] [US1] Failing e2e: anonymous mode unaffected (feature 001 suite still green with no env); sign-in adopts local tasks (auth mocked/stubbed session) in `apps/web/tests/e2e/auth-adoption.spec.ts`
+- [ ] T011 [P] [US1] Failing e2e: anonymous mode unaffected (feature 001 suite still green with no env); sign-in adopts local tasks (auth mocked/stubbed session) in `apps/web/tests/e2e/auth-adoption.spec.ts` — PARTIAL: anonymous regression verified (7/7 e2e with client initialized); mocked-session adoption e2e pending
 
 ### Implementation
 
 - [X] T012 [US1] Implement `reconcile()` and `adoptLocalTasks()` in `apps/web/src/domain/` (makes T009, T010 pass)
-- [ ] T013 [US1] `AuthService` in `apps/web/src/auth/authService.ts`: `observeSession` (Dexie `meta` cache), `signInWithGoogle` (PKCE redirect), `signOut` with outbox warning (FR-005); first-sign-in adoption hook
-- [ ] T014 [US1] Sync engine in `apps/web/src/data/sync/`: outbox enqueue on every signed-in write (extend `taskRepository.ts`), FIFO flusher (session+online triggers), full pull on sign-in/reconnect feeding `reconcile`, Realtime `postgres_changes` subscription
-- [ ] T015 [P] [US1] `AuthMenu` component (Iniciar sesión con Google / sesión / Cerrar sesión with pending-changes warning) wired into `App.tsx` — UI in castellano
-- [ ] T016 [US1] RLS integration tests (personal-task isolation: guarantees 1 and 3 of contracts/backend.md) in `apps/web/tests/integration/rls-personal.test.ts` (vs local Supabase)
+- [X] T013 [US1] `AuthService` in `apps/web/src/auth/authService.ts`: `observeSession` (Dexie `meta` cache), `signInWithGoogle` (PKCE redirect), `signOut` with outbox warning (FR-005); first-sign-in adoption hook
+- [X] T014 [US1] Sync engine in `apps/web/src/data/sync/`: outbox enqueue on every signed-in write (extend `taskRepository.ts`), FIFO flusher (session+online triggers), full pull on sign-in/reconnect feeding `reconcile`, Realtime `postgres_changes` subscription
+- [X] T015 [P] [US1] `AuthMenu` component (Iniciar sesión con Google / sesión / Cerrar sesión with pending-changes warning) wired into `App.tsx` — UI in castellano
+- [X] T016 [US1] RLS integration tests (personal-task isolation: guarantees 1 and 3 of contracts/backend.md) in `apps/web/tests/integration/rls-personal.test.ts` (vs local Supabase)
 
 **Checkpoint**: sign in → tasks adopted, synced, multi-device; anonymous unaffected
 
@@ -66,7 +66,7 @@ credentials (see quickstart.md); local dev uses `supabase start` (Docker).
 ### Tests first (must FAIL) ⚠️
 
 - [X] T017 [P] [US2] Failing unit tests for `invitationState()` (pending/accepted/revoked/expired derivation — FR-010) in `apps/web/src/domain/invitation.test.ts`
-- [ ] T018 [P] [US2] RLS/RPC integration tests: accept happy path, expired/revoked/already-used/already-in-nucleus errors, leave + last-member dissolution (guarantees 2, 4, 5) in `apps/web/tests/integration/rls-nucleus.test.ts`
+- [X] T018 [P] [US2] RLS/RPC integration tests: accept happy path, expired/revoked/already-used/already-in-nucleus errors, leave + last-member dissolution (guarantees 2, 4, 5) in `apps/web/tests/integration/rls-nucleus.test.ts`
 
 ### Implementation
 

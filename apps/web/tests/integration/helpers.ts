@@ -11,6 +11,14 @@ const secretKey = process.env.SUPABASE_SECRET_KEY
 
 export type Client = SupabaseClient<Database>
 
+/** Desenvuelve un valor que el test exige presente (falla claro si falta). */
+export function must<T>(value: T | null | undefined): T {
+  if (value === null || value === undefined) {
+    throw new Error('El test esperaba un valor presente y llegó null/undefined')
+  }
+  return value
+}
+
 export function requireEnv(): { url: string; publishableKey: string; secretKey: string } {
   if (!url || !publishableKey || !secretKey) {
     throw new Error(
@@ -46,8 +54,8 @@ export async function createTestUser(admin: Client, label: string): Promise<Test
     password,
     email_confirm: true,
   })
-  if (created.error || !created.data.user) {
-    throw new Error(`No se pudo crear el usuario de prueba: ${created.error?.message ?? '?'}`)
+  if (created.error) {
+    throw new Error(`No se pudo crear el usuario de prueba: ${created.error.message}`)
   }
 
   const client = createClient<Database>(env.url, env.publishableKey, {

@@ -9,6 +9,7 @@ import {
   deleteNucleus,
   deleteTestUser,
   makeTaskRow,
+  must,
   type Client,
   type TestUser,
 } from './helpers'
@@ -45,7 +46,7 @@ describe('RLS — núcleo, invitaciones y disolución', () => {
     const res = await userA.client.rpc('create_nucleus', { p_name: 'Casa Test' })
 
     expect(res.error).toBeNull()
-    nucleusId = res.data as string
+    nucleusId = must(res.data)
     orphanNuclei.push(nucleusId)
 
     const visible = await userA.client.from('nuclei').select('name').eq('id', nucleusId)
@@ -88,7 +89,7 @@ describe('RLS — núcleo, invitaciones y disolución', () => {
       .select('token')
       .single()
     expect(invitation.error).toBeNull()
-    const token = invitation.data?.token as string
+    const token = must(invitation.data?.token)
 
     const accepted = await userB.client.rpc('accept_invitation', { p_token: token })
     expect(accepted.error).toBeNull()
@@ -115,7 +116,7 @@ describe('RLS — núcleo, invitaciones y disolución', () => {
       .single()
 
     const again = await userC.client.rpc('accept_invitation', {
-      p_token: invitation.data?.token as string,
+      p_token: must(invitation.data?.token),
     })
 
     expect(again.error?.message).toContain('already_used')
@@ -127,7 +128,7 @@ describe('RLS — núcleo, invitaciones y disolución', () => {
       .insert({ nucleus_id: nucleusId, created_by: userA.user.id })
       .select('token')
       .single()
-    const token = created.data?.token as string
+    const token = must(created.data?.token)
 
     const revoked = await userA.client
       .from('invitations')
@@ -148,7 +149,7 @@ describe('RLS — núcleo, invitaciones y disolución', () => {
       .single()
 
     const res = await userC.client.rpc('accept_invitation', {
-      p_token: created.data?.token as string,
+      p_token: must(created.data?.token),
     })
 
     expect(res.error?.message).toContain('expired')
@@ -157,7 +158,7 @@ describe('RLS — núcleo, invitaciones y disolución', () => {
   it('quien ya tiene núcleo no puede aceptar otra invitación (already_in_nucleus)', async () => {
     const own = await userC.client.rpc('create_nucleus', { p_name: 'Casa de C' })
     expect(own.error).toBeNull()
-    orphanNuclei.push(own.data as string)
+    orphanNuclei.push(must(own.data))
 
     const created = await userA.client
       .from('invitations')
@@ -166,7 +167,7 @@ describe('RLS — núcleo, invitaciones y disolución', () => {
       .single()
 
     const res = await userC.client.rpc('accept_invitation', {
-      p_token: created.data?.token as string,
+      p_token: must(created.data?.token),
     })
 
     expect(res.error?.message).toContain('already_in_nucleus')

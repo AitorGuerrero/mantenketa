@@ -25,6 +25,7 @@
     "vitest.setup.ts",
     "playwright.config.ts",
     "eslint.config.js",
-    "tests"
+    "tests",
+    "src/data/database.types.ts"
   ]
 }
