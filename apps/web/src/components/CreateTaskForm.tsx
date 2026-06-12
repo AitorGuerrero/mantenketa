@@ -1,26 +1,34 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Aitor Guerrero
 
+import { useObservable } from 'dexie-react-hooks'
 import { useState, type FormEvent } from 'react'
 
-import { ValidationError, type NewTaskInput } from '../domain/task'
+import { observeNucleus } from '../data/nucleusService'
+import { ValidationError, type NewTaskInput, type TaskScope } from '../domain/task'
 
 interface CreateTaskFormProps {
   onCreate: (input: NewTaskInput) => Promise<void>
 }
 
 export function CreateTaskForm({ onCreate }: CreateTaskFormProps) {
+  const nucleus = useObservable(() => observeNucleus(), [])
   const [name, setName] = useState('')
   const [taskDate, setTaskDate] = useState('')
+  const [scope, setScope] = useState<TaskScope>('personal')
   const [error, setError] = useState<string | null>(null)
+
+  // Sin núcleo no hay elección de ámbito (FR-014: personal por defecto)
+  const effectiveScope: TaskScope = nucleus != null ? scope : 'personal'
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
     try {
-      await onCreate({ name, taskDate })
+      await onCreate({ name, taskDate, scope: effectiveScope })
       setName('')
       setTaskDate('')
+      setScope('personal')
     } catch (cause) {
       if (cause instanceof ValidationError) {
         setError(cause.message)
@@ -61,6 +69,33 @@ export function CreateTaskForm({ onCreate }: CreateTaskFormProps) {
           }}
         />
       </div>
+      {nucleus != null && (
+        <fieldset className="scope-field">
+          <legend>Ámbito</legend>
+          <label className="scope-option">
+            <input
+              type="radio"
+              name="scope"
+              checked={scope === 'personal'}
+              onChange={() => {
+                setScope('personal')
+              }}
+            />
+            Personal
+          </label>
+          <label className="scope-option">
+            <input
+              type="radio"
+              name="scope"
+              checked={scope === 'nucleus'}
+              onChange={() => {
+                setScope('nucleus')
+              }}
+            />
+            Del núcleo
+          </label>
+        </fieldset>
+      )}
       <button type="submit">Añadir tarea</button>
       {error !== null && (
         <p className="form-error" role="alert">

@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "lib": ["ES2023"],
+    "lib": ["ES2023", "DOM"],
     "module": "ESNext",
     "moduleResolution": "bundler",
 
@@ -21,9 +21,11 @@
   "include": [
     "vite.config.ts",
     "vitest.config.ts",
+    "vitest.rls.config.ts",
     "vitest.setup.ts",
     "playwright.config.ts",
     "eslint.config.js",
-    "tests"
+    "tests",
+    "src/data/database.types.ts"
   ]
 }
