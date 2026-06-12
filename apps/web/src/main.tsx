@@ -7,12 +7,14 @@ import { registerSW } from 'virtual:pwa-register'
 
 import App from './App'
 import { initAuth } from './auth/authService'
+import { startNucleusCache } from './data/nucleusService'
 import { startSync } from './data/sync/syncEngine'
 import './index.css'
 
 registerSW({ immediate: true })
 initAuth()
 startSync()
+startNucleusCache()
 
 const rootElement = document.getElementById('root')
 if (!rootElement) {

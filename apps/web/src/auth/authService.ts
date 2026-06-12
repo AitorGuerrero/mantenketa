@@ -73,11 +73,12 @@ async function adoptAndEnqueue(userId: string): Promise<void> {
   })
 }
 
-export async function signInWithGoogle(): Promise<void> {
+/** `returnTo` permite volver a una ruta concreta (p. ej. /invitacion/<token>). */
+export async function signInWithGoogle(returnTo?: string): Promise<void> {
   if (!supabase) return
   await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.origin },
+    options: { redirectTo: returnTo ?? window.location.origin },
   })
 }
 

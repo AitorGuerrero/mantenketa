@@ -71,10 +71,10 @@ credentials (see quickstart.md); local dev uses `supabase start` (Docker).
 ### Implementation
 
 - [X] T019 [US2] Implement `invitationState()` in `apps/web/src/domain/invitation.ts` (makes T017 pass)
-- [ ] T020 [US2] `NucleusService` in `apps/web/src/data/nucleusService.ts` per contracts/client-services.md (RPC calls, typed errors, OfflineError when no connectivity, `meta` cache for `observeNucleus`)
-- [ ] T021 [P] [US2] Nucleus UI: `NucleusPanel` (crear núcleo, miembros, invitaciones pendientes con revocar, abandonar with FR-013 warning) in `apps/web/src/components/NucleusPanel.tsx`
-- [ ] T022 [P] [US2] Invitation accept route `/invitacion/:token` (path handling in `App.tsx`; `_redirects` already SPA-falls-back): sign-in-first flow, accept, per-cause error messages in castellano, in `apps/web/src/pages/InvitationPage.tsx`
-- [ ] T023 [US2] e2e: create nucleus → invite → second context accepts → member list on both; revoked/expired messages, in `apps/web/tests/e2e/nucleus-invite.spec.ts`
+- [X] T020 [US2] `NucleusService` in `apps/web/src/data/nucleusService.ts` per contracts/client-services.md (RPC calls, typed errors, OfflineError when no connectivity, `meta` cache for `observeNucleus`)
+- [X] T021 [P] [US2] Nucleus UI: `NucleusPanel` (crear núcleo, miembros, invitaciones pendientes con revocar, abandonar with FR-013 warning) in `apps/web/src/components/NucleusPanel.tsx`
+- [X] T022 [P] [US2] Invitation accept route `/invitacion/:token` (path handling in `App.tsx`; `_redirects` already SPA-falls-back): sign-in-first flow, accept, per-cause error messages in castellano, in `apps/web/src/pages/InvitationPage.tsx`
+- [X] T023 [US2] e2e: create nucleus → invite → second context accepts → member list on both; revoked/expired messages, in `apps/web/tests/e2e/nucleus-invite.spec.ts`
 
 **Checkpoint**: two accounts can form a nucleus via invitation link
 

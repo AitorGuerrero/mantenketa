@@ -51,6 +51,11 @@ export function scheduleFlush(): void {
   void flushOutbox()
 }
 
+/** Push + pull bajo demanda (p. ej. tras unirse o abandonar un núcleo). */
+export function requestSync(): void {
+  void syncNow()
+}
+
 async function syncNow(): Promise<void> {
   await flushOutbox()
   await pullAll()
