@@ -1,0 +1,17 @@
+{
+  "name": "mantenketa",
+  "private": true,
+  "version": "0.1.0",
+  "license": "AGPL-3.0-or-later",
+  "packageManager": "pnpm@10.28.2",
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  },
+  "scripts": {
+    "dev": "pnpm --filter @mantenketa/web dev",
+    "build": "pnpm --filter @mantenketa/web build",
+    "test": "pnpm --filter @mantenketa/web test",
+    "test:e2e": "pnpm --filter @mantenketa/web test:e2e",
+    "lint": "pnpm --filter @mantenketa/web lint"
+  }
+}

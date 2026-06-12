@@ -1,73 +1,85 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 2.0.0 → 2.1.0
-Bump rationale: MINOR — new principle added (VIII. Tenant-Ready Data Model).
-  No existing principle redefined or removed.
+Version change: 2.1.0 → 3.0.0
+Bump rationale: MAJOR — backward-incompatible foundation change. The app is
+  redefined as local-only and single-person to start (data in browser IndexedDB,
+  no backend, no sync, no auth). The Supabase backend is removed from the current
+  stack and deferred to a future multi-device/multi-user phase.
 
-Added principles:
-  - Principle VIII: Tenant-Ready Data Model — every persisted entity carries an
-      owner/space identifier from its first migration, even while V1 has no auth
+Redefined principles:
+  - Principle I:    Offline-First → Local-First (device is source of truth; no
+      backend/sync until later)
+  - Principle II:   removed Edge Functions / SQL / packages-shared mandates;
+      TypeScript-only, with SQL rules deferred until a backend exists
+  - Principle IV:   removed RLS / Supabase-config test clauses
+  - Principle V:    reworded — zero cost in the local-only phase; free/usage
+      tiers apply when a backend is added
+  - Principle VI:   Single Deployable Environment → Cloudflare Pages only
+      (Supabase project reference removed)
+  - Principle VIII: Tenant-Ready Data Model → DEFERRED; activates only once a
+      backend / multi-user persistence is introduced (owner column dropped for now)
 
 Unchanged principles:
-  - I. Offline-First; II. One Language, One Type System; III. Spec Before Code;
-    IV. Test-First for Domain Logic; V. Cheap by Default; VI. Single Deployable
-    Environment; VII. Simplicity Over Framework Magic
+  - III. Spec Before Code; VII. Simplicity Over Framework Magic
+
+Other changes:
+  - Technology Stack rewritten: PWA + IndexedDB (Dexie) local store on Cloudflare
+    Pages; backend = none (Supabase named as the intended future backend)
 
 Templates:
-  - .specify/templates/plan-template.md  — ✅ no change needed; "Constitution
-      Check" gate is generic and reads principles from this file
-  - .specify/templates/spec-template.md  — ✅ no change needed
+  - .specify/templates/plan-template.md  — ✅ no change needed (generic gate)
+  - .specify/templates/spec-template.md  — ⚠ Offline Behavior prompts still apply
+      but answers are now "local-only / N-A until backend"; no structural change
   - .specify/templates/tasks-template.md — ✅ no change needed
 
 Deferred TODOs: none
 
 ----------------------------------------------------------------------
-Prior amendment — 1.0.0 → 2.0.0 (MAJOR): removed AWS (CDK, Lambda, DynamoDB,
-  Cognito, S3, CloudFront) entirely; replaced by Supabase backend + Cloudflare
-  Pages hosting. Redefined Principles II (SQL allowed within supabase/migrations),
-  V (cheap-by-default around free/usage tiers), VI (single Supabase project +
-  Cloudflare Pages deploy); rewrote Technology Stack; npm → pnpm workspaces.
+Prior amendments:
+  2.0.0 → 2.1.0 (MINOR): added Principle VIII (Tenant-Ready Data Model).
+  1.0.0 → 2.0.0 (MAJOR): removed AWS entirely; adopted Supabase + Cloudflare Pages.
 -->
 
 # Mantenketa Constitution
 
 ## Core Principles
 
-### I. Offline-First
+### I. Local-First
 
-The app MUST remain fully usable — reading and writing — without network
-connectivity. Sync reconciles local changes with the backend on reconnect;
-conflict-resolution strategy MUST be defined per entity, not globally.
+All application data lives on the user's device and the app MUST be fully usable
+— reading and writing — with no network connection. In the current phase there
+is no backend; the device is the source of truth. When a backend is later
+introduced it MUST sync local changes rather than replace local storage, and
+each feature MUST define a per-entity conflict-resolution strategy at that time.
 
 Every feature spec MUST include an **Offline Behavior** section that answers:
-1. What data is readable offline?
-2. What writes are queued locally?
-3. How are conflicts detected and resolved on sync?
+1. What data is stored and readable on the device?
+2. What happens to writes (and, once a backend exists, how are they queued for sync)?
+3. How are conflicts resolved on sync? (Answer "N/A — no backend yet" until one exists.)
 
 A feature spec that omits this section MUST NOT be merged.
 
 **Rationale**: Mantenketa is consulted in garages, basements, and away from
-Wi-Fi. Offline-first is a core user promise, not a nice-to-have.
+Wi-Fi. Local-first means the app never depends on connectivity to function; a
+backend, when added, is an enhancement for multi-device/multi-user use, not a
+prerequisite.
 
 ### II. One Language, One Type System
 
-TypeScript is the language of all application code: the React frontend and all
-Supabase Edge Functions. SQL is permitted ONLY within Supabase database
-boundaries — schema migrations and Row-Level Security (RLS) policies — and MUST
-live under a versioned `supabase/migrations` directory. All shared domain types
-(entities, API request/response shapes, event payloads) MUST live in
-`packages/shared` and be imported by both frontend and Edge Functions; database
-row types MUST be generated from the Supabase schema, never hand-duplicated.
-Duplicate type definitions across packages are PROHIBITED. `any` is PROHIBITED
-outside verified external-library boundaries; every exception MUST carry an
-inline comment explaining why a safe type is impossible.
+TypeScript (strict) is the only language in the codebase. Each domain type and
+its validation schema is defined once and reused; duplicate definitions of the
+same domain concept are PROHIBITED. `any` is PROHIBITED outside verified
+external-library boundaries; every exception MUST carry an inline comment
+explaining why a safe type is impossible.
 
-**Rationale**: A single application language eliminates the class of bugs where
-frontend and backend silently diverge on the same domain concept. SQL is
-unavoidable for Postgres migrations and RLS, but it is confined to a single
-versioned boundary so the contract stays explicit and reviewable. Generated row
-types keep the database the single source of truth.
+When a backend is later introduced, any SQL it requires MUST be confined to a
+single versioned migrations directory, and database row types MUST be generated
+from the schema rather than hand-duplicated.
+
+**Rationale**: A single language and one definition per domain type eliminate
+whole classes of drift bugs. Confining future SQL to a versioned boundary keeps
+that contract explicit and reviewable when the time comes.
 
 ### III. Spec Before Code (NON-NEGOTIABLE)
 
@@ -84,11 +96,10 @@ traceable regardless of urgency.
 ### IV. Test-First for Domain Logic (NON-NEGOTIABLE)
 
 Unit tests MUST be written and confirmed failing before implementation code
-is added for: recurrence calculation, overdue detection, and state transition
+is added for: recurrence calculation, overdue detection, and state-transition
 logic. The Red step of Red–Green–Refactor is non-negotiable for these areas.
-UI components and Supabase configuration (migrations, RLS policies, Edge
-Functions) are exempt from test-first but MUST still have tests — including RLS
-policy tests that prove access rules — before a feature is considered complete.
+UI components and configuration code are exempt from test-first but MUST still
+have tests before a feature is considered complete.
 
 **Rationale**: Recurrence and overdue logic are the core value of the app;
 correctness bugs here directly harm users. Test-first ensures the behaviour
@@ -97,17 +108,17 @@ implementation is written.
 
 ### V. Cheap by Default
 
-The MVP MUST run within free or usage-based tiers with no fixed monthly floor.
-**Allowed**: Supabase (Postgres, Auth, Storage, Realtime, Edge Functions),
-Cloudflare Pages, and other services billed per-use or offering a permanent
-free tier sufficient for a single household.
-**Forbidden**: dedicated/always-on compute, reserved or provisioned capacity,
-managed services with a minimum monthly charge, and any paid add-on not
-required to ship the MVP.
+The product MUST run within free or usage-based tiers with no fixed monthly
+floor. In the current local-only phase running cost is zero — a static site plus
+on-device storage. When a backend is later added, only services billed per-use
+or offering a permanent free tier sufficient for a single household are
+**Allowed** (e.g. Supabase, Cloudflare Pages). **Forbidden**: dedicated/always-on
+compute, reserved or provisioned capacity, managed services with a minimum
+monthly charge, and any paid add-on not required to ship.
 
-A service not in the allowed category, or any move to a paid Supabase /
-Cloudflare plan, requires a written ADR explaining why no free-tier or
-usage-based alternative exists and estimating monthly cost at expected scale.
+A service outside the allowed category, or any move to a paid plan, requires a
+written ADR explaining why no free-tier or usage-based alternative exists and
+estimating monthly cost at expected scale.
 
 **Rationale**: Mantenketa is a personal/family app. Running cost should be
 effectively zero at low usage. Every always-on or minimum-charge service would
@@ -115,13 +126,13 @@ add a fixed monthly floor regardless of traffic.
 
 ### VI. Single Deployable Environment
 
-Only a single environment exists: one Supabase project and one Cloudflare Pages
-production deployment fed from the main branch. A separate production/staging
-environment is introduced only when a second household begins using the app.
-Until that threshold is crossed, investing in multi-environment infrastructure
-(parallel Supabase projects, blue/green, canary, environment-specific alarms)
-is PROHIBITED. Cloudflare Pages preview deployments for pull requests are
-permitted because they are free and require no extra infrastructure.
+Only a single environment exists: one Cloudflare Pages production deployment fed
+from the `main` branch. A separate production/staging environment — and any
+backend environments introduced later — is added only when a second household
+begins using the app. Until that threshold is crossed, investing in
+multi-environment infrastructure (blue/green, canary, environment-specific
+alarms) is PROHIBITED. Cloudflare Pages preview deployments for pull requests
+are permitted because they are free and require no extra infrastructure.
 
 **Rationale**: Premature environment complexity adds maintenance overhead
 with no user-facing benefit while the app has a single household as its
@@ -139,37 +150,38 @@ with the two use sites named.
 opaque layer is a future debugging burden. Readable, explicit code outlasts
 clever indirection.
 
-### VIII. Tenant-Ready Data Model
+### VIII. Tenant-Ready Data Model (DEFERRED — activates with a backend)
 
-Every persisted entity MUST carry an owner identifier column (`owner_id` /
-`space_id`) from its FIRST migration, even though V1 ships with no
-authentication. In V1 the column MAY be populated with a single default owner
-value, but it MUST NOT be nullable-by-omission and MUST NOT be added
-retroactively after rows already exist. Multi-tenant isolation in V2 MUST be
-enforced through Postgres RLS policies keyed on this column (per Principle II),
-never in application code alone.
+This principle is DORMANT in the current local-only, single-person phase: local
+data does NOT carry an owner identifier. It ACTIVATES the moment a backend or any
+multi-user / multi-device persistence is introduced. At that point, every
+persisted entity MUST carry an owner identifier from the first backend migration,
+existing local data MUST be assigned an owner via a one-time backfill, and
+multi-tenant isolation MUST be enforced in the data layer (e.g. RLS) rather than
+in application code alone.
 
-**Rationale**: V1 has no auth, but V2 requires SSO and per-user/household
-spaces. Retrofitting ownership onto an existing dataset is a costly, error-prone
-migration with no safe automatic backfill. The column is effectively free to
-add up front and makes the V2 transition a near no-op. RLS — not app code — is
-the enforcement boundary because the database is the single source of truth.
+**Rationale**: While the app is single-person and local, an owner column is dead
+weight (Principle VII). The forward-compatibility concern is real but bounded:
+the move to multi-user is planned work that will add the column and backfill the
+single existing owner in one controlled step.
 
 ## Technology Stack
 
 These choices are binding for all features unless amended via governance.
 
-**Frontend**: Vite · React · TypeScript (strict) · Vitest · Playwright, hosted
-on **Cloudflare Pages** (production from main; PR preview deployments allowed)
+**App**: Vite · React · TypeScript (strict) · Vitest · Playwright — an
+installable **PWA**, hosted on **Cloudflare Pages** (production from `main`; PR
+preview deployments allowed).
 
-**Backend**: **Supabase** — Postgres (schema + RLS), Auth, Storage, Realtime,
-and Edge Functions (TypeScript/Deno). Database migrations and RLS policies live
-under `supabase/migrations`; row types are generated from the schema.
+**Local storage**: Browser **IndexedDB** (via a thin wrapper such as Dexie) is
+the sole data store in the current phase. The device is the source of truth.
 
-**Shared**: `packages/shared` workspace — domain types, Zod schemas, utility
-functions used by both frontend and Edge Functions
+**Backend**: **None in the current phase.** When multi-device/multi-user is
+specced, the intended backend is **Supabase** (Postgres, Auth, Storage,
+Realtime); adopting it will be a constitution amendment with its own plan and ADR.
 
-**Package manager**: pnpm workspaces
+**Package manager**: pnpm (workspaces-ready; a shared package is introduced only
+once a second consumer exists — Principle VII).
 
 Deviations from this list require a written ADR and a constitution amendment.
 
@@ -196,4 +208,4 @@ All PRs and spec reviews MUST verify compliance with each Core Principle.
 Violations caught at review rather than at the Constitution Check gate are
 process failures and MUST be noted for retrospective discussion.
 
-**Version**: 2.1.0 | **Ratified**: 2026-05-16 | **Last Amended**: 2026-06-01
+**Version**: 3.0.0 | **Ratified**: 2026-05-16 | **Last Amended**: 2026-06-07
