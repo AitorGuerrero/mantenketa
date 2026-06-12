@@ -19,6 +19,7 @@ Pages) · Dexie local store · **Supabase** (Postgres+RLS, Auth SSO, Realtime).
 ```bash
 VITE_SUPABASE_URL=...        # local: from `supabase start` output
 VITE_SUPABASE_PUBLISHABLE_KEY=...   # publishable key (sb_publishable_..., safe in client)
+SUPABASE_SECRET_KEY=...      # ONLY for test:rls / auth e2e (admin); never in the client
 ```
 
 No env vars ⇒ the app runs in pure local-only mode (feature 001 behavior).

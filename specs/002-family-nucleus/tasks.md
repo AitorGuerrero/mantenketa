@@ -92,9 +92,9 @@ credentials (see quickstart.md); local dev uses `supabase start` (Docker).
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T027 [P] Offline affordances: OfflineError messages on nucleus actions; subtle pending-sync indicator (outbox count) in the footer
-- [ ] T028 [P] SPDX headers on new files; README + quickstart sync (env vars, `supabase db push`, Google provider setup)
-- [ ] T029 Full validation: unit + `test:rls` + e2e suites green; quickstart steps 1–6 verified; feature 001 e2e regression-free in anonymous mode
+- [X] T027 [P] Offline affordances: OfflineError messages on nucleus actions; subtle pending-sync indicator (outbox count) in the footer
+- [X] T028 [P] SPDX headers on new files; README + quickstart sync (env vars, `supabase db push`, Google provider setup)
+- [X] T029 Full validation: unit + `test:rls` + e2e suites green; quickstart steps 1–6 verified; feature 001 e2e regression-free in anonymous mode
 
 ---
 

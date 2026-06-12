@@ -353,3 +353,7 @@ body {
 .invitation-page a {
   color: var(--color-primary);
 }
+
+.sync-pending {
+  color: #b9770e;
+}
