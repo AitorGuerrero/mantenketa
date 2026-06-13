@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Aitor Guerrero
 //
-// Despliegue en Cloudflare Workers (static assets): sirve apps/web/dist
-// con fallback SPA (sustituye al _redirects de Pages en este modo).
+// Despliegue en Cloudflare Workers (static assets): sirve apps/web/dist.
+// El fallback SPA lo da not_found_handling (no se usa _redirects: en Workers
+// la regla /* /index.html 200 dispara la detección de bucle infinito).
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "mantenketa",

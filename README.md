@@ -49,13 +49,18 @@ pnpm --filter @mantenketa/web test:rls   # aislamiento RLS (necesita Supabase en
   `http://localhost:5173/**` (más el dominio de Pages al desplegar) en
   Authentication → URL Configuration.
 
-## Despliegue (Cloudflare Pages — Principio VI: un solo entorno)
+## Despliegue (Cloudflare Workers — Principio VI: un solo entorno)
+
+Proyecto de Workers conectado al repo (build automático en cada push a `main`):
 
 | Ajuste | Valor |
 |--------|-------|
-| Build command | `pnpm --filter @mantenketa/web build` |
-| Build output directory | `apps/web/dist` |
+| Root directory | `apps/web` |
+| Build command | `pnpm build` |
+| Deploy command | `npx wrangler deploy` |
 | Production branch | `main` |
 
-`apps/web/public/_redirects` contiene el fallback SPA (`/* /index.html 200`).
-No hay variables de entorno ni secretos: no existe backend.
+La config de despliegue vive en `apps/web/wrangler.jsonc`: sirve `dist/` como
+static assets con `not_found_handling: single-page-application` (fallback SPA
+para rutas como `/invitacion/<token>`; sustituye al `_redirects` de Pages).
+Variables de build necesarias: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`.
