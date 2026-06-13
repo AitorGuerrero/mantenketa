@@ -32,12 +32,9 @@
 ## Notes
 
 - Defaults chosen without blocking (documented in Assumptions): three groups
-  (the request said "2" but described three); "Hechas recientemente" limited to
-  the 5 most recent; "hacer ya" orders dateless first then by date asc with
-  overdue highlighted; device local day as the boundary.
+  (the request said "2" but described three); "hacer ya" orders dateless first
+  then by date asc with overdue highlighted; device local day as the boundary.
+- "Hechas recientemente" count = **5 most recent**, confirmed with the user.
 - Reintroduces **overdue detection** (deferred in feature 001) → per
   Constitution Principle IV this is test-first domain logic; the plan must
   cover failing-first unit tests for the grouping/overdue function.
-- One product decision worth confirming at /speckit-clarify or before plan: the
-  "Hechas recientemente" count (default 5) — could be a fixed N, a time window,
-  or all completed.

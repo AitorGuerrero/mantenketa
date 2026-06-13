@@ -39,7 +39,7 @@ each task appears in the correct group, overdue tasks are highlighted, the
 2. **Given** an outstanding task dated before today, **When** the user views the home, **Then** it appears in "Para hacer ya" and is visually highlighted as overdue.
 3. **Given** an outstanding task dated today, **When** the user views the home, **Then** it appears in "Para hacer ya" and is NOT highlighted as overdue.
 4. **Given** outstanding tasks dated in the future, **When** the user views the home, **Then** they appear in "Para hacer pronto" ordered by date ascending (soonest first), and not in "Para hacer ya".
-5. **Given** completed tasks, **When** the user views the home, **Then** they appear only in "Hechas recientemente", newest completion first, and not in the other two groups.
+5. **Given** completed tasks, **When** the user views the home, **Then** the 5 most recently completed appear in "Hechas recientemente" (newest completion first) and none appear in the other two groups.
 6. **Given** a group has no tasks, **When** the user views the home, **Then** that group shows a brief empty hint (or is omitted) and the other groups still render correctly.
 7. **Given** an overdue task in "Para hacer ya", **When** the user marks it done, **Then** it leaves "Para hacer ya" and appears at the top of "Hechas recientemente".
 8. **Given** a completed task in "Hechas recientemente", **When** the user reverts it, **Then** it leaves that group and reappears in "Para hacer ya" or "Para hacer pronto" according to its date.
@@ -130,7 +130,7 @@ N/A — no new writable entity. Existing per-task last-write-wins is unaffected.
 ## Assumptions
 
 - **Three groups, not two**: the original request mentioned "2 listas" but described three; this spec implements the three described groups ("ya", "pronto", "hechas recientemente").
-- **"Hechas recientemente" limit**: shows the most recent **5** completed tasks (newest first). A full completed-history view is out of scope. This count is a tunable default.
+- **"Hechas recientemente" limit**: shows the most recent **5** completed tasks (newest first) — confirmed with the user. A full completed-history view is out of scope.
 - **"Hacer ya" internal order**: dateless ("hacer ya") tasks first, then dated tasks by date ascending (most overdue → today). Overdue (strictly past) tasks are highlighted.
 - **Day boundary**: "today", "overdue" and "future" are computed against the **device's local calendar day** (no time-of-day), consistent with feature 001's calendar-day granularity. This reintroduces overdue detection, which feature 001 deferred.
 - **Completion-date tiebreak**: completed tasks sharing a completion date are ordered by most-recently-changed first.
