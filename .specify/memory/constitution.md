@@ -1,6 +1,15 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 4.0.0 → 4.1.0
+Bump rationale: MINOR — new principle added. Principle IX (Mobile-First UI)
+  formalizes the standing rule that all UI is designed and built for small
+  screens first and enhanced upward. No existing principle changed; no
+  template changes required (the rule is a layout convention, not a gate).
+
+----------------------------------------------------------------------
+Prior report (3.0.0 → 4.0.0)
+==================
 Version change: 3.0.0 → 4.0.0
 Bump rationale: MAJOR — backward-incompatible foundation change. The app gains
   a backend (Supabase: Postgres, Auth, Realtime) to support feature 002
@@ -183,6 +192,20 @@ covered by the isolation tests required by Principle IV.
 single worst failure mode of the product. Enforcing ownership at the data
 layer makes it impossible to forget in application code.
 
+### IX. Mobile-First UI
+
+All UI MUST be designed and built for the smallest screen first and enhanced
+upward. Base styles (those outside any media query) ARE the mobile layout;
+larger-screen adaptations are added only with `min-width` media queries.
+Designing for desktop and stripping down with `max-width` queries
+(graceful degradation) is PROHIBITED. Every UI change MUST be verified at a
+narrow viewport before it is considered done.
+
+**Rationale**: Mantenketa is an installable PWA used mostly on phones, in
+garages and away from a desk. Small-screen-first forces content priority and
+keeps the default payload light (progressive enhancement); what fits on a
+phone always fits on a larger screen, but not the reverse.
+
 ## Technology Stack
 
 These choices are binding for all features unless amended via governance.
@@ -227,4 +250,4 @@ All PRs and spec reviews MUST verify compliance with each Core Principle.
 Violations caught at review rather than at the Constitution Check gate are
 process failures and MUST be noted for retrospective discussion.
 
-**Version**: 4.0.0 | **Ratified**: 2026-05-16 | **Last Amended**: 2026-06-11
+**Version**: 4.1.0 | **Ratified**: 2026-05-16 | **Last Amended**: 2026-06-13
