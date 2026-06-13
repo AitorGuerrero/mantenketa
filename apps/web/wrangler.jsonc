@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Aitor Guerrero
+//
+// Despliegue en Cloudflare Workers (static assets): sirve apps/web/dist
+// con fallback SPA (sustituye al _redirects de Pages en este modo).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mantenketa",
+  "compatibility_date": "2026-06-13",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
