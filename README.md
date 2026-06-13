@@ -64,3 +64,12 @@ La config de despliegue vive en `apps/web/wrangler.jsonc`: sirve `dist/` como
 static assets con `not_found_handling: single-page-application` (fallback SPA
 para rutas como `/invitacion/<token>`; sustituye al `_redirects` de Pages).
 Variables de build necesarias: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`.
+
+Tras desplegar, ejecuta el smoke test de producción para verificar que la
+`apikey` horneada en el bundle es válida (caza errores de configuración de las
+variables en Cloudflare):
+
+```bash
+pnpm --filter @mantenketa/web smoke           # contra el dominio por defecto
+pnpm --filter @mantenketa/web smoke <url>     # o contra otro despliegue/preview
+```

@@ -12,6 +12,7 @@
     "test:rls": "vitest run --config vitest.rls.config.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "smoke": "node scripts/smoke-prod.mjs",
     "lint": "eslint ."
   },
   "dependencies": {
