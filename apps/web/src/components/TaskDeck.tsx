@@ -80,7 +80,10 @@ export function TaskDeck({ ya, memberName }: TaskDeckProps) {
                 className="task-card-peek"
                 aria-hidden="true"
                 style={{
-                  transform: `translateY(${String(depth * 10)}px) scale(${String(1 - depth * 0.04)})`,
+                  // Desplazamiento vertical puro (asoman por abajo) + algo más
+                  // estrechas detrás; sin scaleY para que el desplazamiento no
+                  // se cancele y la pila se vea.
+                  transform: `translateY(${String(depth * 16)}px) scaleX(${String(1 - depth * 0.05)})`,
                   opacity: DEPTH_OPACITY[depth] ?? 0.2,
                   zIndex: STACK_SIZE - depth,
                 }}

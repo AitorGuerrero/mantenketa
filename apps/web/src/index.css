@@ -171,7 +171,8 @@ body {
   position: relative;
   width: min(78vw, 17rem);
   aspect-ratio: 5 / 7; /* proporción de naipe, en vertical */
-  margin: 0.5rem auto 1.25rem;
+  /* margen inferior holgado: las cartas de detrás asoman hasta ~64px */
+  margin: 0.5rem auto 4.5rem;
 }
 
 .task-card,
@@ -186,6 +187,8 @@ body {
 
 .task-card-peek {
   transform-origin: top center;
+  background: var(--color-surface);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
   /* posición/opacidad/zIndex se aplican inline según la profundidad */
 }
 
