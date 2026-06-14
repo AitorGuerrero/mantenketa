@@ -17,6 +17,7 @@ function makeTask(overrides: Partial<Task>): Task {
     completedBy: null,
     ownerId: null,
     nucleusId: null,
+    description: null,
     createdAt: '2026-06-01T10:00:00.000Z',
     updatedAt: '2026-06-01T10:00:00.000Z',
     ...overrides,

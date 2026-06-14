@@ -48,3 +48,20 @@ db.version(2)
         row.updatedAt ??= row.createdAt
       })
   })
+
+// Feature 005: descripción opcional (sin índice; solo backfill a null)
+db.version(3)
+  .stores({
+    tasks: 'id, taskDate, completedAt, createdAt, updatedAt, nucleusId',
+    outbox: '++seq, taskId',
+    meta: 'key',
+  })
+  .upgrade(async (tx) => {
+    await tx
+      .table<Task, string>('tasks')
+      .toCollection()
+      .modify((task) => {
+        const row = task as Partial<Task>
+        row.description ??= null
+      })
+  })

@@ -22,6 +22,8 @@ export const TaskSchema = z.object({
   completedBy: z.string().nullable(),
   ownerId: z.string().nullable(),
   nucleusId: z.string().nullable(),
+  // Descripción opcional (texto libre multilínea); null ⇒ sin descripción
+  description: z.string().nullable(),
   createdAt: z.string().min(1),
   updatedAt: z.string().min(1),
 })
@@ -40,6 +42,13 @@ export const NewTaskInputSchema = z.object({
   ),
   // Ámbito (FR-014): personal por defecto; 'nucleus' solo con núcleo activo
   scope: TaskScopeSchema.default('personal'),
+  // Descripción opcional: se recorta; vacía o solo espacios ⇒ null; el texto
+  // interno (saltos de línea) se conserva (FR-005, FR-006)
+  description: z.preprocess((value) => {
+    if (typeof value !== 'string') return null
+    const trimmed = value.trim()
+    return trimmed === '' ? null : trimmed
+  }, z.string().nullable()),
 })
 
 /** Entrada tal y como la construye la UI (campos opcionales sin normalizar). */
@@ -47,6 +56,7 @@ export interface NewTaskInput {
   name: string
   taskDate?: string | null
   scope?: TaskScope
+  description?: string | null
 }
 
 /** Entrada normalizada por parseNewTask (fecha → null, scope con defecto). */

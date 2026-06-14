@@ -333,7 +333,8 @@ body {
 .task-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  flex-wrap: wrap; /* la descripción (flex-basis 100%) cae a su propia línea */
+  gap: 0.35rem 0.75rem;
   padding: 0.75rem;
   border: 1px solid var(--color-border);
   border-radius: 0.5rem;
@@ -369,6 +370,25 @@ body {
 .task-date--now {
   color: var(--color-primary);
   font-weight: 600;
+}
+
+/* Descripción de la tarea: conserva saltos de línea; ancho completo */
+.task-description {
+  flex-basis: 100%;
+  margin: 0.25rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+}
+
+/* En la tarjeta de la baraja se recorta a unas líneas (el texto completo está
+   en la lista); en la lista se ve entero. */
+.task-card-body .task-description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
 }
 
 /* Después de .task-date para ganar en color (misma especificidad) */

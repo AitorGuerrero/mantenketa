@@ -19,6 +19,7 @@ export function CreateTaskForm({ onCreate, onCreated, onCancel }: CreateTaskForm
   const nucleus = useObservable(() => observeNucleus(), [])
   const [name, setName] = useState('')
   const [taskDate, setTaskDate] = useState('')
+  const [description, setDescription] = useState('')
   const [scope, setScope] = useState<TaskScope>('personal')
   const [error, setError] = useState<string | null>(null)
 
@@ -29,9 +30,10 @@ export function CreateTaskForm({ onCreate, onCreated, onCancel }: CreateTaskForm
     event.preventDefault()
     setError(null)
     try {
-      await onCreate({ name, taskDate, scope: effectiveScope })
+      await onCreate({ name, taskDate, scope: effectiveScope, description })
       setName('')
       setTaskDate('')
+      setDescription('')
       setScope('personal')
       onCreated?.()
     } catch (cause) {
@@ -71,6 +73,18 @@ export function CreateTaskForm({ onCreate, onCreated, onCancel }: CreateTaskForm
           value={taskDate}
           onChange={(event) => {
             setTaskDate(event.target.value)
+          }}
+        />
+      </div>
+      <div className="form-field">
+        <label htmlFor="task-description">Descripción (opcional)</label>
+        <textarea
+          id="task-description"
+          rows={3}
+          value={description}
+          placeholder="Detalles, notas…"
+          onChange={(event) => {
+            setDescription(event.target.value)
           }}
         />
       </div>
