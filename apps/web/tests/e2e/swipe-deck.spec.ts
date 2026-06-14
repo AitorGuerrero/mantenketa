@@ -48,6 +48,17 @@ test.describe('baraja en táctil (puntero grueso)', () => {
     await expect(page.getByRole('button', { name: 'Hecha' })).toContainText('→')
   })
 
+  test('"Ver como lista" fuerza la vista de lista en táctil', async () => {
+    await createTask(page, 'En la baraja')
+
+    await expect(deck(page)).toBeVisible()
+    await page.getByRole('button', { name: 'Ver como lista' }).click()
+
+    // Ya no hay baraja: "Para hacer ya" pasa a ser lista
+    await expect(page.getByRole('list', { name: 'Tarea actual' })).toHaveCount(0)
+    await expect(yaList(page)).toContainText('En la baraja')
+  })
+
   test('"Hecha" completa la tarjeta y avanza a la siguiente (FR-002)', async () => {
     await createTask(page, 'Primera')
     await createTask(page, 'Segunda')

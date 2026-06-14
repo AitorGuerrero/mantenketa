@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Aitor Guerrero
 
 import { useObservable } from 'dexie-react-hooks'
+import { useState } from 'react'
 
 import { observeNucleus } from '../data/nucleusService'
 import { taskRepository } from '../data/taskRepository'
@@ -46,6 +47,8 @@ export function TaskGroups() {
   const tasks = useObservable(() => taskRepository.observeTasks(), [])
   const nucleus = useObservable(() => observeNucleus(), [])
   const touch = useCoarsePointer()
+  // El usuario puede forzar la vista de lista en táctil (como en escritorio)
+  const [forceList, setForceList] = useState(false)
 
   if (tasks === undefined) {
     return null
@@ -58,8 +61,14 @@ export function TaskGroups() {
 
   return (
     <div className="task-groups">
-      {touch ? (
-        <TaskDeck ya={ya} memberName={memberName} />
+      {touch && !forceList ? (
+        <TaskDeck
+          ya={ya}
+          memberName={memberName}
+          onViewAsList={() => {
+            setForceList(true)
+          }}
+        />
       ) : (
         <GroupSection
           title="Para hacer ya"

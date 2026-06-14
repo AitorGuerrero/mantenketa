@@ -13,6 +13,7 @@ import { TaskBody } from './TaskItem'
 interface TaskDeckProps {
   ya: TaskInGroup[]
   memberName: (userId: string) => string
+  onViewAsList: () => void
 }
 
 // Total de cartas visibles en la pila (activa + hasta 4 detrás)
@@ -20,7 +21,7 @@ const STACK_SIZE = 5
 // Opacidad por profundidad (índice 0 = activa); desvanece de la 3.ª a la 5.ª
 const DEPTH_OPACITY = [1, 1, 0.66, 0.4, 0.2]
 
-export function TaskDeck({ ya, memberName }: TaskDeckProps) {
+export function TaskDeck({ ya, memberName, onViewAsList }: TaskDeckProps) {
   // Orden de posposición, solo en memoria de sesión (se reinicia al recargar)
   const [deferredIds, setDeferredIds] = useState<string[]>([])
   const cardRef = useRef<TaskCardHandle>(null)
@@ -38,6 +39,9 @@ export function TaskDeck({ ya, memberName }: TaskDeckProps) {
       <section className="task-group" aria-label="Para hacer ya">
         <h2 className="task-group-title">Para hacer ya</h2>
         <p className="empty-state all-done">¡Todo al día!</p>
+        <button type="button" className="view-as-list" onClick={onViewAsList}>
+          Ver como lista
+        </button>
       </section>
     )
   }
@@ -118,6 +122,10 @@ export function TaskDeck({ ya, memberName }: TaskDeckProps) {
           Hecha <span aria-hidden="true">→</span>
         </button>
       </div>
+
+      <button type="button" className="view-as-list" onClick={onViewAsList}>
+        Ver como lista
+      </button>
     </section>
   )
 }

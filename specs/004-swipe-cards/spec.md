@@ -144,6 +144,12 @@ Refines the presentation of the deck (no behavioural/data change):
   by scrolling.
 - **FR-017**: The action controls MUST show a **direction arrow** indicating the
   swipe side: "Posponer" with a left arrow (←), "Hecha" with a right arrow (→).
+- **FR-018**: The deck MUST offer a **"Ver como lista"** action that switches the
+  touch device to the list view (the desktop presentation) for the session.
+- **FR-019**: Overdue tasks MUST show **how long ago they were due** ("Venció
+  hace N días", or weeks if more than 7 days) instead of the due date, and the
+  "Para hacer ya" order MUST be: overdue (earliest-due first), then today, then
+  dateless; by creation order within each.
 
 Scope confirmed: the stack contains only the "Para hacer ya" set (option A);
 "Para hacer pronto" and "Hechas recientemente" remain lists below.

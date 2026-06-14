@@ -298,6 +298,18 @@ body {
   padding: 1.5rem 0;
 }
 
+.view-as-list {
+  display: block;
+  margin: 0.75rem auto 0;
+  padding: 0.35rem 0.5rem;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .task-card--settling,
   .task-card--flying {
