@@ -167,23 +167,38 @@ body {
 }
 
 /* Baraja de tarjetas (feature 004, solo táctil) */
-.task-card-stage {
+.task-deck-stack {
   position: relative;
-  min-height: 7rem;
-  touch-action: pan-y; /* permite scroll vertical; el horizontal lo gestiona el gesto */
+  width: min(78vw, 17rem);
+  aspect-ratio: 5 / 7; /* proporción de naipe, en vertical */
+  margin: 0.5rem auto 1.25rem;
+}
+
+.task-card,
+.task-card-peek {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 0.9rem;
+  background: var(--color-surface);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
+}
+
+.task-card-peek {
+  transform-origin: top center;
+  /* posición/opacidad/zIndex se aplican inline según la profundidad */
 }
 
 .task-card {
+  z-index: 10;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 0.75rem;
-  padding: 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.75rem;
-  background: var(--color-surface);
-  box-shadow: 0 2px 10px rgb(0 0 0 / 8%);
+  padding: 1.25rem;
   cursor: grab;
   user-select: none;
+  touch-action: pan-y; /* scroll vertical permitido; el horizontal es el gesto */
 }
 
 .task-card--settling {
@@ -194,25 +209,57 @@ body {
   border-color: #c0392b;
 }
 
+.task-card--leaving-defer {
+  animation: card-to-back 0.32s ease-in forwards;
+}
+
+.task-card--leaving-done {
+  animation: card-off-right 0.3s ease-in forwards;
+}
+
+@keyframes card-to-back {
+  to {
+    transform: translateX(-55%) translateY(14%) scale(0.82) rotate(-7deg);
+    opacity: 0.2;
+  }
+}
+
+@keyframes card-off-right {
+  to {
+    transform: translateX(90%) translateY(-8%) rotate(9deg);
+    opacity: 0;
+  }
+}
+
 .task-card-body {
-  gap: 0;
+  gap: 0.4rem;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .task-card-body .task-item {
   border: none;
   padding: 0;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.task-card-body .task-name {
+  font-size: 1.3rem;
 }
 
 .task-card-actions {
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
+  width: min(78vw, 17rem);
+  margin: 0 auto 1rem;
 }
 
 .task-card-actions button {
   flex: 1;
-  padding: 0.6rem 1rem;
+  padding: 0.7rem 1rem;
   border: none;
   border-radius: 0.5rem;
   background: var(--color-primary);
@@ -237,6 +284,11 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .task-card--settling {
     transition: none;
+  }
+
+  .task-card--leaving-defer,
+  .task-card--leaving-done {
+    animation: none;
   }
 }
 

@@ -14,19 +14,27 @@ interface TaskCardProps {
   task: Task
   memberName: (userId: string) => string
   overdue: boolean
+  leaving: 'done' | 'defer' | null
   onDone: () => void
   onDefer: () => void
+  onLeaveEnd: () => void
 }
 
-export function TaskCard({ task, memberName, overdue, onDone, onDefer }: TaskCardProps) {
+export function TaskCard({
+  task,
+  memberName,
+  overdue,
+  leaving,
+  onDone,
+  onDefer,
+  onLeaveEnd,
+}: TaskCardProps) {
   const [dx, setDx] = useState(0)
   const [dragging, setDragging] = useState(false)
   const startX = useRef<number | null>(null)
 
   function handlePointerDown(e: ReactPointerEvent<HTMLDivElement>) {
-    // No iniciar arrastre si el gesto empieza sobre un botón (Hecha/Posponer),
-    // o la captura de puntero se tragaría su click.
-    if (e.target instanceof Element && e.target.closest('button')) return
+    if (leaving !== null) return
     startX.current = e.clientX
     setDragging(true)
     e.currentTarget.setPointerCapture(e.pointerId)
@@ -47,36 +55,35 @@ export function TaskCard({ task, memberName, overdue, onDone, onDefer }: TaskCar
     else if (outcome === 'defer') onDefer()
   }
 
-  const rotate = dx / 20
-  const style = { transform: `translateX(${String(dx)}px) rotate(${String(rotate)}deg)` }
   const classes = ['task-card']
   if (overdue) classes.push('task-card--overdue')
-  if (!dragging) classes.push('task-card--settling')
+  if (leaving === 'done') classes.push('task-card--leaving-done')
+  else if (leaving === 'defer') classes.push('task-card--leaving-defer')
+  else if (!dragging) classes.push('task-card--settling')
+
+  // Mientras se anima la salida, el keyframe controla el transform
+  const style =
+    leaving === null
+      ? { transform: `translateX(${String(dx)}px) rotate(${String(dx / 20)}deg)` }
+      : undefined
 
   return (
-    <div className="task-card-stage">
-      <article
-        className={classes.join(' ')}
-        style={style}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-      >
-        <ul className="task-list task-card-body" aria-label="Tarea actual">
-          <li className="task-item">
-            <TaskBody task={task} memberName={memberName} overdue={overdue} />
-          </li>
-        </ul>
-        <div className="task-card-actions">
-          <button type="button" className="button-secondary" onClick={onDefer}>
-            Posponer
-          </button>
-          <button type="button" onClick={onDone}>
-            Hecha
-          </button>
-        </div>
-      </article>
-    </div>
+    <article
+      className={classes.join(' ')}
+      style={style}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      onAnimationEnd={() => {
+        if (leaving !== null) onLeaveEnd()
+      }}
+    >
+      <ul className="task-list task-card-body" aria-label="Tarea actual">
+        <li className="task-item">
+          <TaskBody task={task} memberName={memberName} overdue={overdue} />
+        </li>
+      </ul>
+    </article>
   )
 }

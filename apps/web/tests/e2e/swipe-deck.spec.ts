@@ -34,6 +34,20 @@ test.describe('baraja en táctil (puntero grueso)', () => {
     await expect(page.getByRole('list', { name: 'Tareas para hacer ya' })).toHaveCount(0)
   })
 
+  test('la pila muestra cartas asomando detrás y los botones llevan flechas (FR-014, FR-017)', async () => {
+    await createTask(page, 'Primera')
+    await createTask(page, 'Segunda')
+    await createTask(page, 'Tercera')
+
+    // Activa (1) + al menos 2 asomando detrás
+    await expect(deck(page).getByRole('listitem')).toHaveCount(1)
+    await expect(page.locator('.task-card-peek')).toHaveCount(2)
+
+    // Flechas en los botones de acción
+    await expect(page.getByRole('button', { name: 'Posponer' })).toContainText('←')
+    await expect(page.getByRole('button', { name: 'Hecha' })).toContainText('→')
+  })
+
   test('"Hecha" completa la tarjeta y avanza a la siguiente (FR-002)', async () => {
     await createTask(page, 'Primera')
     await createTask(page, 'Segunda')

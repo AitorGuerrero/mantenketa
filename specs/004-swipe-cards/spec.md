@@ -126,6 +126,28 @@ last-write-wins behaviour; the defer order is local and never synced.
 - **SC-004**: On a non-touch environment, the home is byte-for-behaviour identical to feature 003 (the deck never appears); the feature 003 e2e suite still passes there.
 - **SC-005**: Every card action achievable by swipe is also achievable by a visible button (gesture-free path always available).
 
+## Amendment 2026-06-14 — Stacked deck visuals
+
+Refines the presentation of the deck (no behavioural/data change):
+
+- **FR-014**: The deck MUST render as a visible **stack** — the active card on
+  top, fully shown, with the next pending cards peeking behind it (a pile,
+  "una encima de otra") rather than a single isolated card. Up to **5** cards are
+  shown (the active one plus up to 4 behind); from the **3rd to the 5th** the
+  peeking cards fade progressively (decreasing opacity with depth).
+- **FR-015**: Posponer/left-swipe MUST **animate** the top card travelling to the
+  **back** of the stack (visibly going to the end of the queue) before the next
+  card becomes active; Hecha/right-swipe animates the card leaving to the right.
+  Animations are skipped under `prefers-reduced-motion` (instant commit).
+- **FR-016**: Cards MUST use a **playing-card portrait proportion** (~5:7,
+  taller than wide), shown large but bounded so the lists below remain reachable
+  by scrolling.
+- **FR-017**: The action controls MUST show a **direction arrow** indicating the
+  swipe side: "Posponer" with a left arrow (←), "Hecha" with a right arrow (→).
+
+Scope confirmed: the stack contains only the "Para hacer ya" set (option A);
+"Para hacer pronto" and "Hechas recientemente" remain lists below.
+
 ## Assumptions
 
 - **Touch detection via primary pointer**: the deck is shown when the environment's primary pointer is coarse (a finger) — the standard "is this a touch device" signal — rather than by screen width. A narrow desktop window (mouse) keeps the list; a phone/tablet gets the deck. This is the agreed criterion and is tunable.
