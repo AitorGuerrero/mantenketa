@@ -1,23 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Aitor Guerrero
 
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
-async function createTask(page: Page, name: string, date: string) {
-  await page.getByLabel('Nombre').fill(name)
-  await page.getByLabel('Fecha').fill(date)
-  await page.getByRole('button', { name: 'Añadir tarea' }).click()
-  // El formulario se vacía al guardarse la tarea; esperar evita pisar el
-  // siguiente fill con el reset asíncrono de React.
-  await expect(page.getByLabel('Nombre')).toHaveValue('')
-}
+import { createTask, isoDay, prontoList, yaList } from './ui'
 
 test('crear una tarea la muestra inmediatamente y sobrevive a una recarga', async ({
   page,
 }) => {
   await page.goto('/')
 
-  await createTask(page, 'Cambiar filtro de la cocina', '2026-06-15')
+  await createTask(page, 'Cambiar filtro de la cocina')
 
   await expect(page.getByText('Cambiar filtro de la cocina')).toBeVisible()
 
@@ -25,14 +18,16 @@ test('crear una tarea la muestra inmediatamente y sobrevive a una recarga', asyn
   await expect(page.getByText('Cambiar filtro de la cocina')).toBeVisible()
 })
 
-test('las pendientes van primero por fecha ascendente (FR-005)', async ({ page }) => {
+test('"Para hacer pronto" ordena las futuras por fecha ascendente (FR-004)', async ({
+  page,
+}) => {
   await page.goto('/')
 
-  await createTask(page, 'Tarea tardía', '2026-09-01')
-  await createTask(page, 'Tarea próxima', '2026-06-12')
-  await createTask(page, 'Tarea intermedia', '2026-07-15')
+  await createTask(page, 'Tarea tardía', { date: isoDay(40) })
+  await createTask(page, 'Tarea próxima', { date: isoDay(5) })
+  await createTask(page, 'Tarea intermedia', { date: isoDay(20) })
 
-  const items = page.getByRole('listitem')
+  const items = prontoList(page).getByRole('listitem')
   await expect(items).toHaveCount(3)
   await expect(items.nth(0)).toContainText('Tarea próxima')
   await expect(items.nth(1)).toContainText('Tarea intermedia')
@@ -46,7 +41,7 @@ test('una tarea creada sin conexión aparece igualmente (SC-002)', async ({
   await page.goto('/')
 
   await context.setOffline(true)
-  await createTask(page, 'Tarea sin red', '2026-06-20')
+  await createTask(page, 'Tarea sin red')
 
   await expect(page.getByText('Tarea sin red')).toBeVisible()
   await context.setOffline(false)
@@ -57,27 +52,41 @@ test('un nombre en blanco no crea la tarea y se informa al usuario (FR-002)', as
 }) => {
   await page.goto('/')
 
-  await page.getByLabel('Fecha').fill('2026-06-15')
+  await page.getByRole('button', { name: 'Nueva tarea' }).click()
+  await page.getByLabel('Fecha (opcional)').fill(isoDay(3))
   await page.getByRole('button', { name: 'Añadir tarea' }).click()
 
   await expect(page.getByRole('alert')).toContainText('El nombre es obligatorio')
-  await expect(page.getByRole('listitem')).toHaveCount(0)
+  // El formulario sigue abierto (no se cerró ni reapareció el botón)
+  await expect(page.getByRole('button', { name: 'Nueva tarea' })).toHaveCount(0)
 })
 
-test('sin fecha la tarea se crea como "Hacer ya" y va antes que las pendientes con fecha (FR-003)', async ({
+test('sin fecha va a "Para hacer ya"; con fecha futura va a "Para hacer pronto" (FR-002/FR-004)', async ({
   page,
 }) => {
   await page.goto('/')
 
-  await createTask(page, 'Tarea con fecha', '2026-06-12')
+  await createTask(page, 'Tarea urgente')
+  await createTask(page, 'Tarea con fecha', { date: isoDay(10) })
 
-  await page.getByLabel('Nombre').fill('Tarea urgente')
-  await page.getByRole('button', { name: 'Añadir tarea' }).click()
-  await expect(page.getByLabel('Nombre')).toHaveValue('')
+  const ya = yaList(page).getByRole('listitem')
+  await expect(ya).toHaveCount(1)
+  await expect(ya.nth(0)).toContainText('Tarea urgente')
+  await expect(ya.nth(0)).toContainText('Hacer ya')
 
-  const items = page.getByRole('listitem')
-  await expect(items).toHaveCount(2)
-  await expect(items.nth(0)).toContainText('Tarea urgente')
-  await expect(items.nth(0)).toContainText('Hacer ya')
-  await expect(items.nth(1)).toContainText('Tarea con fecha')
+  const pronto = prontoList(page).getByRole('listitem')
+  await expect(pronto).toHaveCount(1)
+  await expect(pronto.nth(0)).toContainText('Tarea con fecha')
+})
+
+test('una tarea de fecha pasada va a "Para hacer ya" resaltada como vencida (FR-003)', async ({
+  page,
+}) => {
+  await page.goto('/')
+
+  await createTask(page, 'Tarea vencida', { date: isoDay(-3) })
+
+  const ya = yaList(page).getByRole('listitem')
+  await expect(ya.nth(0)).toContainText('Tarea vencida')
+  await expect(ya.nth(0)).toContainText('Vencida')
 })

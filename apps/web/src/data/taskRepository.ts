@@ -5,20 +5,13 @@ import { liveQuery, type Observable } from 'dexie'
 
 import { getCurrentUserId } from '../auth/sessionStore'
 import { markDone as toDone, revert as toOutstanding } from '../domain/completion'
+import { todayIsoDate } from '../domain/date'
 import { sortTasks } from '../domain/ordering'
 import { parseNewTask, type NewTaskInput, type Task } from '../domain/task'
 
 import { db } from './db'
 import { currentNucleusId } from './nucleusService'
 import { scheduleFlush } from './sync/syncEngine'
-
-/** Día local en formato YYYY-MM-DD (la fecha de completado es un día natural). */
-function todayIsoDate(): string {
-  const now = new Date()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  return `${String(now.getFullYear())}-${month}-${day}`
-}
 
 /**
  * Contrato de acceso a datos local (contracts/data-access.md).

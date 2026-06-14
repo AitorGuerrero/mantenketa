@@ -1,49 +1,41 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Aitor Guerrero
 
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
-async function createTask(page: Page, name: string, date: string) {
-  await page.getByLabel('Nombre').fill(name)
-  await page.getByLabel('Fecha').fill(date)
-  await page.getByRole('button', { name: 'Añadir tarea' }).click()
-  await expect(page.getByLabel('Nombre')).toHaveValue('')
-}
+import { createTask, hechasList, yaList } from './ui'
 
-test('marcar hecha mueve la tarea al grupo de completadas y revertir la devuelve (FR-009, FR-010)', async ({
+test('marcar hecha mueve la tarea a "Hechas recientemente" y revertir la devuelve (FR-009, FR-010)', async ({
   page,
 }) => {
   await page.goto('/')
-  await createTask(page, 'Tarea temprana', '2026-06-12')
-  await createTask(page, 'Tarea tardía', '2026-08-01')
+  await createTask(page, 'Tarea temprana')
 
-  const items = page.getByRole('listitem')
+  // Empieza en "Para hacer ya"
+  await expect(yaList(page).getByRole('listitem')).toContainText('Tarea temprana')
 
-  // Pendientes por fecha asc: la temprana primero
-  await expect(items.nth(0)).toContainText('Tarea temprana')
-
-  // Marcar hecha la temprana → pasa al grupo de completadas, debajo (FR-009)
+  // Marcar hecha → pasa a "Hechas recientemente" y sale de "ya"
   await page.getByRole('checkbox', { name: 'Tarea temprana' }).click()
-  await expect(items.nth(0)).toContainText('Tarea tardía')
-  await expect(items.nth(1)).toContainText('Tarea temprana')
-  await expect(items.nth(1)).toContainText('Hecha')
+  await expect(hechasList(page).getByRole('listitem')).toContainText('Tarea temprana')
+  await expect(hechasList(page).getByRole('listitem').first()).toContainText('Hecha')
+  await expect(yaList(page).getByRole('listitem')).toHaveCount(0)
 
-  // Revertir → vuelve a pendiente y a su posición (FR-010)
+  // Revertir → vuelve a "ya"
   await page.getByRole('checkbox', { name: 'Tarea temprana' }).click()
-  await expect(items.nth(0)).toContainText('Tarea temprana')
-  await expect(items.nth(0)).toContainText('Pendiente')
+  await expect(yaList(page).getByRole('listitem')).toContainText('Tarea temprana')
+  await expect(hechasList(page).getByRole('listitem')).toHaveCount(0)
 })
 
 test('el estado de completado persiste tras recargar (SC-005)', async ({ page }) => {
   await page.goto('/')
-  await createTask(page, 'Tarea persistente', '2026-06-20')
+  await createTask(page, 'Tarea persistente')
 
   await page.getByRole('checkbox', { name: 'Tarea persistente' }).click()
-  await expect(page.getByRole('listitem').first()).toContainText('Hecha')
+  await expect(hechasList(page).getByRole('listitem').first()).toContainText('Hecha')
 
   await page.reload()
 
-  const item = page.getByRole('listitem').first()
+  const item = hechasList(page).getByRole('listitem').first()
   await expect(item).toContainText('Tarea persistente')
   await expect(item).toContainText('Hecha')
   await expect(page.getByRole('checkbox', { name: 'Tarea persistente' })).toBeChecked()
