@@ -22,7 +22,10 @@ const RECENT_DONE_LIMIT = 5
  * relativos a `today` (día local YYYY-MM-DD, inyectado para ser determinista
  * y testeable — Principio IV: detección de vencidas). Función pura.
  *
- * - ya:     pendientes sin fecha o con fecha <= hoy (vencidas resaltadas)
+ * - ya:     pendientes sin fecha o con fecha <= hoy (vencidas resaltadas).
+ *           Orden: primero las vencidas (la que venció antes, primera), luego
+ *           las de hoy, y por último las sin fecha; dentro de cada grupo por
+ *           orden de creación (la más antigua primero).
  * - pronto: pendientes con fecha > hoy, por fecha ascendente
  * - hechas: completadas, completada más reciente primero, máximo 5
  *
@@ -36,7 +39,7 @@ export function groupTasks(tasks: readonly Task[], today: string): GroupedTasks 
   const yaTasks = outstanding.filter((t) => t.taskDate === null || t.taskDate <= today)
   const prontoTasks = outstanding.filter((t) => t.taskDate !== null && t.taskDate > today)
 
-  const ya: TaskInGroup[] = sortTasks(yaTasks).map((task) => ({
+  const ya: TaskInGroup[] = orderYa(yaTasks).map((task) => ({
     task,
     isOverdue: task.taskDate !== null && task.taskDate < today,
   }))
@@ -51,6 +54,24 @@ export function groupTasks(tasks: readonly Task[], today: string): GroupedTasks 
     .map((task) => ({ task, isOverdue: false }))
 
   return { ya, pronto, hechas }
+}
+
+/**
+ * Orden de "Para hacer ya": las fechadas primero por fecha ascendente (la que
+ * venció antes, arriba; hoy al final de las fechadas), luego las sin fecha;
+ * dentro de cada caso, por createdAt ascendente (la más antigua primero).
+ */
+function orderYa(tasks: readonly Task[]): Task[] {
+  return [...tasks].sort((a, b) => {
+    const aDateless = a.taskDate === null
+    const bDateless = b.taskDate === null
+    if (aDateless !== bDateless) return aDateless ? 1 : -1 // sin fecha al final
+    if (a.taskDate !== null && b.taskDate !== null && a.taskDate !== b.taskDate) {
+      return a.taskDate < b.taskDate ? -1 : 1 // fecha más antigua primero
+    }
+    if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? -1 : 1
+    return 0
+  })
 }
 
 /** Completadas: completedAt desc, desempate updatedAt desc y luego createdAt desc. */

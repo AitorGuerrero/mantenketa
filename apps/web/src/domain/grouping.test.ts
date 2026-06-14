@@ -68,7 +68,7 @@ describe('groupTasks (FR-001..FR-006)', () => {
     expect(pronto[0]?.isOverdue).toBe(false)
   })
 
-  it('"ya" ordena: sin fecha primero, luego por fecha ascendente (más vencida arriba)', () => {
+  it('"ya" ordena: vencidas (más antigua primero), luego hoy, luego sin fecha', () => {
     const dateless = makeTask({ name: 'sin fecha', taskDate: null })
     const today = makeTask({ name: 'hoy', taskDate: TODAY })
     const oldPast = makeTask({ name: 'muy vencida', taskDate: '2026-06-02' })
@@ -77,11 +77,24 @@ describe('groupTasks (FR-001..FR-006)', () => {
     const { ya } = groupTasks([today, recentPast, dateless, oldPast], TODAY)
 
     expect(ya.map((g) => g.task.name)).toEqual([
-      'sin fecha',
       'muy vencida',
       'poco vencida',
       'hoy',
+      'sin fecha',
     ])
+  })
+
+  it('"ya" desempata por orden de creación dentro de cada grupo', () => {
+    // dos sin fecha y dos de hoy, creadas en orden conocido (createdAt por seq)
+    const datelessA = makeTask({ name: 'sf-A', taskDate: null })
+    const datelessB = makeTask({ name: 'sf-B', taskDate: null })
+    const hoyA = makeTask({ name: 'hoy-A', taskDate: TODAY })
+    const hoyB = makeTask({ name: 'hoy-B', taskDate: TODAY })
+
+    // se pasan desordenadas; el orden debe ser hoy (por creación), luego sin fecha
+    const { ya } = groupTasks([datelessB, hoyB, datelessA, hoyA], TODAY)
+
+    expect(ya.map((g) => g.task.name)).toEqual(['hoy-A', 'hoy-B', 'sf-A', 'sf-B'])
   })
 
   it('"pronto" ordena por fecha ascendente (la más próxima arriba)', () => {

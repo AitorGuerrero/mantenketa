@@ -100,21 +100,27 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
     opacity: flying !== null ? 0 : 1,
   }
 
+  // El contenedor anima el escalado de entrada (al pasar a primera posición,
+  // se remonta con key=task.id); la tarjeta interna gestiona arrastre/vuelo,
+  // así la escala (contenedor) y el translate (tarjeta) no compiten por el
+  // mismo `transform` y el transitionend del vuelo se dispara con fiabilidad.
   return (
-    <article
-      className={classes.join(' ')}
-      style={style}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      onTransitionEnd={handleTransitionEnd}
-    >
-      <ul className="task-list task-card-body" aria-label="Tarea actual">
-        <li className="task-item">
-          <TaskBody task={task} memberName={memberName} overdue={overdue} />
-        </li>
-      </ul>
-    </article>
+    <div className="task-card-slot task-card--enter">
+      <article
+        className={classes.join(' ')}
+        style={style}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onTransitionEnd={handleTransitionEnd}
+      >
+        <ul className="task-list task-card-body" aria-label="Tarea actual">
+          <li className="task-item">
+            <TaskBody task={task} memberName={memberName} overdue={overdue} />
+          </li>
+        </ul>
+      </article>
+    </div>
   )
 })

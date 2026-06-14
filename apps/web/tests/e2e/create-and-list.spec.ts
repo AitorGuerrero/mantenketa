@@ -88,5 +88,5 @@ test('una tarea de fecha pasada va a "Para hacer ya" resaltada como vencida (FR-
 
   const ya = yaList(page).getByRole('listitem')
   await expect(ya.nth(0)).toContainText('Tarea vencida')
-  await expect(ya.nth(0)).toContainText('Vencida')
+  await expect(ya.nth(0)).toContainText('Venció hace 3 días')
 })

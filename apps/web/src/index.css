@@ -185,8 +185,17 @@ body {
   box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
 }
 
+/* Contenedor de la carta activa: posiciona y anima el escalado de entrada;
+   la escala vive aquí y el arrastre/vuelo en .task-card (transform anidado). */
+.task-card-slot {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  transform-origin: bottom center;
+}
+
 .task-card-peek {
-  transform-origin: top center;
+  transform-origin: bottom center;
   background: var(--color-surface);
   box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
   overflow: hidden; /* el contenido no se desborda al estrechar (scaleX) */
@@ -204,7 +213,22 @@ body {
   padding: 1.25rem;
   cursor: grab;
   user-select: none;
+  transform-origin: bottom center;
   touch-action: pan-y; /* scroll vertical permitido; el horizontal es el gesto */
+}
+
+/* Al promocionar a primera posición, la nueva tarjeta entra escalando */
+.task-card--enter {
+  animation: card-promote 0.25s ease-out;
+}
+
+@keyframes card-promote {
+  from {
+    transform: scale(0.93);
+  }
+  to {
+    transform: scale(1);
+  }
 }
 
 .task-card--settling {
@@ -279,6 +303,10 @@ body {
   .task-card--flying {
     transition: none;
   }
+
+  .task-card--enter {
+    animation: none;
+  }
 }
 
 .task-list {
@@ -309,11 +337,6 @@ body {
   font-weight: 600;
 }
 
-.task-badge--overdue {
-  background: color-mix(in srgb, #c0392b 15%, transparent);
-  color: #c0392b;
-}
-
 .task-toggle {
   width: 1.15rem;
   height: 1.15rem;
@@ -333,6 +356,12 @@ body {
 
 .task-date--now {
   color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Después de .task-date para ganar en color (misma especificidad) */
+.task-date--overdue {
+  color: #c0392b;
   font-weight: 600;
 }
 

@@ -12,3 +12,26 @@ export function todayIsoDate(): string {
   const day = String(now.getDate()).padStart(2, '0')
   return `${String(now.getFullYear())}-${month}-${day}`
 }
+
+function toUTC(date: string): number {
+  const [y, m, d] = date.split('-')
+  return Date.UTC(Number(y), Number(m) - 1, Number(d))
+}
+
+/** Días naturales transcurridos entre dos fechas YYYY-MM-DD (to - from). */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((toUTC(to) - toUTC(from)) / 86_400_000)
+}
+
+/**
+ * Texto de "cuánto hace que venció" una tarea (taskDate < today): días, o
+ * semanas si pasó más de una semana (>7 días). Pura.
+ */
+export function overdueText(taskDate: string, today: string): string {
+  const days = daysBetween(taskDate, today)
+  if (days <= 7) {
+    return `Venció hace ${String(days)} ${days === 1 ? 'día' : 'días'}`
+  }
+  const weeks = Math.floor(days / 7)
+  return `Venció hace ${String(weeks)} ${weeks === 1 ? 'semana' : 'semanas'}`
+}

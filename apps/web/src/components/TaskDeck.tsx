@@ -62,28 +62,31 @@ export function TaskDeck({ ya, memberName }: TaskDeckProps) {
         {peeks
           .map((task, i) => {
             const depth = i + 1
+            const peekOverdue = overdueById.get(task.id) ?? false
             return (
               <div
                 key={task.id}
-                className="task-card task-card-peek"
+                className={
+                  peekOverdue
+                    ? 'task-card task-card-peek task-card--overdue'
+                    : 'task-card task-card-peek'
+                }
                 aria-hidden="true"
                 style={{
-                  // Desplazamiento vertical puro (asoman por abajo) + algo más
-                  // estrechas detrás; sin scaleY para que el desplazamiento no
-                  // se cancele y la pila se vea.
-                  transform: `translateY(${String(depth * 8)}px) scaleX(${String(1 - depth * 0.05)})`,
+                  // Escala uniforme (el contenido se reduce con la carta) con
+                  // origen abajo + translateY para que asomen por debajo.
+                  transform: `translateY(${String(depth * 10)}px) scale(${String(1 - depth * 0.05)})`,
                   opacity: DEPTH_OPACITY[depth] ?? 0.2,
                   zIndex: STACK_SIZE - depth,
                 }}
               >
-                {/* Contenido pintado para que al mover la de arriba no aparezca vacía */}
-                <div className="task-card-body">
-                  <TaskBody
-                    task={task}
-                    memberName={memberName}
-                    overdue={overdueById.get(task.id) ?? false}
-                  />
-                </div>
+                {/* Misma estructura que la carta activa (fecha en línea nueva) y
+                    contenido pintado para que al mover la de arriba no salga vacía */}
+                <ul className="task-list task-card-body">
+                  <li className="task-item">
+                    <TaskBody task={task} memberName={memberName} overdue={peekOverdue} />
+                  </li>
+                </ul>
               </div>
             )
           })

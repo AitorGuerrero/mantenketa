@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Aitor Guerrero
 
 import { taskRepository } from '../data/taskRepository'
+import { overdueText, todayIsoDate } from '../domain/date'
 import { isDone, type Task } from '../domain/task'
 
 function formatDate(isoDate: string): string {
@@ -42,14 +43,18 @@ export function TaskBody({
       <span className="task-name">
         {task.name}
         {task.nucleusId !== null && <span className="task-badge">Núcleo</span>}
-        {overdue && <span className="task-badge task-badge--overdue">Vencida</span>}
       </span>
-      {task.taskDate !== null ? (
+      {task.taskDate === null ? (
+        <span className="task-date task-date--now">Hacer ya</span>
+      ) : overdue ? (
+        // Vencida: cuánto hace que venció, en lugar de la fecha
+        <span className="task-date task-date--overdue">
+          {overdueText(task.taskDate, todayIsoDate())}
+        </span>
+      ) : (
         <time className="task-date" dateTime={task.taskDate}>
           {formatDate(task.taskDate)}
         </time>
-      ) : (
-        <span className="task-date task-date--now">Hacer ya</span>
       )}
       {label !== null && <span className="task-state">{label}</span>}
     </>
