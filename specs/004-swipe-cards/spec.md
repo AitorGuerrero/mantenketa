@@ -145,7 +145,10 @@ Refines the presentation of the deck (no behavioural/data change):
 - **FR-017**: The action controls MUST show a **direction arrow** indicating the
   swipe side: "Posponer" with a left arrow (←), "Hecha" with a right arrow (→).
 - **FR-018**: The deck MUST offer a **"Ver como lista"** action that switches the
-  touch device to the list view (the desktop presentation) for the session.
+  touch device to the list view (the desktop presentation) for the session; and
+  while in that forced list view on a touch device, a **"Ver como tarjetas"**
+  action below the "Para hacer ya" list MUST switch back to the deck. On
+  non-touch devices neither action appears (there is no card mode).
 - **FR-019**: Overdue tasks MUST show **how long ago they were due** ("Venció
   hace N días", or weeks if more than 7 days) instead of the due date, and the
   "Para hacer ya" order MUST be: overdue (earliest-due first), then today, then

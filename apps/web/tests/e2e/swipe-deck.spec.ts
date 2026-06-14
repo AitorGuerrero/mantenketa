@@ -57,6 +57,11 @@ test.describe('baraja en táctil (puntero grueso)', () => {
     // Ya no hay baraja: "Para hacer ya" pasa a ser lista
     await expect(page.getByRole('list', { name: 'Tarea actual' })).toHaveCount(0)
     await expect(yaList(page)).toContainText('En la baraja')
+
+    // En táctil, se ofrece volver a la baraja
+    await page.getByRole('button', { name: 'Ver como tarjetas' }).click()
+    await expect(deck(page)).toBeVisible()
+    await expect(page.getByRole('list', { name: 'Tareas para hacer ya' })).toHaveCount(0)
   })
 
   test('"Hecha" completa la tarjeta y avanza a la siguiente (FR-002)', async () => {

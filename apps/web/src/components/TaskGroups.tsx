@@ -70,13 +70,27 @@ export function TaskGroups() {
           }}
         />
       ) : (
-        <GroupSection
-          title="Para hacer ya"
-          items={ya}
-          emptyHint="Nada urgente ahora mismo"
-          memberName={memberName}
-          label="Tareas para hacer ya"
-        />
+        <>
+          <GroupSection
+            title="Para hacer ya"
+            items={ya}
+            emptyHint="Nada urgente ahora mismo"
+            memberName={memberName}
+            label="Tareas para hacer ya"
+          />
+          {/* En táctil, ofrecer volver a la baraja (en escritorio no hay tarjetas) */}
+          {touch && forceList && (
+            <button
+              type="button"
+              className="view-as-list"
+              onClick={() => {
+                setForceList(false)
+              }}
+            >
+              Ver como tarjetas
+            </button>
+          )}
+        </>
       )}
       <GroupSection
         title="Para hacer pronto"
