@@ -171,8 +171,8 @@ body {
   position: relative;
   width: min(78vw, 17rem);
   aspect-ratio: 5 / 7; /* proporción de naipe, en vertical */
-  /* margen inferior holgado: las cartas de detrás asoman hasta ~64px */
-  margin: 0.5rem auto 4.5rem;
+  /* margen inferior holgado: las cartas de detrás asoman hasta ~32px */
+  margin: 0.5rem auto 2.75rem;
 }
 
 .task-card,

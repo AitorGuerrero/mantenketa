@@ -83,7 +83,7 @@ export function TaskDeck({ ya, memberName }: TaskDeckProps) {
                   // Desplazamiento vertical puro (asoman por abajo) + algo más
                   // estrechas detrás; sin scaleY para que el desplazamiento no
                   // se cancele y la pila se vea.
-                  transform: `translateY(${String(depth * 16)}px) scaleX(${String(1 - depth * 0.05)})`,
+                  transform: `translateY(${String(depth * 8)}px) scaleX(${String(1 - depth * 0.05)})`,
                   opacity: DEPTH_OPACITY[depth] ?? 0.2,
                   zIndex: STACK_SIZE - depth,
                 }}
