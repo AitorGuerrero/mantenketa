@@ -13,8 +13,10 @@ function formatDate(isoDate: string): string {
   })
 }
 
-function stateLabel(task: Task, memberName: (userId: string) => string): string {
-  if (!isDone(task) || task.completedAt === null) return 'Pendiente'
+// null para tareas pendientes: el grupo ("ya"/"pronto") ya indica que lo están,
+// así que "Pendiente" no aporta información. Las hechas muestran su fecha/autor.
+function stateLabel(task: Task, memberName: (userId: string) => string): string | null {
+  if (!isDone(task) || task.completedAt === null) return null
   const base = `Hecha el ${formatDate(task.completedAt)}`
   // En tareas del núcleo importa quién la hizo (FR-016)
   if (task.nucleusId !== null && task.completedBy !== null) {
@@ -34,6 +36,7 @@ export function TaskBody({
   memberName: (userId: string) => string
   overdue?: boolean
 }) {
+  const label = stateLabel(task, memberName)
   return (
     <>
       <span className="task-name">
@@ -48,7 +51,7 @@ export function TaskBody({
       ) : (
         <span className="task-date task-date--now">Hacer ya</span>
       )}
-      <span className="task-state">{stateLabel(task, memberName)}</span>
+      {label !== null && <span className="task-state">{label}</span>}
     </>
   )
 }

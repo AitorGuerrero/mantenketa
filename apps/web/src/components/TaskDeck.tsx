@@ -1,34 +1,29 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Aitor Guerrero
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { taskRepository } from '../data/taskRepository'
 import { orderDeck } from '../domain/deck'
 import type { TaskInGroup } from '../domain/grouping'
 
-import { TaskCard } from './TaskCard'
+import { TaskCard, type TaskCardHandle } from './TaskCard'
+import { TaskBody } from './TaskItem'
 
 interface TaskDeckProps {
   ya: TaskInGroup[]
   memberName: (userId: string) => string
 }
 
-type Leaving = { id: string; kind: 'done' | 'defer' } | null
-
 // Total de cartas visibles en la pila (activa + hasta 4 detrás)
 const STACK_SIZE = 5
 // Opacidad por profundidad (índice 0 = activa); desvanece de la 3.ª a la 5.ª
 const DEPTH_OPACITY = [1, 1, 0.66, 0.4, 0.2]
 
-function prefersReducedMotion(): boolean {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
-
 export function TaskDeck({ ya, memberName }: TaskDeckProps) {
   // Orden de posposición, solo en memoria de sesión (se reinicia al recargar)
   const [deferredIds, setDeferredIds] = useState<string[]>([])
-  const [leaving, setLeaving] = useState<Leaving>(null)
+  const cardRef = useRef<TaskCardHandle>(null)
 
   const overdueById = new Map(ya.map((g) => [g.task.id, g.isOverdue]))
   const ordered = orderDeck(
@@ -47,19 +42,12 @@ export function TaskDeck({ ya, memberName }: TaskDeckProps) {
     )
   }
 
-  function commit(kind: 'done' | 'defer', id: string) {
-    if (kind === 'done') void taskRepository.markDone(id)
-    else setDeferredIds((prev) => [...prev.filter((d) => d !== id), id])
-    setLeaving(null)
+  // Confirmación, tras la animación de salida que ejecuta la propia tarjeta.
+  function handleDone(id: string) {
+    void taskRepository.markDone(id)
   }
-
-  function request(kind: 'done' | 'defer', id: string) {
-    if (leaving !== null) return // ignora acciones mientras anima una salida
-    if (prefersReducedMotion()) {
-      commit(kind, id)
-      return
-    }
-    setLeaving({ id, kind })
+  function handleDefer(id: string) {
+    setDeferredIds((prev) => [...prev.filter((d) => d !== id), id])
   }
 
   // Cartas que asoman detrás (de la 2.ª a la 5.ª), pintadas de atrás hacia
@@ -77,7 +65,7 @@ export function TaskDeck({ ya, memberName }: TaskDeckProps) {
             return (
               <div
                 key={task.id}
-                className="task-card-peek"
+                className="task-card task-card-peek"
                 aria-hidden="true"
                 style={{
                   // Desplazamiento vertical puro (asoman por abajo) + algo más
@@ -87,24 +75,30 @@ export function TaskDeck({ ya, memberName }: TaskDeckProps) {
                   opacity: DEPTH_OPACITY[depth] ?? 0.2,
                   zIndex: STACK_SIZE - depth,
                 }}
-              />
+              >
+                {/* Contenido pintado para que al mover la de arriba no aparezca vacía */}
+                <div className="task-card-body">
+                  <TaskBody
+                    task={task}
+                    memberName={memberName}
+                    overdue={overdueById.get(task.id) ?? false}
+                  />
+                </div>
+              </div>
             )
           })
           .reverse()}
         <TaskCard
+          ref={cardRef}
           key={top.id}
           task={top}
           memberName={memberName}
           overdue={overdueById.get(top.id) ?? false}
-          leaving={leaving?.id === top.id ? leaving.kind : null}
           onDone={() => {
-            request('done', top.id)
+            handleDone(top.id)
           }}
           onDefer={() => {
-            request('defer', top.id)
-          }}
-          onLeaveEnd={() => {
-            if (leaving !== null) commit(leaving.kind, leaving.id)
+            handleDefer(top.id)
           }}
         />
       </div>
@@ -113,18 +107,11 @@ export function TaskDeck({ ya, memberName }: TaskDeckProps) {
         <button
           type="button"
           className="button-secondary"
-          onClick={() => {
-            request('defer', top.id)
-          }}
+          onClick={() => cardRef.current?.fly('defer')}
         >
           <span aria-hidden="true">←</span> Posponer
         </button>
-        <button
-          type="button"
-          onClick={() => {
-            request('done', top.id)
-          }}
-        >
+        <button type="button" onClick={() => cardRef.current?.fly('done')}>
           Hecha <span aria-hidden="true">→</span>
         </button>
       </div>

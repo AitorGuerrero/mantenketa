@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Aitor Guerrero
 
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import {
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type TransitionEvent as ReactTransitionEvent,
+} from 'react'
 
 import { swipeOutcome } from '../domain/deck'
 import type { Task } from '../domain/task'
@@ -10,31 +17,50 @@ import { TaskBody } from './TaskItem'
 
 const SWIPE_THRESHOLD = 80 // px para confirmar la acción
 
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+export interface TaskCardHandle {
+  /** Lanza la salida (desde la posición actual) y confirma al terminar. */
+  fly: (kind: 'done' | 'defer') => void
+}
+
 interface TaskCardProps {
   task: Task
   memberName: (userId: string) => string
   overdue: boolean
-  leaving: 'done' | 'defer' | null
   onDone: () => void
   onDefer: () => void
-  onLeaveEnd: () => void
 }
 
-export function TaskCard({
-  task,
-  memberName,
-  overdue,
-  leaving,
-  onDone,
-  onDefer,
-  onLeaveEnd,
-}: TaskCardProps) {
+export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskCard(
+  { task, memberName, overdue, onDone, onDefer },
+  ref,
+) {
   const [dx, setDx] = useState(0)
   const [dragging, setDragging] = useState(false)
+  const [flying, setFlying] = useState<'done' | 'defer' | null>(null)
   const startX = useRef<number | null>(null)
 
+  function fly(kind: 'done' | 'defer') {
+    if (flying !== null) return
+    if (prefersReducedMotion()) {
+      if (kind === 'done') onDone()
+      else onDefer()
+      return
+    }
+    setDragging(false)
+    setFlying(kind)
+    // Vuela desde la posición ACTUAL (dx) hasta fuera de pantalla: la
+    // transición interpola desde el valor actual, no desde el centro.
+    setDx(kind === 'done' ? window.innerWidth : -window.innerWidth)
+  }
+
+  useImperativeHandle(ref, () => ({ fly }))
+
   function handlePointerDown(e: ReactPointerEvent<HTMLDivElement>) {
-    if (leaving !== null) return
+    if (flying !== null) return
     startX.current = e.clientX
     setDragging(true)
     e.currentTarget.setPointerCapture(e.pointerId)
@@ -50,22 +76,29 @@ export function TaskCard({
     startX.current = null
     setDragging(false)
     const outcome = swipeOutcome(dx, SWIPE_THRESHOLD)
-    setDx(0)
-    if (outcome === 'done') onDone()
-    else if (outcome === 'defer') onDefer()
+    if (outcome === 'cancel') {
+      setDx(0)
+      return
+    }
+    fly(outcome)
+  }
+
+  function handleTransitionEnd(e: ReactTransitionEvent<HTMLDivElement>) {
+    // Solo una vez: la salida transiciona transform y opacity a la vez
+    if (e.propertyName !== 'transform') return
+    if (flying === 'done') onDone()
+    else if (flying === 'defer') onDefer()
   }
 
   const classes = ['task-card']
   if (overdue) classes.push('task-card--overdue')
-  if (leaving === 'done') classes.push('task-card--leaving-done')
-  else if (leaving === 'defer') classes.push('task-card--leaving-defer')
+  if (flying !== null) classes.push('task-card--flying')
   else if (!dragging) classes.push('task-card--settling')
 
-  // Mientras se anima la salida, el keyframe controla el transform
-  const style =
-    leaving === null
-      ? { transform: `translateX(${String(dx)}px) rotate(${String(dx / 20)}deg)` }
-      : undefined
+  const style = {
+    transform: `translateX(${String(dx)}px) rotate(${String(dx / 24)}deg)`,
+    opacity: flying !== null ? 0 : 1,
+  }
 
   return (
     <article
@@ -75,9 +108,7 @@ export function TaskCard({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      onAnimationEnd={() => {
-        if (leaving !== null) onLeaveEnd()
-      }}
+      onTransitionEnd={handleTransitionEnd}
     >
       <ul className="task-list task-card-body" aria-label="Tarea actual">
         <li className="task-item">
@@ -86,4 +117,4 @@ export function TaskCard({
       </ul>
     </article>
   )
-}
+})

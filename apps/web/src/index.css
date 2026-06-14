@@ -189,6 +189,9 @@ body {
   transform-origin: top center;
   background: var(--color-surface);
   box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
+  overflow: hidden; /* el contenido no se desborda al estrechar (scaleX) */
+  pointer-events: none; /* solo la tarjeta superior es interactiva */
+  cursor: default;
   /* posición/opacidad/zIndex se aplican inline según la profundidad */
 }
 
@@ -205,33 +208,20 @@ body {
 }
 
 .task-card--settling {
-  transition: transform 0.2s ease-out;
+  transition:
+    transform 0.2s ease-out,
+    opacity 0.2s ease-out;
+}
+
+/* Salida (deslizar o botón): vuela desde la posición actual hasta fuera */
+.task-card--flying {
+  transition:
+    transform 0.32s ease-in,
+    opacity 0.32s ease-in;
 }
 
 .task-card--overdue {
   border-color: #c0392b;
-}
-
-.task-card--leaving-defer {
-  animation: card-to-back 0.32s ease-in forwards;
-}
-
-.task-card--leaving-done {
-  animation: card-off-right 0.3s ease-in forwards;
-}
-
-@keyframes card-to-back {
-  to {
-    transform: translateX(-55%) translateY(14%) scale(0.82) rotate(-7deg);
-    opacity: 0.2;
-  }
-}
-
-@keyframes card-off-right {
-  to {
-    transform: translateX(90%) translateY(-8%) rotate(9deg);
-    opacity: 0;
-  }
 }
 
 .task-card-body {
@@ -285,13 +275,9 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .task-card--settling {
+  .task-card--settling,
+  .task-card--flying {
     transition: none;
-  }
-
-  .task-card--leaving-defer,
-  .task-card--leaving-done {
-    animation: none;
   }
 }
 
