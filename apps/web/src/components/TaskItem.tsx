@@ -23,6 +23,36 @@ function stateLabel(task: Task, memberName: (userId: string) => string): string 
   return base
 }
 
+/** Contenido visual de una tarea (sin contenedor): nombre, insignias, fecha, estado.
+ *  Compartido por la lista (TaskItem) y por la tarjeta de la baraja (TaskCard). */
+export function TaskBody({
+  task,
+  memberName,
+  overdue = false,
+}: {
+  task: Task
+  memberName: (userId: string) => string
+  overdue?: boolean
+}) {
+  return (
+    <>
+      <span className="task-name">
+        {task.name}
+        {task.nucleusId !== null && <span className="task-badge">Núcleo</span>}
+        {overdue && <span className="task-badge task-badge--overdue">Vencida</span>}
+      </span>
+      {task.taskDate !== null ? (
+        <time className="task-date" dateTime={task.taskDate}>
+          {formatDate(task.taskDate)}
+        </time>
+      ) : (
+        <span className="task-date task-date--now">Hacer ya</span>
+      )}
+      <span className="task-state">{stateLabel(task, memberName)}</span>
+    </>
+  )
+}
+
 interface TaskItemProps {
   task: Task
   memberName: (userId: string) => string
@@ -50,19 +80,7 @@ export function TaskItem({ task, memberName, overdue = false }: TaskItemProps) {
         title={done ? 'Devolver a pendiente' : 'Marcar como hecha'}
         onChange={handleToggle}
       />
-      <span className="task-name">
-        {task.name}
-        {task.nucleusId !== null && <span className="task-badge">Núcleo</span>}
-        {overdue && <span className="task-badge task-badge--overdue">Vencida</span>}
-      </span>
-      {task.taskDate !== null ? (
-        <time className="task-date" dateTime={task.taskDate}>
-          {formatDate(task.taskDate)}
-        </time>
-      ) : (
-        <span className="task-date task-date--now">Hacer ya</span>
-      )}
-      <span className="task-state">{stateLabel(task, memberName)}</span>
+      <TaskBody task={task} memberName={memberName} overdue={overdue} />
     </li>
   )
 }

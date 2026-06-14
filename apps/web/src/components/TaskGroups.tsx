@@ -8,7 +8,9 @@ import { taskRepository } from '../data/taskRepository'
 import { todayIsoDate } from '../domain/date'
 import { groupTasks, type TaskInGroup } from '../domain/grouping'
 
+import { TaskDeck } from './TaskDeck'
 import { TaskItem } from './TaskItem'
+import { useCoarsePointer } from './useCoarsePointer'
 
 interface GroupSectionProps {
   title: string
@@ -43,6 +45,7 @@ function GroupSection({ title, items, emptyHint, memberName, label }: GroupSecti
 export function TaskGroups() {
   const tasks = useObservable(() => taskRepository.observeTasks(), [])
   const nucleus = useObservable(() => observeNucleus(), [])
+  const touch = useCoarsePointer()
 
   if (tasks === undefined) {
     return null
@@ -55,13 +58,17 @@ export function TaskGroups() {
 
   return (
     <div className="task-groups">
-      <GroupSection
-        title="Para hacer ya"
-        items={ya}
-        emptyHint="Nada urgente ahora mismo"
-        memberName={memberName}
-        label="Tareas para hacer ya"
-      />
+      {touch ? (
+        <TaskDeck ya={ya} memberName={memberName} />
+      ) : (
+        <GroupSection
+          title="Para hacer ya"
+          items={ya}
+          emptyHint="Nada urgente ahora mismo"
+          memberName={memberName}
+          label="Tareas para hacer ya"
+        />
+      )}
       <GroupSection
         title="Para hacer pronto"
         items={pronto}

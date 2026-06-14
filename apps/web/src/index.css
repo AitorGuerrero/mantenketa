@@ -166,6 +166,80 @@ body {
   margin: 0 0 0.6rem;
 }
 
+/* Baraja de tarjetas (feature 004, solo táctil) */
+.task-card-stage {
+  position: relative;
+  min-height: 7rem;
+  touch-action: pan-y; /* permite scroll vertical; el horizontal lo gestiona el gesto */
+}
+
+.task-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 8%);
+  cursor: grab;
+  user-select: none;
+}
+
+.task-card--settling {
+  transition: transform 0.2s ease-out;
+}
+
+.task-card--overdue {
+  border-color: #c0392b;
+}
+
+.task-card-body {
+  gap: 0;
+}
+
+.task-card-body .task-item {
+  border: none;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.task-card-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.task-card-actions button {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: var(--color-primary);
+  color: #ffffff;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.task-card-actions .button-secondary {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.all-done {
+  font-weight: 600;
+  color: var(--color-primary);
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-card--settling {
+    transition: none;
+  }
+}
+
 .task-list {
   list-style: none;
   margin: 0;
