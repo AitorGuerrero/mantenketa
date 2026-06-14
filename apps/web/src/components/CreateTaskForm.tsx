@@ -9,9 +9,13 @@ import { ValidationError, type NewTaskInput, type TaskScope } from '../domain/ta
 
 interface CreateTaskFormProps {
   onCreate: (input: NewTaskInput) => Promise<void>
+  /** Se invoca tras guardar con éxito (para que el padre cierre el formulario). */
+  onCreated?: () => void
+  /** Se invoca al cancelar. */
+  onCancel?: () => void
 }
 
-export function CreateTaskForm({ onCreate }: CreateTaskFormProps) {
+export function CreateTaskForm({ onCreate, onCreated, onCancel }: CreateTaskFormProps) {
   const nucleus = useObservable(() => observeNucleus(), [])
   const [name, setName] = useState('')
   const [taskDate, setTaskDate] = useState('')
@@ -29,6 +33,7 @@ export function CreateTaskForm({ onCreate }: CreateTaskFormProps) {
       setName('')
       setTaskDate('')
       setScope('personal')
+      onCreated?.()
     } catch (cause) {
       if (cause instanceof ValidationError) {
         setError(cause.message)
@@ -96,7 +101,20 @@ export function CreateTaskForm({ onCreate }: CreateTaskFormProps) {
           </label>
         </fieldset>
       )}
-      <button type="submit">Añadir tarea</button>
+      <div className="form-actions">
+        <button type="submit">Añadir tarea</button>
+        {onCancel && (
+          <button
+            type="button"
+            className="button-secondary"
+            onClick={() => {
+              onCancel()
+            }}
+          >
+            Cancelar
+          </button>
+        )}
+      </div>
       {error !== null && (
         <p className="form-error" role="alert">
           {error}

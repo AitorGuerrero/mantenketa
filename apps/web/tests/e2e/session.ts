@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Aitor Guerrero
 
-import { expect, type Page } from '@playwright/test'
+import { type Page } from '@playwright/test'
 
 import { must, type TestUser } from '../integration/helpers'
+
+import { createTask } from './ui'
 
 export const supabaseConfigured = Boolean(
   process.env.VITE_SUPABASE_URL &&
@@ -38,8 +40,5 @@ export async function injectSession(page: Page, user: TestUser): Promise<void> {
 }
 
 export async function createTaskInPage(page: Page, name: string, date: string) {
-  await page.getByLabel('Nombre', { exact: true }).fill(name)
-  await page.getByLabel('Fecha').fill(date)
-  await page.getByRole('button', { name: 'Añadir tarea' }).click()
-  await expect(page.getByLabel('Nombre', { exact: true })).toHaveValue('')
+  await createTask(page, name, { date })
 }

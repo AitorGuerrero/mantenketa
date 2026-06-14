@@ -13,6 +13,7 @@ import {
 } from '../integration/helpers'
 
 import { injectSession, supabaseConfigured } from './session'
+import { createTask, isoDay } from './ui'
 
 // T024 — US3: una tarea del núcleo creada por A aparece en B ≤ 5 s sin
 // recargar (Realtime, SC-003); B la completa y A ve quién la hizo (FR-016);
@@ -77,16 +78,8 @@ test('una tarea del núcleo creada por A aparece en B sin recargar (SC-003) y la
   await expect(pageB.getByText(userB.email)).toBeVisible()
 
   // A crea una tarea personal (por defecto) y una del núcleo
-  await pageA.getByLabel('Nombre', { exact: true }).fill('Solo mía')
-  await pageA.getByLabel('Fecha').fill('2026-06-25')
-  await pageA.getByRole('button', { name: 'Añadir tarea' }).click()
-  await expect(pageA.getByLabel('Nombre', { exact: true })).toHaveValue('')
-
-  await pageA.getByLabel('Nombre', { exact: true }).fill('Comprar bombillas')
-  await pageA.getByLabel('Fecha').fill('2026-06-20')
-  await pageA.getByRole('radio', { name: 'Del núcleo' }).check()
-  await pageA.getByRole('button', { name: 'Añadir tarea' }).click()
-  await expect(pageA.getByLabel('Nombre', { exact: true })).toHaveValue('')
+  await createTask(pageA, 'Solo mía', { date: isoDay(11) })
+  await createTask(pageA, 'Comprar bombillas', { date: isoDay(6), scope: 'nucleus' })
 
   // B la ve sin recargar, en ≤ 5 s (Realtime)
   await expect(pageB.getByText('Comprar bombillas')).toBeVisible({ timeout: 5000 })

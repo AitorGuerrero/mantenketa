@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Aitor Guerrero
 
-import { useObservable } from 'dexie-react-hooks'
-
-import { observeNucleus } from '../data/nucleusService'
 import { taskRepository } from '../data/taskRepository'
 import { isDone, type Task } from '../domain/task'
 
@@ -26,21 +23,25 @@ function stateLabel(task: Task, memberName: (userId: string) => string): string 
   return base
 }
 
-function TaskItem({
-  task,
-  memberName,
-}: {
+interface TaskItemProps {
   task: Task
   memberName: (userId: string) => string
-}) {
+  overdue?: boolean
+}
+
+export function TaskItem({ task, memberName, overdue = false }: TaskItemProps) {
   const done = isDone(task)
 
   function handleToggle() {
     void (done ? taskRepository.revert(task.id) : taskRepository.markDone(task.id))
   }
 
+  const classes = ['task-item']
+  if (done) classes.push('task-item--done')
+  if (overdue) classes.push('task-item--overdue')
+
   return (
-    <li className={done ? 'task-item task-item--done' : 'task-item'}>
+    <li className={classes.join(' ')}>
       <input
         type="checkbox"
         className="task-toggle"
@@ -52,6 +53,7 @@ function TaskItem({
       <span className="task-name">
         {task.name}
         {task.nucleusId !== null && <span className="task-badge">Núcleo</span>}
+        {overdue && <span className="task-badge task-badge--overdue">Vencida</span>}
       </span>
       {task.taskDate !== null ? (
         <time className="task-date" dateTime={task.taskDate}>
@@ -62,29 +64,5 @@ function TaskItem({
       )}
       <span className="task-state">{stateLabel(task, memberName)}</span>
     </li>
-  )
-}
-
-export function TaskList() {
-  const tasks = useObservable(() => taskRepository.observeTasks(), [])
-  const nucleus = useObservable(() => observeNucleus(), [])
-
-  if (tasks === undefined) {
-    return null
-  }
-
-  if (tasks.length === 0) {
-    return <p className="empty-state">No hay tareas todavía</p>
-  }
-
-  const memberName = (userId: string): string =>
-    nucleus?.members.find((m) => m.userId === userId)?.displayName ?? 'otro miembro'
-
-  return (
-    <ul className="task-list" aria-label="Lista de tareas">
-      {tasks.map((task) => (
-        <TaskItem key={task.id} task={task} memberName={memberName} />
-      ))}
-    </ul>
   )
 }
