@@ -2,13 +2,16 @@
 // Copyright (C) 2026 Aitor Guerrero
 
 import { useObservable } from 'dexie-react-hooks'
+import { useState } from 'react'
 
 import { observeNucleus } from '../data/nucleusService'
 import { taskRepository } from '../data/taskRepository'
 import { todayIsoDate } from '../domain/date'
 import { groupTasks, type TaskInGroup } from '../domain/grouping'
 
+import { TaskDeck } from './TaskDeck'
 import { TaskItem } from './TaskItem'
+import { useCoarsePointer } from './useCoarsePointer'
 
 interface GroupSectionProps {
   title: string
@@ -43,6 +46,9 @@ function GroupSection({ title, items, emptyHint, memberName, label }: GroupSecti
 export function TaskGroups() {
   const tasks = useObservable(() => taskRepository.observeTasks(), [])
   const nucleus = useObservable(() => observeNucleus(), [])
+  const touch = useCoarsePointer()
+  // El usuario puede forzar la vista de lista en táctil (como en escritorio)
+  const [forceList, setForceList] = useState(false)
 
   if (tasks === undefined) {
     return null
@@ -55,13 +61,37 @@ export function TaskGroups() {
 
   return (
     <div className="task-groups">
-      <GroupSection
-        title="Para hacer ya"
-        items={ya}
-        emptyHint="Nada urgente ahora mismo"
-        memberName={memberName}
-        label="Tareas para hacer ya"
-      />
+      {touch && !forceList ? (
+        <TaskDeck
+          ya={ya}
+          memberName={memberName}
+          onViewAsList={() => {
+            setForceList(true)
+          }}
+        />
+      ) : (
+        <>
+          <GroupSection
+            title="Para hacer ya"
+            items={ya}
+            emptyHint="Nada urgente ahora mismo"
+            memberName={memberName}
+            label="Tareas para hacer ya"
+          />
+          {/* En táctil, ofrecer volver a la baraja (en escritorio no hay tarjetas) */}
+          {touch && forceList && (
+            <button
+              type="button"
+              className="view-as-list"
+              onClick={() => {
+                setForceList(false)
+              }}
+            >
+              Ver como tarjetas
+            </button>
+          )}
+        </>
+      )}
       <GroupSection
         title="Para hacer pronto"
         items={pronto}

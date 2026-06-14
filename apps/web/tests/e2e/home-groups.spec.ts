@@ -31,14 +31,15 @@ test('las vencidas (días pasados) se resaltan; las de hoy no (FR-003)', async (
 }) => {
   await page.goto('/')
 
-  await createTask(page, 'Vencida', { date: isoDay(-2) })
+  await createTask(page, 'Tarea atrasada', { date: isoDay(-2) })
   await createTask(page, 'Para hoy', { date: isoDay(0) })
 
-  const overdue = page.getByRole('listitem').filter({ hasText: 'Vencida' })
-  await expect(overdue).toContainText('Vencida') // etiqueta + clase
-  // la de hoy no lleva la etiqueta "Vencida"
+  // La vencida muestra cuánto hace que venció (en vez de la fecha)
+  const overdue = page.getByRole('listitem').filter({ hasText: 'Tarea atrasada' })
+  await expect(overdue).toContainText('Venció hace 2 días')
+  // la de hoy NO está vencida
   const today = page.getByRole('listitem').filter({ hasText: 'Para hoy' })
-  await expect(today).not.toContainText('Vencida')
+  await expect(today).not.toContainText('Venció hace')
 })
 
 test('"Hechas recientemente" muestra solo las 5 más recientes', async ({ page }) => {

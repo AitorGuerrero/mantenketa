@@ -166,6 +166,161 @@ body {
   margin: 0 0 0.6rem;
 }
 
+/* Baraja de tarjetas (feature 004, solo táctil) */
+.task-deck-stack {
+  position: relative;
+  width: min(78vw, 17rem);
+  aspect-ratio: 5 / 7; /* proporción de naipe, en vertical */
+  /* margen inferior holgado: las cartas de detrás asoman hasta ~32px */
+  margin: 0.5rem auto 2.75rem;
+}
+
+.task-card,
+.task-card-peek {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 0.9rem;
+  background: var(--color-surface);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
+}
+
+/* Contenedor de la carta activa: posiciona y anima el escalado de entrada;
+   la escala vive aquí y el arrastre/vuelo en .task-card (transform anidado). */
+.task-card-slot {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  transform-origin: bottom center;
+}
+
+.task-card-peek {
+  transform-origin: bottom center;
+  background: var(--color-surface);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
+  overflow: hidden; /* el contenido no se desborda al estrechar (scaleX) */
+  pointer-events: none; /* solo la tarjeta superior es interactiva */
+  cursor: default;
+  /* posición/opacidad/zIndex se aplican inline según la profundidad */
+}
+
+.task-card {
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  cursor: grab;
+  user-select: none;
+  transform-origin: bottom center;
+  touch-action: pan-y; /* scroll vertical permitido; el horizontal es el gesto */
+}
+
+/* Al promocionar a primera posición, la nueva tarjeta entra escalando */
+.task-card--enter {
+  animation: card-promote 0.25s ease-out;
+}
+
+@keyframes card-promote {
+  from {
+    transform: scale(0.93);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.task-card--settling {
+  transition:
+    transform 0.2s ease-out,
+    opacity 0.2s ease-out;
+}
+
+/* Salida (deslizar o botón): vuela desde la posición actual hasta fuera */
+.task-card--flying {
+  transition:
+    transform 0.32s ease-in,
+    opacity 0.32s ease-in;
+}
+
+.task-card--overdue {
+  border-color: #c0392b;
+}
+
+.task-card-body {
+  gap: 0.4rem;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.task-card-body .task-item {
+  border: none;
+  padding: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.task-card-body .task-name {
+  font-size: 1.3rem;
+}
+
+.task-card-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: min(78vw, 17rem);
+  margin: 0 auto 1rem;
+}
+
+.task-card-actions button {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: var(--color-primary);
+  color: #ffffff;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.task-card-actions .button-secondary {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.all-done {
+  font-weight: 600;
+  color: var(--color-primary);
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+.view-as-list {
+  display: block;
+  margin: 0.75rem auto 0;
+  padding: 0.35rem 0.5rem;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-card--settling,
+  .task-card--flying {
+    transition: none;
+  }
+
+  .task-card--enter {
+    animation: none;
+  }
+}
+
 .task-list {
   list-style: none;
   margin: 0;
@@ -194,11 +349,6 @@ body {
   font-weight: 600;
 }
 
-.task-badge--overdue {
-  background: color-mix(in srgb, #c0392b 15%, transparent);
-  color: #c0392b;
-}
-
 .task-toggle {
   width: 1.15rem;
   height: 1.15rem;
@@ -218,6 +368,12 @@ body {
 
 .task-date--now {
   color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Después de .task-date para ganar en color (misma especificidad) */
+.task-date--overdue {
+  color: #c0392b;
   font-weight: 600;
 }
 
