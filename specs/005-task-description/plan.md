@@ -53,7 +53,7 @@ apps/web/src/
   data/taskRepository.ts# createTask stores parsed description
   components/CreateTaskForm.tsx  # optional multi-line "Descripción" textarea
   components/TaskItem.tsx        # TaskBody shows description (lists + card) when present
-supabase/migrations/0002_task_description.sql  # ALTER TABLE tasks ADD COLUMN description text
+supabase/migrations/20260614120000_task_description.sql  # ALTER TABLE tasks ADD COLUMN description text
 apps/web/tests/e2e/task-description.spec.ts     # create→shown in list+card; blank = none
 ```
 

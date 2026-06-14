@@ -54,7 +54,7 @@ is the place to read the full text. No truncation of stored data.
 
 ## Decision 6: Migration application
 
-**Decision**: New migration `supabase/migrations/0002_task_description.sql`
+**Decision**: New migration `supabase/migrations/20260614120000_task_description.sql`
 (`ALTER TABLE public.tasks ADD COLUMN description text`); applied to the linked
 project with `supabase db push`; regenerate `database.types.ts`.
 

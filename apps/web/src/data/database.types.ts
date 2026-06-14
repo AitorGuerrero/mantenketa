@@ -6,15 +6,19 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export interface Database {
+export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
   graphql_public: {
-    Tables: Record<never, never>
-    Views: Record<never, never>
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
     Functions: {
       graphql: {
         Args: {
@@ -26,8 +30,12 @@ export interface Database {
         Returns: Json
       }
     }
-    Enums: Record<never, never>
-    CompositeTypes: Record<never, never>
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -160,6 +168,7 @@ export interface Database {
           completed_at: string | null
           completed_by: string | null
           created_at: string
+          description: string | null
           id: string
           name: string
           nucleus_id: string | null
@@ -171,6 +180,7 @@ export interface Database {
           completed_at?: string | null
           completed_by?: string | null
           created_at: string
+          description?: string | null
           id: string
           name: string
           nucleus_id?: string | null
@@ -182,6 +192,7 @@ export interface Database {
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           name?: string
           nucleus_id?: string | null
@@ -214,15 +225,21 @@ export interface Database {
         ]
       }
     }
-    Views: Record<never, never>
+    Views: {
+      [_ in never]: never
+    }
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string }
       create_nucleus: { Args: { p_name: string }; Returns: string }
       leave_nucleus: { Args: never; Returns: undefined }
       my_nucleus_id: { Args: never; Returns: string }
     }
-    Enums: Record<never, never>
-    CompositeTypes: Record<never, never>
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
 }
 

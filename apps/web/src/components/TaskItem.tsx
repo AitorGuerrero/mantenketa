@@ -57,6 +57,9 @@ export function TaskBody({
         </time>
       )}
       {label !== null && <span className="task-state">{label}</span>}
+      {task.description !== null && task.description !== '' && (
+        <p className="task-description">{task.description}</p>
+      )}
     </>
   )
 }

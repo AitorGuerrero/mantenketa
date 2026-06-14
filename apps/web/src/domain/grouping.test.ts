@@ -20,6 +20,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     completedBy: null,
     ownerId: null,
     nucleusId: null,
+    description: null,
     createdAt: stamp,
     updatedAt: stamp,
     ...overrides,

@@ -16,12 +16,15 @@ export function isoDay(offset = 0): string {
 export async function createTask(
   page: Page,
   name: string,
-  opts: { date?: string; scope?: 'personal' | 'nucleus' } = {},
+  opts: { date?: string; scope?: 'personal' | 'nucleus'; description?: string } = {},
 ): Promise<void> {
   await page.getByRole('button', { name: 'Nueva tarea' }).click()
   await page.getByLabel('Nombre', { exact: true }).fill(name)
   if (opts.date !== undefined) {
     await page.getByLabel('Fecha (opcional)').fill(opts.date)
+  }
+  if (opts.description !== undefined) {
+    await page.getByLabel('Descripción (opcional)').fill(opts.description)
   }
   if (opts.scope === 'nucleus') {
     await page.getByRole('radio', { name: 'Del núcleo' }).check()

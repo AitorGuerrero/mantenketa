@@ -19,7 +19,7 @@ export interface NewTaskInput {
 
 ## Backend (migration)
 
-`supabase/migrations/0002_task_description.sql`:
+`supabase/migrations/20260614120000_task_description.sql`:
 
 ```sql
 alter table public.tasks add column description text;

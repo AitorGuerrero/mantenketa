@@ -25,7 +25,7 @@ All other fields and the validation of name/date/scope are unchanged.
 `description = null` on existing `tasks` rows so pre-existing tasks match the
 type. `createTask` writes `description` (null when none).
 
-## Postgres (`supabase/migrations/0002_task_description.sql`)
+## Postgres (`supabase/migrations/20260614120000_task_description.sql`)
 
 ```sql
 alter table public.tasks add column description text;

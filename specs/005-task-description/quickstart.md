@@ -5,7 +5,7 @@
 ## Apply the backend change
 
 ```bash
-supabase db push                                            # applies 0002_task_description.sql
+supabase db push                                            # applies 20260614120000_task_description.sql
 supabase gen types typescript --linked > apps/web/src/data/database.types.ts
 ```
 

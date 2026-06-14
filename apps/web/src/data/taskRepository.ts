@@ -65,6 +65,7 @@ export class DexieTaskRepository implements TaskRepository {
       // En anónimo ownerId queda null (modo local puro, FR-002)
       ownerId: getCurrentUserId(),
       nucleusId,
+      description: parsed.description,
       createdAt: now,
       updatedAt: now,
     }

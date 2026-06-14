@@ -91,6 +91,7 @@ async function flushOutbox(): Promise<void> {
             task_date: task.taskDate,
             completed_at: task.completedAt,
             completed_by: task.completedBy,
+            description: task.description,
             updated_at: task.updatedAt,
           })
           .eq('id', task.id)
