@@ -71,9 +71,7 @@ export function TaskDeck({ ya, memberName, onViewAsList }: TaskDeckProps) {
               <div
                 key={task.id}
                 className={
-                  peekOverdue
-                    ? 'task-card task-card-peek task-card--overdue'
-                    : 'task-card task-card-peek'
+                  peekOverdue ? 'task-card-peek task-card--overdue' : 'task-card-peek'
                 }
                 aria-hidden="true"
                 style={{
