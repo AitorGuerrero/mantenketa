@@ -1,7 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/005-task-description/plan.md`
+`specs/006-card-flip/plan.md`
 
 Stack: Vite + React + TypeScript PWA on Cloudflare Workers · local-first, data
 in browser IndexedDB via Dexie, synced to Supabase (Postgres+RLS, Auth via
