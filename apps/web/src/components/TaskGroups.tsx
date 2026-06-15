@@ -4,10 +4,11 @@
 import { useObservable } from 'dexie-react-hooks'
 import { useState } from 'react'
 
-import { observeNucleus } from '../data/nucleusService'
+import { observeGroups } from '../data/nucleusService'
 import { taskRepository } from '../data/taskRepository'
 import { todayIsoDate } from '../domain/date'
 import { groupTasks, type TaskInGroup } from '../domain/grouping'
+import type { Task } from '../domain/task'
 
 import { TaskDeck } from './TaskDeck'
 import { TaskItem } from './TaskItem'
@@ -18,10 +19,18 @@ interface GroupSectionProps {
   items: TaskInGroup[]
   emptyHint: string
   memberName: (userId: string) => string
+  scopeLabel: (task: Task) => string | null
   label: string
 }
 
-function GroupSection({ title, items, emptyHint, memberName, label }: GroupSectionProps) {
+function GroupSection({
+  title,
+  items,
+  emptyHint,
+  memberName,
+  scopeLabel,
+  label,
+}: GroupSectionProps) {
   return (
     <section className="task-group">
       <h2 className="task-group-title">{title}</h2>
@@ -34,6 +43,7 @@ function GroupSection({ title, items, emptyHint, memberName, label }: GroupSecti
               key={task.id}
               task={task}
               memberName={memberName}
+              scopeLabel={scopeLabel}
               overdue={isOverdue}
             />
           ))}
@@ -45,7 +55,7 @@ function GroupSection({ title, items, emptyHint, memberName, label }: GroupSecti
 
 export function TaskGroups() {
   const tasks = useObservable(() => taskRepository.observeTasks(), [])
-  const nucleus = useObservable(() => observeNucleus(), [])
+  const groups = useObservable(() => observeGroups(), [])
   const touch = useCoarsePointer()
   // El usuario puede forzar la vista de lista en táctil (como en escritorio)
   const [forceList, setForceList] = useState(false)
@@ -56,8 +66,24 @@ export function TaskGroups() {
 
   const { ya, pronto, hechas } = groupTasks(tasks, todayIsoDate())
 
-  const memberName = (userId: string): string =>
-    nucleus?.members.find((m) => m.userId === userId)?.displayName ?? 'otro miembro'
+  const myGroups = groups ?? []
+
+  const memberName = (userId: string): string => {
+    for (const group of myGroups) {
+      const member = group.members.find((m) => m.userId === userId)
+      if (member) return member.displayName
+    }
+    return 'otro miembro'
+  }
+
+  // Etiqueta de ámbito (FR-007): "Personal" o el nombre del grupo. Solo se
+  // muestra si perteneces a algún grupo; sin grupos todo es personal y la
+  // etiqueta sobra (FR-010).
+  const scopeLabel = (task: Task): string | null => {
+    if (myGroups.length === 0) return null
+    if (task.nucleusId === null) return 'Personal'
+    return myGroups.find((g) => g.id === task.nucleusId)?.name ?? 'Grupo'
+  }
 
   return (
     <div className="task-groups">
@@ -65,6 +91,7 @@ export function TaskGroups() {
         <TaskDeck
           ya={ya}
           memberName={memberName}
+          scopeLabel={scopeLabel}
           onViewAsList={() => {
             setForceList(true)
           }}
@@ -76,6 +103,7 @@ export function TaskGroups() {
             items={ya}
             emptyHint="Nada urgente ahora mismo"
             memberName={memberName}
+            scopeLabel={scopeLabel}
             label="Tareas para hacer ya"
           />
           {/* En táctil, ofrecer volver a la baraja (en escritorio no hay tarjetas) */}
@@ -97,6 +125,7 @@ export function TaskGroups() {
         items={pronto}
         emptyHint="No hay tareas programadas"
         memberName={memberName}
+        scopeLabel={scopeLabel}
         label="Tareas para hacer pronto"
       />
       <GroupSection
@@ -104,6 +133,7 @@ export function TaskGroups() {
         items={hechas}
         emptyHint="Todavía no has completado tareas"
         memberName={memberName}
+        scopeLabel={scopeLabel}
         label="Tareas hechas recientemente"
       />
     </div>

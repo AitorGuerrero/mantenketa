@@ -38,8 +38,8 @@ test.beforeAll(async ({ browser }) => {
   userA = await createTestUser(admin, 'us3-a')
   userB = await createTestUser(admin, 'us3-b')
 
-  // Núcleo de dos miembros, montado por la vía rápida (la UI ya la cubre T023)
-  const nucleus = await userA.client.rpc('create_nucleus', { p_name: NUCLEUS_NAME })
+  // Grupo de dos miembros, montado por la vía rápida (la UI ya la cubre)
+  const nucleus = await userA.client.rpc('create_group', { p_name: NUCLEUS_NAME })
   if (nucleus.error) throw new Error(nucleus.error.message)
   const invitation = await userA.client
     .from('invitations')
@@ -77,12 +77,14 @@ test('una tarea del núcleo creada por A aparece en B sin recargar (SC-003) y la
   await pageB.reload()
   await expect(pageB.getByText(userB.email)).toBeVisible()
 
-  // A crea una tarea personal (por defecto) y una del núcleo
+  // A crea una tarea personal (por defecto) y una del grupo
   await createTask(pageA, 'Solo mía', { date: isoDay(11) })
-  await createTask(pageA, 'Comprar bombillas', { date: isoDay(6), scope: 'nucleus' })
+  await createTask(pageA, 'Comprar bombillas', { date: isoDay(6), group: NUCLEUS_NAME })
 
-  // B la ve sin recargar, en ≤ 5 s (Realtime)
-  await expect(pageB.getByText('Comprar bombillas')).toBeVisible({ timeout: 5000 })
+  // B la ve sin recargar, en ≤ 5 s (Realtime), etiquetada con el nombre del grupo
+  const shared = pageB.getByRole('listitem').filter({ hasText: 'Comprar bombillas' })
+  await expect(shared).toBeVisible({ timeout: 5000 })
+  await expect(shared).toContainText(NUCLEUS_NAME)
 
   // La personal de A nunca aparece en B
   await expect(pageB.getByText('Solo mía')).toHaveCount(0)

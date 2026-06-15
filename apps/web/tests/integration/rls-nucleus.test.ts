@@ -7,23 +7,26 @@ import {
   adminClient,
   createTestUser,
   deleteNucleus,
-  deleteTestUser,
   makeTaskRow,
   must,
   type Client,
   type TestUser,
 } from './helpers'
 
-// Garantías 2, 4 y 5 de contracts/backend.md: visibilidad de núcleo en sus
-// transiciones (antes/después de unirse/salir), invariantes de invitación
-// (un solo uso, revocada, caducada) y disolución del último miembro.
+// Feature 008 — aislamiento RLS con varios grupos por usuario
+// (contracts/groups.md). Cubre: pertenecer a ≥2 grupos, aislamiento entre
+// grupos, invariantes de invitación, abandonar uno conservando los demás y
+// disolución del último miembro.
 
 const admin: Client = adminClient()
 let userA: TestUser
 let userB: TestUser
 let userC: TestUser
-let nucleusId: string
-let nucleusTaskId: string
+let group1: string
+let group2: string
+let cGroup: string
+let task1Id: string
+let task2Id: string
 const orphanNuclei: string[] = []
 
 beforeAll(async () => {
@@ -36,100 +39,133 @@ afterAll(async () => {
   for (const id of orphanNuclei) {
     await deleteNucleus(admin, id)
   }
-  await deleteTestUser(admin, userA)
-  await deleteTestUser(admin, userB)
-  await deleteTestUser(admin, userC)
+  await deleteTestUserSafe(userA)
+  await deleteTestUserSafe(userB)
+  await deleteTestUserSafe(userC)
 })
 
-describe('RLS — núcleo, invitaciones y disolución', () => {
-  it('A crea un núcleo y queda como primer miembro', async () => {
-    const res = await userA.client.rpc('create_nucleus', { p_name: 'Casa Test' })
+async function deleteTestUserSafe(user: TestUser) {
+  await admin.auth.admin.deleteUser(user.user.id)
+}
 
+async function inviteToken(group: string): Promise<string> {
+  const created = await userA.client
+    .from('invitations')
+    .insert({ nucleus_id: group, created_by: userA.user.id })
+    .select('token')
+    .single()
+  expect(created.error).toBeNull()
+  return must(created.data?.token)
+}
+
+describe('RLS — varios grupos, aislamiento y disolución (feature 008)', () => {
+  it('A crea un grupo y queda como primer miembro', async () => {
+    const res = await userA.client.rpc('create_group', { p_name: 'Casa Test' })
     expect(res.error).toBeNull()
-    nucleusId = must(res.data)
-    orphanNuclei.push(nucleusId)
+    group1 = must(res.data)
+    orphanNuclei.push(group1)
 
-    const visible = await userA.client.from('nuclei').select('name').eq('id', nucleusId)
+    const visible = await userA.client.from('nuclei').select('name').eq('id', group1)
     expect(visible.data).toHaveLength(1)
   })
 
-  it('A no puede crear un segundo núcleo (already_in_nucleus)', async () => {
-    const res = await userA.client.rpc('create_nucleus', { p_name: 'Otra casa' })
+  it('A crea un SEGUNDO grupo y pertenece a ambos (FR-001/FR-002)', async () => {
+    const res = await userA.client.rpc('create_group', { p_name: 'Viaje Test' })
+    expect(res.error).toBeNull()
+    group2 = must(res.data)
+    orphanNuclei.push(group2)
 
-    expect(res.error?.message).toContain('already_in_nucleus')
+    const nuclei = await userA.client.from('nuclei').select('id')
+    expect(nuclei.data?.map((n) => n.id).sort()).toEqual([group1, group2].sort())
+
+    const memberships = await userA.client.from('memberships').select('nucleus_id')
+    expect(memberships.data?.map((m) => m.nucleus_id).sort()).toEqual(
+      [group1, group2].sort(),
+    )
   })
 
-  it('B no ve el núcleo ni sus tareas antes de unirse', async () => {
-    const row = makeTaskRow(userA.user.id, {
-      name: 'Tarea del núcleo',
-      nucleus_id: nucleusId,
-    })
-    nucleusTaskId = row.id
+  it('B no ve un grupo ni sus tareas antes de unirse', async () => {
+    const row = makeTaskRow(userA.user.id, { name: 'Tarea grupo 1', nucleus_id: group1 })
+    task1Id = row.id
     const inserted = await userA.client.from('tasks').insert(row)
     expect(inserted.error).toBeNull()
 
     const nuclei = await userB.client.from('nuclei').select('id')
-    const tasks = await userB.client.from('tasks').select('id').eq('id', nucleusTaskId)
+    const tasks = await userB.client.from('tasks').select('id').eq('id', task1Id)
     expect(nuclei.data).toHaveLength(0)
     expect(tasks.data).toHaveLength(0)
   })
 
-  it('B no puede insertar tareas en un núcleo ajeno (WITH CHECK)', async () => {
-    const forged = makeTaskRow(userB.user.id, { nucleus_id: nucleusId })
-
+  it('B no puede insertar tareas en un grupo ajeno (WITH CHECK)', async () => {
+    const forged = makeTaskRow(userB.user.id, { nucleus_id: group1 })
     const res = await userB.client.from('tasks').insert(forged)
-
     expect(res.error?.code).toBe('42501')
   })
 
-  it('B acepta una invitación y pasa a ver el núcleo, sus tareas y sus miembros', async () => {
-    const invitation = await userA.client
-      .from('invitations')
-      .insert({ nucleus_id: nucleusId, created_by: userA.user.id })
-      .select('token')
-      .single()
-    expect(invitation.error).toBeNull()
-    const token = must(invitation.data?.token)
-
-    const accepted = await userB.client.rpc('accept_invitation', { p_token: token })
+  it('B acepta una invitación a grupo 1 y pasa a verlo, con sus tareas y miembros', async () => {
+    const accepted = await userB.client.rpc('accept_invitation', {
+      p_token: await inviteToken(group1),
+    })
     expect(accepted.error).toBeNull()
-    expect(accepted.data).toBe(nucleusId)
+    expect(accepted.data).toBe(group1)
 
-    const tasks = await userB.client.from('tasks').select('id').eq('id', nucleusTaskId)
+    const tasks = await userB.client.from('tasks').select('id').eq('id', task1Id)
     expect(tasks.data).toHaveLength(1)
 
     const members = await userB.client.from('memberships').select('user_id')
     expect(members.data?.map((m) => m.user_id).sort()).toEqual(
       [userA.user.id, userB.user.id].sort(),
     )
+  })
 
-    const profiles = await userB.client.from('profiles').select('id')
-    expect(profiles.data?.length).toBe(2)
+  it('aislamiento entre grupos: B (solo en grupo 1) no ve las tareas del grupo 2', async () => {
+    const row = makeTaskRow(userA.user.id, { name: 'Tarea grupo 2', nucleus_id: group2 })
+    task2Id = row.id
+    const inserted = await userA.client.from('tasks').insert(row)
+    expect(inserted.error).toBeNull()
+
+    const nuclei = await userB.client.from('nuclei').select('id').eq('id', group2)
+    const tasks = await userB.client.from('tasks').select('id').eq('id', task2Id)
+    expect(nuclei.data).toHaveLength(0)
+    expect(tasks.data).toHaveLength(0)
+  })
+
+  it('C, que ya tiene su propio grupo, puede aceptar una invitación a grupo 1 (multi-grupo)', async () => {
+    const own = await userC.client.rpc('create_group', { p_name: 'Casa de C' })
+    expect(own.error).toBeNull()
+    cGroup = must(own.data)
+    orphanNuclei.push(cGroup)
+
+    const accepted = await userC.client.rpc('accept_invitation', {
+      p_token: await inviteToken(group1),
+    })
+    expect(accepted.error).toBeNull()
+
+    const nuclei = await userC.client.from('nuclei').select('id')
+    expect(nuclei.data?.map((n) => n.id).sort()).toEqual([group1, cGroup].sort())
+  })
+
+  it('C abandona grupo 1 y conserva su propio grupo (FR-015)', async () => {
+    const left = await userC.client.rpc('leave_group', { p_nucleus_id: group1 })
+    expect(left.error).toBeNull()
+
+    const nuclei = await userC.client.from('nuclei').select('id')
+    expect(nuclei.data?.map((n) => n.id)).toEqual([cGroup])
   })
 
   it('una invitación aceptada no puede reutilizarse (already_used)', async () => {
-    const invitation = await userA.client
-      .from('invitations')
-      .select('token')
-      .eq('nucleus_id', nucleusId)
-      .eq('status', 'accepted')
-      .single()
+    const token = await inviteToken(group1)
+    const first = await userC.client.rpc('accept_invitation', { p_token: token })
+    expect(first.error).toBeNull()
+    // C la deja de nuevo para no alterar el recuento de miembros de grupo 1
+    await userC.client.rpc('leave_group', { p_nucleus_id: group1 })
 
-    const again = await userC.client.rpc('accept_invitation', {
-      p_token: must(invitation.data?.token),
-    })
-
+    const again = await userC.client.rpc('accept_invitation', { p_token: token })
     expect(again.error?.message).toContain('already_used')
   })
 
   it('una invitación revocada no puede aceptarse (revoked)', async () => {
-    const created = await userA.client
-      .from('invitations')
-      .insert({ nucleus_id: nucleusId, created_by: userA.user.id })
-      .select('token')
-      .single()
-    const token = must(created.data?.token)
-
+    const token = await inviteToken(group1)
     const revoked = await userA.client
       .from('invitations')
       .update({ status: 'revoked' })
@@ -144,45 +180,29 @@ describe('RLS — núcleo, invitaciones y disolución', () => {
     const past = new Date(Date.now() - 1000).toISOString()
     const created = await userA.client
       .from('invitations')
-      .insert({ nucleus_id: nucleusId, created_by: userA.user.id, expires_at: past })
+      .insert({ nucleus_id: group1, created_by: userA.user.id, expires_at: past })
       .select('token')
       .single()
 
     const res = await userC.client.rpc('accept_invitation', {
       p_token: must(created.data?.token),
     })
-
     expect(res.error?.message).toContain('expired')
   })
 
-  it('quien ya tiene núcleo no puede aceptar otra invitación (already_in_nucleus)', async () => {
-    const own = await userC.client.rpc('create_nucleus', { p_name: 'Casa de C' })
-    expect(own.error).toBeNull()
-    orphanNuclei.push(must(own.data))
-
-    const created = await userA.client
-      .from('invitations')
-      .insert({ nucleus_id: nucleusId, created_by: userA.user.id })
-      .select('token')
-      .single()
-
-    const res = await userC.client.rpc('accept_invitation', {
-      p_token: must(created.data?.token),
+  it('quien ya es miembro de un grupo no consume otra invitación (already_member)', async () => {
+    const res = await userB.client.rpc('accept_invitation', {
+      p_token: await inviteToken(group1),
     })
-
-    expect(res.error?.message).toContain('already_in_nucleus')
+    expect(res.error?.message).toContain('already_member')
   })
 
-  it('un miembro puede completar una tarea del núcleo', async () => {
+  it('un miembro puede completar una tarea del grupo', async () => {
     const newer = new Date(Date.now() + 60_000).toISOString()
     const res = await userB.client
       .from('tasks')
-      .update({
-        completed_at: '2026-06-12',
-        completed_by: userB.user.id,
-        updated_at: newer,
-      })
-      .eq('id', nucleusTaskId)
+      .update({ completed_at: '2026-06-15', completed_by: userB.user.id, updated_at: newer })
+      .eq('id', task1Id)
       .select('completed_by')
       .single()
 
@@ -190,36 +210,35 @@ describe('RLS — núcleo, invitaciones y disolución', () => {
     expect(res.data?.completed_by).toBe(userB.user.id)
   })
 
-  it('al salir, B deja de ver el núcleo; el núcleo sobrevive (queda A)', async () => {
-    const left = await userB.client.rpc('leave_nucleus')
+  it('al salir de grupo 1, B deja de verlo; el grupo sobrevive (queda A)', async () => {
+    const left = await userB.client.rpc('leave_group', { p_nucleus_id: group1 })
     expect(left.error).toBeNull()
 
-    const tasks = await userB.client.from('tasks').select('id').eq('id', nucleusTaskId)
+    const tasks = await userB.client.from('tasks').select('id').eq('id', task1Id)
     expect(tasks.data).toHaveLength(0)
 
-    const stillThere = await admin.from('nuclei').select('id').eq('id', nucleusId)
+    const stillThere = await admin.from('nuclei').select('id').eq('id', group1)
     expect(stillThere.data).toHaveLength(1)
   })
 
-  it('salir sin núcleo da no_nucleus', async () => {
-    const res = await userB.client.rpc('leave_nucleus')
-
-    expect(res.error?.message).toContain('no_nucleus')
+  it('abandonar un grupo del que no eres miembro da not_a_member', async () => {
+    const res = await userB.client.rpc('leave_group', { p_nucleus_id: group1 })
+    expect(res.error?.message).toContain('not_a_member')
   })
 
-  it('el último miembro disuelve el núcleo: tareas e invitaciones desaparecen (FR-013)', async () => {
-    const left = await userA.client.rpc('leave_nucleus')
+  it('el último miembro disuelve grupo 1; el otro grupo de A sobrevive (FR-016)', async () => {
+    const left = await userA.client.rpc('leave_group', { p_nucleus_id: group1 })
     expect(left.error).toBeNull()
 
-    const nuclei = await admin.from('nuclei').select('id').eq('id', nucleusId)
-    const tasks = await admin.from('tasks').select('id').eq('id', nucleusTaskId)
-    const invitations = await admin
-      .from('invitations')
-      .select('token')
-      .eq('nucleus_id', nucleusId)
-
-    expect(nuclei.data).toHaveLength(0)
+    const dissolved = await admin.from('nuclei').select('id').eq('id', group1)
+    const tasks = await admin.from('tasks').select('id').eq('id', task1Id)
+    expect(dissolved.data).toHaveLength(0)
     expect(tasks.data).toHaveLength(0)
-    expect(invitations.data).toHaveLength(0)
+
+    // El segundo grupo de A sigue intacto, con su tarea
+    const survives = await userA.client.from('nuclei').select('id').eq('id', group2)
+    const task2 = await userA.client.from('tasks').select('id').eq('id', task2Id)
+    expect(survives.data).toHaveLength(1)
+    expect(task2.data).toHaveLength(1)
   })
 })

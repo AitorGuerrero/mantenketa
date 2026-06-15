@@ -31,22 +31,27 @@ function stateLabel(task: Task, memberName: (userId: string) => string): string 
 export function TaskBody({
   task,
   memberName,
+  scopeLabel,
   overdue = false,
   showDescription = true,
 }: {
   task: Task
   memberName: (userId: string) => string
+  // Etiqueta de ámbito (feature 008): "Personal" o el nombre del grupo; null ⇒
+  // no mostrar (p. ej. el usuario no pertenece a ningún grupo)
+  scopeLabel?: ((task: Task) => string | null) | undefined
   overdue?: boolean
   // En la baraja la descripción va en el dorso (volteo), no en la cara frontal
   showDescription?: boolean
 }) {
   const label = stateLabel(task, memberName)
+  const scope = scopeLabel?.(task) ?? null
   return (
     <>
       <span className="task-name">
         {task.urgent && <span className="task-badge task-badge--urgent">Urgente</span>}
         {task.name}
-        {task.nucleusId !== null && <span className="task-badge">Núcleo</span>}
+        {scope !== null && <span className="task-badge">{scope}</span>}
       </span>
       {task.taskDate === null ? (
         <span className="task-date task-date--now">Hacer ya</span>
@@ -71,10 +76,11 @@ export function TaskBody({
 interface TaskItemProps {
   task: Task
   memberName: (userId: string) => string
+  scopeLabel?: (task: Task) => string | null
   overdue?: boolean
 }
 
-export function TaskItem({ task, memberName, overdue = false }: TaskItemProps) {
+export function TaskItem({ task, memberName, scopeLabel, overdue = false }: TaskItemProps) {
   const done = isDone(task)
 
   function handleToggle() {
@@ -96,7 +102,12 @@ export function TaskItem({ task, memberName, overdue = false }: TaskItemProps) {
         title={done ? 'Devolver a pendiente' : 'Marcar como hecha'}
         onChange={handleToggle}
       />
-      <TaskBody task={task} memberName={memberName} overdue={overdue} />
+      <TaskBody
+        task={task}
+        memberName={memberName}
+        scopeLabel={scopeLabel}
+        overdue={overdue}
+      />
     </li>
   )
 }

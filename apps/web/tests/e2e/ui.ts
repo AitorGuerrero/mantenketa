@@ -18,7 +18,8 @@ export async function createTask(
   name: string,
   opts: {
     date?: string
-    scope?: 'personal' | 'nucleus'
+    // Nombre del grupo a elegir en el selector de ámbito; ausente ⇒ Personal
+    group?: string
     description?: string
     urgent?: boolean
   } = {},
@@ -34,8 +35,8 @@ export async function createTask(
   if (opts.urgent === true) {
     await page.getByRole('checkbox', { name: 'Urgente', exact: true }).check()
   }
-  if (opts.scope === 'nucleus') {
-    await page.getByRole('radio', { name: 'Del núcleo' }).check()
+  if (opts.group !== undefined) {
+    await page.getByLabel('Ámbito').selectOption({ label: opts.group })
   }
   await page.getByRole('button', { name: 'Añadir tarea' }).click()
   // Al guardar con éxito el formulario se cierra y reaparece el botón

@@ -32,9 +32,6 @@ export const TaskSchema = z.object({
 
 export type Task = z.infer<typeof TaskSchema>
 
-export const TaskScopeSchema = z.enum(['personal', 'nucleus'])
-export type TaskScope = z.infer<typeof TaskScopeSchema>
-
 export const NewTaskInputSchema = z.object({
   name: TaskSchema.shape.name,
   // La fecha es opcional: ausente o vacía se normaliza a null ("hacer ya")
@@ -42,8 +39,13 @@ export const NewTaskInputSchema = z.object({
     (value) => (value === '' || value === undefined ? null : value),
     TaskSchema.shape.taskDate,
   ),
-  // Ámbito (FR-014): personal por defecto; 'nucleus' solo con núcleo activo
-  scope: TaskScopeSchema.default('personal'),
+  // Ámbito (FR-008, feature 008): null ⇒ personal (por defecto); en otro caso,
+  // el id del grupo elegido. La UI solo ofrece grupos a los que perteneces y
+  // RLS lo refuerza en el backend.
+  nucleusId: z.preprocess(
+    (value) => (value === undefined ? null : value),
+    z.string().nullable(),
+  ),
   // Descripción opcional: se recorta; vacía o solo espacios ⇒ null; el texto
   // interno (saltos de línea) se conserva (FR-005, FR-006)
   description: z.preprocess((value) => {
@@ -59,12 +61,13 @@ export const NewTaskInputSchema = z.object({
 export interface NewTaskInput {
   name: string
   taskDate?: string | null
-  scope?: TaskScope
+  // null o ausente ⇒ personal; en otro caso, id del grupo elegido (feature 008)
+  nucleusId?: string | null
   description?: string | null
   urgent?: boolean
 }
 
-/** Entrada normalizada por parseNewTask (fecha → null, scope con defecto). */
+/** Entrada normalizada por parseNewTask (fecha → null, nucleusId con defecto). */
 export type ParsedNewTask = z.infer<typeof NewTaskInputSchema>
 
 export class ValidationError extends Error {

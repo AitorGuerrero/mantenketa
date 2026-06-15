@@ -6,19 +6,20 @@ import { useState } from 'react'
 
 import { observeSession } from '../auth/authService'
 import {
+  createGroup,
   createInvitation,
-  createNucleus,
-  leaveNucleus,
-  observeNucleus,
+  leaveGroup,
+  observeGroups,
   OfflineError,
   revokeInvitation,
+  type GroupView,
   type PendingInvitation,
 } from '../data/nucleusService'
 import { supabaseEnabled } from '../data/supabaseClient'
 
 function errorMessage(cause: unknown): string {
   if (cause instanceof OfflineError) {
-    return 'Estás sin conexión: las acciones del núcleo necesitan red'
+    return 'Estás sin conexión: las acciones de grupo necesitan red'
   }
   return 'No se pudo completar la acción; inténtalo de nuevo'
 }
@@ -30,35 +31,43 @@ function formatDay(iso: string): string {
   })
 }
 
-export function NucleusPanel() {
+/** Invitación recién generada, junto al grupo al que pertenece. */
+interface ActiveInvitation {
+  groupId: string
+  invitation: PendingInvitation
+}
+
+export function GroupsPanel() {
   const session = useObservable(() => observeSession(), [])
-  const nucleus = useObservable(() => observeNucleus(), [])
+  const groups = useObservable(() => observeGroups(), [])
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [lastInvitation, setLastInvitation] = useState<PendingInvitation | null>(null)
+  const [active, setActive] = useState<ActiveInvitation | null>(null)
   const [copied, setCopied] = useState(false)
 
   if (!supabaseEnabled || !session) return null
 
+  const myGroups = groups ?? []
+
   async function handleCreate() {
     setError(null)
     if (name.trim() === '') {
-      setError('El núcleo necesita un nombre')
+      setError('El grupo necesita un nombre')
       return
     }
     try {
-      await createNucleus(name.trim())
+      await createGroup(name.trim())
       setName('')
     } catch (cause) {
       setError(errorMessage(cause))
     }
   }
 
-  async function handleInvite() {
+  async function handleInvite(groupId: string) {
     setError(null)
     setCopied(false)
     try {
-      setLastInvitation(await createInvitation())
+      setActive({ groupId, invitation: await createInvitation(groupId) })
     } catch (cause) {
       setError(errorMessage(cause))
     }
@@ -68,23 +77,22 @@ export function NucleusPanel() {
     setError(null)
     try {
       await revokeInvitation(token)
-      if (lastInvitation?.token === token) setLastInvitation(null)
+      if (active?.invitation.token === token) setActive(null)
     } catch (cause) {
       setError(errorMessage(cause))
     }
   }
 
-  async function handleLeave() {
-    if (!nucleus) return
+  async function handleLeave(group: GroupView) {
     setError(null)
-    const lastMember = nucleus.members.length === 1
+    const lastMember = group.members.length === 1
     const warning = lastMember
-      ? `Eres el último miembro: «${nucleus.name}» se disolverá y sus tareas compartidas se borrarán. ¿Abandonar el núcleo?`
-      : `Dejarás de ver las tareas de «${nucleus.name}». Tus tareas personales no se ven afectadas. ¿Abandonar el núcleo?`
+      ? `Eres el último miembro: «${group.name}» se disolverá y sus tareas compartidas se borrarán. ¿Abandonar el grupo?`
+      : `Dejarás de ver las tareas de «${group.name}». Tus tareas personales y tus otros grupos no se ven afectados. ¿Abandonar el grupo?`
     if (!window.confirm(warning)) return
     try {
-      await leaveNucleus()
-      setLastInvitation(null)
+      await leaveGroup(group.id)
+      if (active?.groupId === group.id) setActive(null)
     } catch (cause) {
       setError(errorMessage(cause))
     }
@@ -96,43 +104,42 @@ export function NucleusPanel() {
   }
 
   return (
-    <section className="nucleus-panel" aria-label="Núcleo familiar">
-      <h2>Núcleo familiar</h2>
+    <section className="groups-panel" aria-label="Grupos">
+      <h2>Grupos</h2>
 
-      {nucleus === null && (
-        <div className="nucleus-create">
-          <p className="nucleus-hint">
-            Crea un núcleo para compartir tareas con tu familia.
-          </p>
-          <div className="form-field">
-            <label htmlFor="nucleus-name">Nombre del núcleo</label>
-            <input
-              id="nucleus-name"
-              type="text"
-              value={name}
-              placeholder="Casa Guerrero"
-              onChange={(event) => {
-                setName(event.target.value)
-              }}
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              void handleCreate()
+      <div className="group-create">
+        <p className="group-hint">
+          Crea un grupo para compartir tareas (casa, viaje, trabajo…). Puedes
+          pertenecer a varios a la vez.
+        </p>
+        <div className="form-field">
+          <label htmlFor="group-name">Nombre del grupo</label>
+          <input
+            id="group-name"
+            type="text"
+            value={name}
+            placeholder="Casa Guerrero"
+            onChange={(event) => {
+              setName(event.target.value)
             }}
-          >
-            Crear núcleo
-          </button>
+          />
         </div>
-      )}
+        <button
+          type="button"
+          onClick={() => {
+            void handleCreate()
+          }}
+        >
+          Crear grupo
+        </button>
+      </div>
 
-      {nucleus != null && (
-        <div className="nucleus-info">
-          <h3 className="nucleus-name">{nucleus.name}</h3>
+      {myGroups.map((group) => (
+        <article key={group.id} className="group-info" aria-label={group.name}>
+          <h3 className="group-name">{group.name}</h3>
 
-          <ul className="nucleus-members" aria-label="Miembros del núcleo">
-            {nucleus.members.map((member) => (
+          <ul className="group-members" aria-label={`Miembros de ${group.name}`}>
+            {group.members.map((member) => (
               <li key={member.userId}>
                 {member.displayName}
                 <span className="member-since"> · desde el {formatDay(member.since)}</span>
@@ -140,11 +147,11 @@ export function NucleusPanel() {
             ))}
           </ul>
 
-          <div className="nucleus-actions">
+          <div className="group-actions">
             <button
               type="button"
               onClick={() => {
-                void handleInvite()
+                void handleInvite(group.id)
               }}
             >
               Generar invitación
@@ -153,38 +160,44 @@ export function NucleusPanel() {
               type="button"
               className="button-danger"
               onClick={() => {
-                void handleLeave()
+                void handleLeave(group)
               }}
             >
-              Abandonar el núcleo
+              Abandonar el grupo
             </button>
           </div>
 
-          {lastInvitation && (
+          {active?.groupId === group.id && (
             <div className="invitation-share">
-              <label htmlFor="invitation-url">Enlace de invitación</label>
+              <label htmlFor={`invitation-url-${group.id}`}>Enlace de invitación</label>
               <div className="invitation-row">
-                <input id="invitation-url" type="text" readOnly value={lastInvitation.url} />
+                <input
+                  id={`invitation-url-${group.id}`}
+                  type="text"
+                  readOnly
+                  value={active.invitation.url}
+                />
                 <button
                   type="button"
                   onClick={() => {
-                    void handleCopy(lastInvitation.url)
+                    void handleCopy(active.invitation.url)
                   }}
                 >
                   {copied ? 'Copiado' : 'Copiar enlace'}
                 </button>
               </div>
-              <p className="nucleus-hint">
-                Caduca el {formatDay(lastInvitation.expiresAt)} y solo puede usarse una vez.
+              <p className="group-hint">
+                Caduca el {formatDay(active.invitation.expiresAt)} y solo puede usarse
+                una vez.
               </p>
             </div>
           )}
 
-          {nucleus.pendingInvitations.length > 0 && (
+          {group.pendingInvitations.length > 0 && (
             <div className="pending-invitations">
               <h4>Invitaciones pendientes</h4>
-              <ul aria-label="Invitaciones pendientes">
-                {nucleus.pendingInvitations.map((inv) => (
+              <ul aria-label={`Invitaciones pendientes de ${group.name}`}>
+                {group.pendingInvitations.map((inv) => (
                   <li key={inv.token}>
                     <span>
                       De {inv.createdBy} · caduca el {formatDay(inv.expiresAt)}
@@ -203,8 +216,8 @@ export function NucleusPanel() {
               </ul>
             </div>
           )}
-        </div>
-      )}
+        </article>
+      ))}
 
       {error !== null && (
         <p className="form-error" role="alert">

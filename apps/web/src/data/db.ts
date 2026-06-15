@@ -82,3 +82,16 @@ db.version(4)
         row.urgent ??= false
       })
   })
+
+// Feature 008: múltiples grupos. La caché pasa de un único núcleo ('nucleus')
+// a una lista de grupos ('groups'); se descarta la entrada antigua, que
+// refreshGroups() reconstruye. Sin cambios en el store de tareas.
+db.version(5)
+  .stores({
+    tasks: 'id, taskDate, completedAt, createdAt, updatedAt, nucleusId',
+    outbox: '++seq, taskId',
+    meta: 'key',
+  })
+  .upgrade(async (tx) => {
+    await tx.table<MetaEntry, string>('meta').delete('nucleus')
+  })
