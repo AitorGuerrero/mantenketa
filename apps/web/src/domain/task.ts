@@ -10,6 +10,18 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
  * Feature 002: ownerId (null solo en modo anónimo), nucleusId (null ⇒
  * personal), completedBy y updatedAt (reloj LWW, lo sella cada escritura).
  */
+// Recurrencia (feature 009): patrón simple frecuencia + "cada N" + ancla.
+// null en la tarea ⇒ tarea única (no recurrente).
+export const RecurrenceSchema = z.object({
+  freq: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
+  interval: z.number().int().min(1),
+  // 'completion' ⇒ próxima fecha desde la finalización (por defecto; admite
+  // tareas sin fecha); 'dueDate' ⇒ desde la fecha prevista (exige fecha).
+  anchor: z.enum(['completion', 'dueDate']),
+})
+
+export type Recurrence = z.infer<typeof RecurrenceSchema>
+
 export const TaskSchema = z.object({
   id: z.uuid(),
   name: z
@@ -26,6 +38,10 @@ export const TaskSchema = z.object({
   description: z.string().nullable(),
   // Urgente (feature 007): adelanta en "Para hacer ya" y se marca claramente
   urgent: z.boolean(),
+  // Recurrencia (feature 009): null ⇒ tarea única
+  recurrence: RecurrenceSchema.nullable(),
+  // Serie a la que pertenece la instancia (feature 009); null ⇒ no recurrente
+  seriesId: z.string().nullable(),
   createdAt: z.string().min(1),
   updatedAt: z.string().min(1),
 })
@@ -55,6 +71,20 @@ export const NewTaskInputSchema = z.object({
   }, z.string().nullable()),
   // Urgente (FR-001): ausente ⇒ false
   urgent: z.boolean().default(false),
+  // Recurrencia (feature 009): ausente ⇒ null (tarea única)
+  recurrence: z.preprocess(
+    (value) => (value === undefined ? null : value),
+    RecurrenceSchema.nullable(),
+  ),
+}).superRefine((input, ctx) => {
+  // Ancla "fecha prevista" exige fecha (FR-002)
+  if (input.recurrence?.anchor === 'dueDate' && input.taskDate === null) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'La repetición desde la fecha prevista necesita una fecha',
+      path: ['recurrence'],
+    })
+  }
 })
 
 /** Entrada tal y como la construye la UI (campos opcionales sin normalizar). */
@@ -65,6 +95,8 @@ export interface NewTaskInput {
   nucleusId?: string | null
   description?: string | null
   urgent?: boolean
+  // null o ausente ⇒ tarea única; en otro caso, patrón de recurrencia (feature 009)
+  recurrence?: Recurrence | null
 }
 
 /** Entrada normalizada por parseNewTask (fecha → null, nucleusId con defecto). */

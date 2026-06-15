@@ -7,6 +7,7 @@ import { getCurrentUserId } from '../auth/sessionStore'
 import { markDone as toDone, revert as toOutstanding } from '../domain/completion'
 import { todayIsoDate } from '../domain/date'
 import { sortTasks } from '../domain/ordering'
+import { nextOccurrenceDate, successorId } from '../domain/recurrence'
 import { parseNewTask, type NewTaskInput, type Task } from '../domain/task'
 
 import { db } from './db'
@@ -42,6 +43,17 @@ export interface TaskRepository {
    * Idempotente: sin efecto si ya está pendiente.
    */
   revert(taskId: string): Promise<Task>
+
+  /**
+   * Salta la ocurrencia actual de una serie recurrente sin completarla
+   * (feature 009, FR-008): adelanta la fecha al siguiente intervalo.
+   */
+  skipOccurrence(taskId: string): Promise<Task>
+
+  /**
+   * Deja de repetir una serie (feature 009, FR-009): la tarea pasa a única.
+   */
+  stopRecurrence(taskId: string): Promise<Task>
 }
 
 export class DexieTaskRepository implements TaskRepository {
@@ -65,6 +77,9 @@ export class DexieTaskRepository implements TaskRepository {
       nucleusId: parsed.nucleusId,
       description: parsed.description,
       urgent: parsed.urgent,
+      // Recurrencia (feature 009): la raíz estrena su propia serie
+      recurrence: parsed.recurrence,
+      seriesId: parsed.recurrence !== null ? crypto.randomUUID() : null,
       createdAt: now,
       updatedAt: now,
     }
@@ -76,44 +91,140 @@ export class DexieTaskRepository implements TaskRepository {
     return task
   }
 
-  markDone(taskId: string): Promise<Task> {
-    return this.transition(taskId, (task) => {
-      const done = toDone(task, todayIsoDate())
-      if (done === task) return task
-      // Quién la completó (FR-016) — null en modo anónimo
-      return { ...done, completedBy: getCurrentUserId() }
-    })
-  }
-
-  revert(taskId: string): Promise<Task> {
-    return this.transition(taskId, (task) => {
-      const outstanding = toOutstanding(task)
-      if (outstanding === task) return task
-      return { ...outstanding, completedBy: null }
-    })
-  }
-
-  private async transition(
-    taskId: string,
-    apply: (task: Task) => Task,
-  ): Promise<Task> {
+  async markDone(taskId: string): Promise<Task> {
+    const today = todayIsoDate()
     const result = await db.transaction('rw', db.tasks, db.outbox, async () => {
       const existing = await db.tasks.get(taskId)
       if (!existing) {
         throw new Error(`Tarea no encontrada: ${taskId}`)
       }
-      const updated = apply(existing)
-      if (updated === existing) {
-        return existing
+      const done = toDone(existing, today)
+      if (done === existing) return existing // idempotente: no genera sucesor
+      // Quién la completó (FR-016) — null en modo anónimo
+      const stamped: Task = {
+        ...done,
+        completedBy: getCurrentUserId(),
+        updatedAt: new Date().toISOString(),
       }
-      // Toda escritura sella el reloj LWW (contrato de sync, feature 002)
-      const stamped: Task = { ...updated, updatedAt: new Date().toISOString() }
+      await db.tasks.put(stamped)
+      await this.enqueuePush(stamped)
+      await this.spawnSuccessor(stamped, today)
+      return stamped
+    })
+    scheduleFlush()
+    return result
+  }
+
+  async revert(taskId: string): Promise<Task> {
+    const result = await db.transaction('rw', db.tasks, db.outbox, async () => {
+      const existing = await db.tasks.get(taskId)
+      if (!existing) {
+        throw new Error(`Tarea no encontrada: ${taskId}`)
+      }
+      const outstanding = toOutstanding(existing)
+      if (outstanding === existing) return existing
+      const completedDay = existing.completedAt
+      const stamped: Task = {
+        ...outstanding,
+        completedBy: null,
+        updatedAt: new Date().toISOString(),
+      }
+      await db.tasks.put(stamped)
+      await this.enqueuePush(stamped)
+      // Quitar el sucesor recién generado si sigue pendiente e intacto (FR-008b).
+      // Nota: solo local; el sync actual no propaga borrados (sin tombstones),
+      // así que tiene efecto sobre todo en el flujo offline (caso común).
+      if (stamped.recurrence != null && stamped.seriesId != null && completedDay !== null) {
+        const base =
+          stamped.recurrence.anchor === 'dueDate' && stamped.taskDate !== null
+            ? stamped.taskDate
+            : completedDay
+        const succId = successorId(stamped.seriesId, nextOccurrenceDate(base, stamped.recurrence))
+        const succ = await db.tasks.get(succId)
+        if (succ?.completedAt === null) {
+          await db.tasks.delete(succId)
+        }
+      }
+      return stamped
+    })
+    scheduleFlush()
+    return result
+  }
+
+  async skipOccurrence(taskId: string): Promise<Task> {
+    const today = todayIsoDate()
+    const result = await db.transaction('rw', db.tasks, db.outbox, async () => {
+      const existing = await db.tasks.get(taskId)
+      if (!existing) {
+        throw new Error(`Tarea no encontrada: ${taskId}`)
+      }
+      if (existing.recurrence == null) return existing
+      // Base del salto: hoy si se ancla a finalización (no se completó);
+      // la fecha prevista si se ancla a ella (FR-008)
+      const base =
+        existing.recurrence.anchor === 'dueDate' && existing.taskDate !== null
+          ? existing.taskDate
+          : today
+      const next = nextOccurrenceDate(base, existing.recurrence)
+      const stamped: Task = {
+        ...existing,
+        taskDate: next,
+        updatedAt: new Date().toISOString(),
+      }
       await db.tasks.put(stamped)
       await this.enqueuePush(stamped)
       return stamped
     })
     scheduleFlush()
     return result
+  }
+
+  async stopRecurrence(taskId: string): Promise<Task> {
+    const result = await db.transaction('rw', db.tasks, db.outbox, async () => {
+      const existing = await db.tasks.get(taskId)
+      if (!existing) {
+        throw new Error(`Tarea no encontrada: ${taskId}`)
+      }
+      if (existing.recurrence == null) return existing
+      const stamped: Task = {
+        ...existing,
+        recurrence: null,
+        updatedAt: new Date().toISOString(),
+      }
+      await db.tasks.put(stamped)
+      await this.enqueuePush(stamped)
+      return stamped
+    })
+    scheduleFlush()
+    return result
+  }
+
+  /**
+   * Materializa la siguiente instancia de una serie recurrente (FR-006). Id
+   * determinista (serie + próxima fecha) para que dos dispositivos converjan
+   * a una sola fila (FR-007). Idempotente: no duplica si ya existe.
+   */
+  private async spawnSuccessor(completed: Task, today: string): Promise<void> {
+    if (completed.recurrence == null || completed.seriesId == null) return
+    const base =
+      completed.recurrence.anchor === 'dueDate' && completed.taskDate !== null
+        ? completed.taskDate
+        : today
+    const next = nextOccurrenceDate(base, completed.recurrence)
+    const id = successorId(completed.seriesId, next)
+    if (await db.tasks.get(id)) return
+    const now = new Date().toISOString()
+    const successor: Task = {
+      ...completed,
+      id,
+      taskDate: next,
+      completedAt: null,
+      completedBy: null,
+      createdAt: now,
+      updatedAt: now,
+    }
+    await db.tasks.add(successor)
+    await this.enqueuePush(successor)
   }
 
   /** Encola el push si la tarea tiene dueño (con sesión); anónimo no sube. */

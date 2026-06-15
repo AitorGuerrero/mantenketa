@@ -95,3 +95,21 @@ db.version(5)
   .upgrade(async (tx) => {
     await tx.table<MetaEntry, string>('meta').delete('nucleus')
   })
+
+// Feature 009: recurrencia (sin índice; backfill a null)
+db.version(6)
+  .stores({
+    tasks: 'id, taskDate, completedAt, createdAt, updatedAt, nucleusId',
+    outbox: '++seq, taskId',
+    meta: 'key',
+  })
+  .upgrade(async (tx) => {
+    await tx
+      .table<Task, string>('tasks')
+      .toCollection()
+      .modify((task) => {
+        const row = task as Partial<Task>
+        row.recurrence ??= null
+        row.seriesId ??= null
+      })
+  })

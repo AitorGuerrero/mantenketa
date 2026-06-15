@@ -173,6 +173,8 @@ export type Database = {
           name: string
           nucleus_id: string | null
           owner_id: string
+          recurrence: Json | null
+          series_id: string | null
           task_date: string | null
           updated_at: string
           urgent: boolean
@@ -186,6 +188,8 @@ export type Database = {
           name: string
           nucleus_id?: string | null
           owner_id: string
+          recurrence?: Json | null
+          series_id?: string | null
           task_date?: string | null
           updated_at: string
           urgent?: boolean
@@ -199,6 +203,8 @@ export type Database = {
           name?: string
           nucleus_id?: string | null
           owner_id?: string
+          recurrence?: Json | null
+          series_id?: string | null
           task_date?: string | null
           updated_at?: string
           urgent?: boolean
