@@ -44,6 +44,7 @@ export function TaskBody({
   return (
     <>
       <span className="task-name">
+        {task.urgent && <span className="task-badge task-badge--urgent">Urgente</span>}
         {task.name}
         {task.nucleusId !== null && <span className="task-badge">Núcleo</span>}
       </span>
@@ -83,6 +84,7 @@ export function TaskItem({ task, memberName, overdue = false }: TaskItemProps) {
   const classes = ['task-item']
   if (done) classes.push('task-item--done')
   if (overdue) classes.push('task-item--overdue')
+  if (task.urgent) classes.push('task-item--urgent')
 
   return (
     <li className={classes.join(' ')}>

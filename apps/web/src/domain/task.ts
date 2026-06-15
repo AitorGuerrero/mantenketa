@@ -24,6 +24,8 @@ export const TaskSchema = z.object({
   nucleusId: z.string().nullable(),
   // Descripción opcional (texto libre multilínea); null ⇒ sin descripción
   description: z.string().nullable(),
+  // Urgente (feature 007): adelanta en "Para hacer ya" y se marca claramente
+  urgent: z.boolean(),
   createdAt: z.string().min(1),
   updatedAt: z.string().min(1),
 })
@@ -49,6 +51,8 @@ export const NewTaskInputSchema = z.object({
     const trimmed = value.trim()
     return trimmed === '' ? null : trimmed
   }, z.string().nullable()),
+  // Urgente (FR-001): ausente ⇒ false
+  urgent: z.boolean().default(false),
 })
 
 /** Entrada tal y como la construye la UI (campos opcionales sin normalizar). */
@@ -57,6 +61,7 @@ export interface NewTaskInput {
   taskDate?: string | null
   scope?: TaskScope
   description?: string | null
+  urgent?: boolean
 }
 
 /** Entrada normalizada por parseNewTask (fecha → null, scope con defecto). */

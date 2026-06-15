@@ -65,3 +65,20 @@ db.version(3)
         row.description ??= null
       })
   })
+
+// Feature 007: urgente (sin índice; backfill a false)
+db.version(4)
+  .stores({
+    tasks: 'id, taskDate, completedAt, createdAt, updatedAt, nucleusId',
+    outbox: '++seq, taskId',
+    meta: 'key',
+  })
+  .upgrade(async (tx) => {
+    await tx
+      .table<Task, string>('tasks')
+      .toCollection()
+      .modify((task) => {
+        const row = task as Partial<Task>
+        row.urgent ??= false
+      })
+  })

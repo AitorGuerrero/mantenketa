@@ -175,6 +175,7 @@ export type Database = {
           owner_id: string
           task_date: string | null
           updated_at: string
+          urgent: boolean
         }
         Insert: {
           completed_at?: string | null
@@ -187,6 +188,7 @@ export type Database = {
           owner_id: string
           task_date?: string | null
           updated_at: string
+          urgent?: boolean
         }
         Update: {
           completed_at?: string | null
@@ -199,6 +201,7 @@ export type Database = {
           owner_id?: string
           task_date?: string | null
           updated_at?: string
+          urgent?: boolean
         }
         Relationships: [
           {

@@ -21,6 +21,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     ownerId: null,
     nucleusId: null,
     description: null,
+    urgent: false,
     createdAt: stamp,
     updatedAt: stamp,
     ...overrides,
@@ -82,6 +83,25 @@ describe('groupTasks (FR-001..FR-006)', () => {
       'poco vencida',
       'hoy',
       'sin fecha',
+    ])
+  })
+
+  it('"ya": las urgentes van primero (incluidas sin fecha), conservando el suborden (FR-003)', () => {
+    const urgenteSinFecha = makeTask({ name: 'urg sin fecha', taskDate: null, urgent: true })
+    const urgenteVencida = makeTask({ name: 'urg vencida', taskDate: '2026-06-10', urgent: true })
+    const normalVencida = makeTask({ name: 'normal vencida', taskDate: '2026-06-05' })
+    const normalSinFecha = makeTask({ name: 'normal sin fecha', taskDate: null })
+
+    const { ya } = groupTasks(
+      [normalSinFecha, urgenteSinFecha, normalVencida, urgenteVencida],
+      TODAY,
+    )
+
+    expect(ya.map((g) => g.task.name)).toEqual([
+      'urg vencida',
+      'urg sin fecha',
+      'normal vencida',
+      'normal sin fecha',
     ])
   })
 

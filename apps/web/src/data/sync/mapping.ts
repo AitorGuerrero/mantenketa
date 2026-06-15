@@ -21,6 +21,7 @@ export function taskToRow(task: Task, ownerId: string): TaskRowInsert {
     completed_at: task.completedAt,
     completed_by: task.completedBy,
     description: task.description,
+    urgent: task.urgent,
     created_at: task.createdAt,
     updated_at: task.updatedAt,
   }
@@ -36,6 +37,7 @@ export function rowToTask(row: TaskRow): Task {
     ownerId: row.owner_id,
     nucleusId: row.nucleus_id,
     description: row.description,
+    urgent: row.urgent,
     // Postgres devuelve timestamptz como '...+00:00' y con microsegundos;
     // se normaliza a ISO-Z con milisegundos para que la comparación LWW
     // de strings entre réplicas sea consistente.

@@ -21,13 +21,13 @@ describe('parseNewTask — validación de creación', () => {
   it('acepta la falta de fecha: la tarea es "para hacer ya" (FR-003)', () => {
     const parsed = parseNewTask({ name: 'Cambiar filtro' })
 
-    expect(parsed).toEqual({ name: 'Cambiar filtro', taskDate: null, scope: 'personal', description: null })
+    expect(parsed).toEqual({ name: 'Cambiar filtro', taskDate: null, scope: 'personal', description: null, urgent: false })
   })
 
   it('normaliza una fecha vacía a null (FR-003)', () => {
     const parsed = parseNewTask({ name: 'Cambiar filtro', taskDate: '' })
 
-    expect(parsed).toEqual({ name: 'Cambiar filtro', taskDate: null, scope: 'personal', description: null })
+    expect(parsed).toEqual({ name: 'Cambiar filtro', taskDate: null, scope: 'personal', description: null, urgent: false })
   })
 
   it('rechaza una fecha con formato no válido', () => {
@@ -39,7 +39,7 @@ describe('parseNewTask — validación de creación', () => {
   it('acepta una entrada válida y recorta el nombre', () => {
     const parsed = parseNewTask({ name: '  Cambiar filtro  ', taskDate: '2026-06-15' })
 
-    expect(parsed).toEqual({ name: 'Cambiar filtro', taskDate: '2026-06-15', scope: 'personal', description: null })
+    expect(parsed).toEqual({ name: 'Cambiar filtro', taskDate: '2026-06-15', scope: 'personal', description: null, urgent: false })
   })
 
   it('sin descripción (ausente) → null', () => {
@@ -57,5 +57,13 @@ describe('parseNewTask — validación de creación', () => {
     })
 
     expect(parsed.description).toBe('Filtro HEPA\nel del armario')
+  })
+
+  it('sin marcar urgente → false (FR-001)', () => {
+    expect(parseNewTask({ name: 'Tarea' }).urgent).toBe(false)
+  })
+
+  it('marcado urgente → true', () => {
+    expect(parseNewTask({ name: 'Tarea', urgent: true }).urgent).toBe(true)
   })
 })

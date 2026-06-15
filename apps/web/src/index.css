@@ -459,6 +459,40 @@ body {
   color: var(--color-primary);
 }
 
+/* Urgente (FR-004): distintivo ámbar, marcado claramente */
+.task-badge--urgent {
+  margin-left: 0;
+  margin-right: 0.5rem;
+  background: color-mix(in srgb, #b45309 18%, transparent);
+  color: #b45309;
+}
+
+.task-item--urgent {
+  border-color: #b45309;
+  background: color-mix(in srgb, #b45309 7%, transparent);
+}
+
+.task-card--urgent .task-card-face,
+.task-card-peek--urgent {
+  border-color: #b45309;
+  box-shadow: 0 0 0 1px #b45309;
+}
+
+.urgent-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.urgent-field input {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: #b45309;
+  cursor: pointer;
+}
+
 .scope-field {
   display: flex;
   align-items: center;

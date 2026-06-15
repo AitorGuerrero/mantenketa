@@ -66,6 +66,7 @@ export class DexieTaskRepository implements TaskRepository {
       ownerId: getCurrentUserId(),
       nucleusId,
       description: parsed.description,
+      urgent: parsed.urgent,
       createdAt: now,
       updatedAt: now,
     }

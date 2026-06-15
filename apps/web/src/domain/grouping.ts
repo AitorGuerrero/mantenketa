@@ -63,6 +63,8 @@ export function groupTasks(tasks: readonly Task[], today: string): GroupedTasks 
  */
 function orderYa(tasks: readonly Task[]): Task[] {
   return [...tasks].sort((a, b) => {
+    // Urgentes primero (FR-003); el resto conserva el orden habitual
+    if (a.urgent !== b.urgent) return a.urgent ? -1 : 1
     const aDateless = a.taskDate === null
     const bDateless = b.taskDate === null
     if (aDateless !== bDateless) return aDateless ? 1 : -1 // sin fecha al final
