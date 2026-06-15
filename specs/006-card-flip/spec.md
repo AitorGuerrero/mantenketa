@@ -57,6 +57,7 @@ flips; a real drag still acts).
 - **FR-006**: Tapping a card whose task has no description MUST NOT show an empty/broken back (see Assumptions for the chosen behaviour).
 - **FR-007**: The flip MUST be confined to the deck card; the list view (non-touch or forced) MUST be unaffected.
 - **FR-008**: All existing deck behaviour MUST be preserved: swipe/buttons (Hecha/Posponer), overdue styling, ordering, the "Ver como lista/tarjetas" toggle, and sync.
+- **FR-009**: Since the description now lives on the back, the card **front** MUST NOT also show the description (it shows name, date/overdue and group only). The list view continues to show the description inline.
 
 ### Key Entities
 

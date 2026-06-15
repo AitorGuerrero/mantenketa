@@ -43,15 +43,24 @@ test('descripción de solo espacios se trata como vacía (FR-005)', async ({ pag
   await expect(item.locator('.task-description')).toHaveCount(0)
 })
 
-test('en táctil, la tarjeta muestra la descripción', async ({ browser }) => {
+test('en táctil, la descripción está en el dorso (no en la cara frontal); se ve al voltear', async ({
+  browser,
+}) => {
   const ctx = await browser.newContext({ ...devices['Pixel 5'] })
   const page = await ctx.newPage()
   await page.goto('/')
 
   await createTask(page, 'Tarea con nota', { description: 'Comprar repuesto antes' })
 
-  const card = page.getByRole('list', { name: 'Tarea actual' })
-  await expect(card).toContainText('Tarea con nota')
-  await expect(card).toContainText('Comprar repuesto antes')
+  // La cara frontal muestra el nombre pero NO la descripción
+  const front = page.getByRole('list', { name: 'Tarea actual' })
+  await expect(front).toContainText('Tarea con nota')
+  await expect(front).not.toContainText('Comprar repuesto antes')
+
+  // Al voltear, el dorso muestra la descripción
+  await page.locator('.task-card').click()
+  await expect(
+    page.getByRole('region', { name: 'Descripción de la tarea' }),
+  ).toContainText('Comprar repuesto antes')
   await ctx.close()
 })

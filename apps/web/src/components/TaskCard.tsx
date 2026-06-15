@@ -122,7 +122,13 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
           <div className="task-card-face task-card-front" aria-hidden={flipped}>
             <ul className="task-list task-card-body" aria-label="Tarea actual">
               <li className="task-item">
-                <TaskBody task={task} memberName={memberName} overdue={overdue} />
+                {/* La descripción va en el dorso (volteo), no en la cara frontal */}
+                <TaskBody
+                  task={task}
+                  memberName={memberName}
+                  overdue={overdue}
+                  showDescription={false}
+                />
               </li>
             </ul>
           </div>

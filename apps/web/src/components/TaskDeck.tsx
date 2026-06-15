@@ -86,7 +86,12 @@ export function TaskDeck({ ya, memberName, onViewAsList }: TaskDeckProps) {
                     contenido pintado para que al mover la de arriba no salga vacía */}
                 <ul className="task-list task-card-body">
                   <li className="task-item">
-                    <TaskBody task={task} memberName={memberName} overdue={peekOverdue} />
+                    <TaskBody
+                      task={task}
+                      memberName={memberName}
+                      overdue={peekOverdue}
+                      showDescription={false}
+                    />
                   </li>
                 </ul>
               </div>

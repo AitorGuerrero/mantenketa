@@ -32,10 +32,13 @@ export function TaskBody({
   task,
   memberName,
   overdue = false,
+  showDescription = true,
 }: {
   task: Task
   memberName: (userId: string) => string
   overdue?: boolean
+  // En la baraja la descripción va en el dorso (volteo), no en la cara frontal
+  showDescription?: boolean
 }) {
   const label = stateLabel(task, memberName)
   return (
@@ -57,7 +60,7 @@ export function TaskBody({
         </time>
       )}
       {label !== null && <span className="task-state">{label}</span>}
-      {task.description !== null && task.description !== '' && (
+      {showDescription && task.description !== null && task.description !== '' && (
         <p className="task-description">{task.description}</p>
       )}
     </>
