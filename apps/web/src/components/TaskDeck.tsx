@@ -67,12 +67,13 @@ export function TaskDeck({ ya, memberName, onViewAsList }: TaskDeckProps) {
           .map((task, i) => {
             const depth = i + 1
             const peekOverdue = overdueById.get(task.id) ?? false
+            const peekClasses = ['task-card-peek']
+            if (peekOverdue) peekClasses.push('task-card--overdue')
+            if (task.urgent) peekClasses.push('task-card-peek--urgent')
             return (
               <div
                 key={task.id}
-                className={
-                  peekOverdue ? 'task-card-peek task-card--overdue' : 'task-card-peek'
-                }
+                className={peekClasses.join(' ')}
                 aria-hidden="true"
                 style={{
                   // Escala uniforme (el contenido se reduce con la carta) con

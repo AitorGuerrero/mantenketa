@@ -20,6 +20,7 @@ export function CreateTaskForm({ onCreate, onCreated, onCancel }: CreateTaskForm
   const [name, setName] = useState('')
   const [taskDate, setTaskDate] = useState('')
   const [description, setDescription] = useState('')
+  const [urgent, setUrgent] = useState(false)
   const [scope, setScope] = useState<TaskScope>('personal')
   const [error, setError] = useState<string | null>(null)
 
@@ -30,10 +31,11 @@ export function CreateTaskForm({ onCreate, onCreated, onCancel }: CreateTaskForm
     event.preventDefault()
     setError(null)
     try {
-      await onCreate({ name, taskDate, scope: effectiveScope, description })
+      await onCreate({ name, taskDate, scope: effectiveScope, description, urgent })
       setName('')
       setTaskDate('')
       setDescription('')
+      setUrgent(false)
       setScope('personal')
       onCreated?.()
     } catch (cause) {
@@ -88,6 +90,16 @@ export function CreateTaskForm({ onCreate, onCreated, onCancel }: CreateTaskForm
           }}
         />
       </div>
+      <label className="urgent-field">
+        <input
+          type="checkbox"
+          checked={urgent}
+          onChange={(event) => {
+            setUrgent(event.target.checked)
+          }}
+        />
+        Urgente
+      </label>
       {nucleus != null && (
         <fieldset className="scope-field">
           <legend>Ámbito</legend>

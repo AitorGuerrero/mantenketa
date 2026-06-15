@@ -16,7 +16,12 @@ export function isoDay(offset = 0): string {
 export async function createTask(
   page: Page,
   name: string,
-  opts: { date?: string; scope?: 'personal' | 'nucleus'; description?: string } = {},
+  opts: {
+    date?: string
+    scope?: 'personal' | 'nucleus'
+    description?: string
+    urgent?: boolean
+  } = {},
 ): Promise<void> {
   await page.getByRole('button', { name: 'Nueva tarea' }).click()
   await page.getByLabel('Nombre', { exact: true }).fill(name)
@@ -25,6 +30,9 @@ export async function createTask(
   }
   if (opts.description !== undefined) {
     await page.getByLabel('Descripción (opcional)').fill(opts.description)
+  }
+  if (opts.urgent === true) {
+    await page.getByRole('checkbox', { name: 'Urgente', exact: true }).check()
   }
   if (opts.scope === 'nucleus') {
     await page.getByRole('radio', { name: 'Del núcleo' }).check()
