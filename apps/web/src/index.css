@@ -179,6 +179,11 @@ body {
 .task-card-peek {
   position: absolute;
   inset: 0;
+}
+
+/* Superficie de carta: las dos caras de la activa + las cartas del mazo */
+.task-card-face,
+.task-card-peek {
   border: 1px solid var(--color-border);
   border-radius: 0.9rem;
   background: var(--color-surface);
@@ -196,25 +201,67 @@ body {
 
 .task-card-peek {
   transform-origin: bottom center;
-  background: var(--color-surface);
   box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
   overflow: hidden; /* el contenido no se desborda al estrechar (scaleX) */
   pointer-events: none; /* solo la tarjeta superior es interactiva */
   cursor: default;
-  /* posición/opacidad/zIndex se aplican inline según la profundidad */
-}
-
-.task-card {
-  z-index: 10;
+  /* contenido centrado como una cara */
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 0.75rem;
   padding: 1.25rem;
+  /* posición/opacidad/zIndex se aplican inline según la profundidad */
+}
+
+.task-card {
+  z-index: 10;
   cursor: grab;
   user-select: none;
   transform-origin: bottom center;
   touch-action: pan-y; /* scroll vertical permitido; el horizontal es el gesto */
+}
+
+/* Volteo 3D: contenedor con dos caras; el rotateY no compite con el
+   translateX del arrastre (van en elementos distintos). */
+.task-card-flip {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.45s ease;
+}
+
+.task-card-flip--back {
+  transform: rotateY(180deg);
+}
+
+.task-card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  overflow: hidden;
+}
+
+.task-card-back {
+  transform: rotateY(180deg);
+}
+
+.task-card-back-text {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-text);
+  white-space: pre-wrap;
+  overflow-y: auto;
+}
+
+.task-card-back-text--empty {
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
 /* Al promocionar a primera posición, la nueva tarjeta entra escalando */
@@ -244,7 +291,9 @@ body {
     opacity 0.32s ease-in;
 }
 
-.task-card--overdue {
+/* Vencida: borde rojo en las caras de la activa y en las cartas del mazo */
+.task-card--overdue.task-card-peek,
+.task-card--overdue .task-card-face {
   border-color: #c0392b;
 }
 
@@ -312,7 +361,8 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .task-card--settling,
-  .task-card--flying {
+  .task-card--flying,
+  .task-card-flip {
     transition: none;
   }
 

@@ -41,6 +41,7 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
   const [dx, setDx] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [flying, setFlying] = useState<'done' | 'defer' | null>(null)
+  const [flipped, setFlipped] = useState(false)
   const startX = useRef<number | null>(null)
 
   function fly(kind: 'done' | 'defer') {
@@ -77,7 +78,9 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
     setDragging(false)
     const outcome = swipeOutcome(dx, SWIPE_THRESHOLD)
     if (outcome === 'cancel') {
+      // Sin desplazamiento que cruce el umbral ⇒ es un toque: voltear (FR-001/4)
       setDx(0)
+      setFlipped((f) => !f)
       return
     }
     fly(outcome)
@@ -115,11 +118,35 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
         onPointerCancel={handlePointerUp}
         onTransitionEnd={handleTransitionEnd}
       >
-        <ul className="task-list task-card-body" aria-label="Tarea actual">
-          <li className="task-item">
-            <TaskBody task={task} memberName={memberName} overdue={overdue} />
-          </li>
-        </ul>
+        <div className={flipped ? 'task-card-flip task-card-flip--back' : 'task-card-flip'}>
+          <div className="task-card-face task-card-front" aria-hidden={flipped}>
+            <ul className="task-list task-card-body" aria-label="Tarea actual">
+              <li className="task-item">
+                {/* La descripción va en el dorso (volteo), no en la cara frontal */}
+                <TaskBody
+                  task={task}
+                  memberName={memberName}
+                  overdue={overdue}
+                  showDescription={false}
+                />
+              </li>
+            </ul>
+          </div>
+          <div
+            className="task-card-face task-card-back"
+            role="region"
+            aria-label="Descripción de la tarea"
+            aria-hidden={!flipped}
+          >
+            {task.description !== null && task.description !== '' ? (
+              <p className="task-card-back-text">{task.description}</p>
+            ) : (
+              <p className="task-card-back-text task-card-back-text--empty">
+                Sin descripción
+              </p>
+            )}
+          </div>
+        </div>
       </article>
     </div>
   )
