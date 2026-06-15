@@ -22,9 +22,9 @@ successor id and the materialize/skip/stop transitions are test-first.
 
 ## Phase 1: Setup & schema
 
-- [ ] T001 Add the deterministic-id dependency: `pnpm --filter @mantenketa/web add uuid` and `pnpm --filter @mantenketa/web add -D @types/uuid`
-- [ ] T002 Write `supabase/migrations/20260615140000_recurring_tasks.sql` (add nullable `recurrence jsonb` and `series_id uuid` to `public.tasks`) and apply with `supabase db push`
-- [ ] T003 Regenerate `apps/web/src/data/database.types.ts` (`supabase gen types typescript --linked`); verify it compiles
+- [X] T001 Add the deterministic-id dependency: `pnpm --filter @mantenketa/web add uuid` and `pnpm --filter @mantenketa/web add -D @types/uuid`
+- [X] T002 Write `supabase/migrations/20260615140000_recurring_tasks.sql` (add nullable `recurrence jsonb` and `series_id uuid` to `public.tasks`) and apply with `supabase db push`
+- [X] T003 Regenerate `apps/web/src/data/database.types.ts` (`supabase gen types typescript --linked`); verify it compiles
 
 ---
 
@@ -32,9 +32,9 @@ successor id and the materialize/skip/stop transitions are test-first.
 
 **Purpose**: Persist and sync recurrence across the stack. No story work until done.
 
-- [ ] T004 Dexie **v6** in `apps/web/src/data/db.ts`: `db.version(6)` upgrade backfilling `recurrence = null` and `seriesId = null` (no index change)
-- [ ] T005 `apps/web/src/domain/task.ts`: add `RecurrenceSchema` (freq enum, interval int ≥1, anchor enum); extend `TaskSchema` with `recurrence` (nullable) and `seriesId` (nullable); extend `NewTaskInput` with optional `recurrence`; update all `makeTask` test helpers (`recurrence: null`, `seriesId: null`) across the domain/data test files
-- [ ] T006 Carry the new fields through sync: `apps/web/src/data/sync/mapping.ts` (`taskToRow`/`rowToTask` map `recurrence` + `series_id`) and the outbox UPDATE in `apps/web/src/data/sync/syncEngine.ts`
+- [X] T004 Dexie **v6** in `apps/web/src/data/db.ts`: `db.version(6)` upgrade backfilling `recurrence = null` and `seriesId = null` (no index change)
+- [X] T005 `apps/web/src/domain/task.ts`: add `RecurrenceSchema` (freq enum, interval int ≥1, anchor enum); extend `TaskSchema` with `recurrence` (nullable) and `seriesId` (nullable); extend `NewTaskInput` with optional `recurrence`; update all `makeTask` test helpers (`recurrence: null`, `seriesId: null`) across the domain/data test files
+- [X] T006 Carry the new fields through sync: `apps/web/src/data/sync/mapping.ts` (`taskToRow`/`rowToTask` map `recurrence` + `series_id`) and the outbox UPDATE in `apps/web/src/data/sync/syncEngine.ts`
 
 **Checkpoint**: recurrence persists locally and round-trips through sync.
 
@@ -48,17 +48,17 @@ successor id and the materialize/skip/stop transitions are test-first.
 
 ### Tests for User Story 1 ⚠️ (write FIRST, confirm FAILING)
 
-- [ ] T007 [P] [US1] Unit tests `apps/web/src/domain/recurrence.test.ts`: `nextOccurrenceDate` daily/weekly; `cadenceLabel` ("cada día"/"cada 2 semanas"…); `successorId` deterministic (same inputs → same uuid, different date → different uuid)
-- [ ] T008 [P] [US1] Unit tests `apps/web/src/domain/task.test.ts`: `parseNewTask` defaults `recurrence` to null; preserves a valid recurrence
-- [ ] T009 [P] [US1] e2e `apps/web/tests/e2e/recurring-tasks.spec.ts`: create weekly (anchor completion, no date) → "cada semana" badge; mark done → completed shows in "Hechas recientemente" and a new pending instance appears dated +7 days
+- [X] T007 [P] [US1] Unit tests `apps/web/src/domain/recurrence.test.ts`: `nextOccurrenceDate` daily/weekly; `cadenceLabel` ("cada día"/"cada 2 semanas"…); `successorId` deterministic (same inputs → same uuid, different date → different uuid)
+- [X] T008 [P] [US1] Unit tests `apps/web/src/domain/task.test.ts`: `parseNewTask` defaults `recurrence` to null; preserves a valid recurrence
+- [X] T009 [P] [US1] e2e `apps/web/tests/e2e/recurring-tasks.spec.ts`: create weekly (anchor completion, no date) → "cada semana" badge; mark done → completed shows in "Hechas recientemente" and a new pending instance appears dated +7 days
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] `apps/web/src/domain/recurrence.ts`: implement `nextOccurrenceDate` (daily/weekly/monthly/yearly with month-end clamp), `cadenceLabel`, `successorId` (uuid v5 + fixed namespace) — makes T007 pass
-- [ ] T011 [US1] `apps/web/src/domain/task.ts` + `apps/web/src/data/taskRepository.ts`: `parseNewTask` recurrence handling; `createTask` assigns a fresh `seriesId` + stores `recurrence` when recurring (else both null)
-- [ ] T012 [US1] `apps/web/src/data/taskRepository.ts`: `markDone` of a recurring task inserts the successor (deterministic id, next date by anchor: completion→today, dueDate→taskDate) in the same rw transaction + outbox; idempotent; `revert` deletes the pending untouched successor
-- [ ] T013 [US1] `apps/web/src/components/CreateTaskForm.tsx`: "Repetir" toggle revealing frequency `<select>`, interval number (≥1) and anchor `<select>` ("Desde que la complete" default / "En la fecha prevista")
-- [ ] T014 [US1] `apps/web/src/components/TaskItem.tsx` (TaskBody) cadence badge via `cadenceLabel`, beside urgent/group badges; styles in `apps/web/src/index.css`
+- [X] T010 [US1] `apps/web/src/domain/recurrence.ts`: implement `nextOccurrenceDate` (daily/weekly/monthly/yearly with month-end clamp), `cadenceLabel`, `successorId` (uuid v5 + fixed namespace) — makes T007 pass
+- [X] T011 [US1] `apps/web/src/domain/task.ts` + `apps/web/src/data/taskRepository.ts`: `parseNewTask` recurrence handling; `createTask` assigns a fresh `seriesId` + stores `recurrence` when recurring (else both null)
+- [X] T012 [US1] `apps/web/src/data/taskRepository.ts`: `markDone` of a recurring task inserts the successor (deterministic id, next date by anchor: completion→today, dueDate→taskDate) in the same rw transaction + outbox; idempotent; `revert` deletes the pending untouched successor
+- [X] T013 [US1] `apps/web/src/components/CreateTaskForm.tsx`: "Repetir" toggle revealing frequency `<select>`, interval number (≥1) and anchor `<select>` ("Desde que la complete" default / "En la fecha prevista")
+- [X] T014 [US1] `apps/web/src/components/TaskItem.tsx` (TaskBody) cadence badge via `cadenceLabel`, beside urgent/group badges; styles in `apps/web/src/index.css`
 
 **Checkpoint**: recurring tasks can be created and regenerate on completion (MVP).
 
@@ -72,12 +72,12 @@ successor id and the materialize/skip/stop transitions are test-first.
 
 ### Tests for User Story 2 ⚠️ (write FIRST, confirm FAILING)
 
-- [ ] T015 [P] [US2] Unit tests `apps/web/src/domain/recurrence.test.ts`: monthly/yearly cadence and month-end clamp (Jan 31 +1m → Feb 28/29; Feb 29 +1y → Feb 28)
-- [ ] T016 [P] [US2] e2e `apps/web/tests/e2e/recurring-tasks.spec.ts`: monthly anchor "due date" dated the 1st, completed late → next on the 1st of next month
+- [X] T015 [P] [US2] Unit tests `apps/web/src/domain/recurrence.test.ts`: monthly/yearly cadence and month-end clamp (Jan 31 +1m → Feb 28/29; Feb 29 +1y → Feb 28)
+- [X] T016 [P] [US2] e2e `apps/web/tests/e2e/recurring-tasks.spec.ts`: monthly anchor "due date" dated the 1st, completed late → next on the 1st of next month
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] `apps/web/src/domain/task.ts` + `apps/web/src/data/taskRepository.ts`: validate that `anchor === 'dueDate'` requires a `taskDate` (ValidationError otherwise); confirm `markDone` uses the scheduled date as base when anchored to due date (clamp covered by T010/T015)
+- [X] T017 [US2] `apps/web/src/domain/task.ts` + `apps/web/src/data/taskRepository.ts`: validate that `anchor === 'dueDate'` requires a `taskDate` (ValidationError otherwise); confirm `markDone` uses the scheduled date as base when anchored to due date (clamp covered by T010/T015)
 
 **Checkpoint**: both anchors correct; US1 + US2 work.
 
@@ -91,12 +91,12 @@ successor id and the materialize/skip/stop transitions are test-first.
 
 ### Tests for User Story 3 ⚠️ (write FIRST, confirm FAILING)
 
-- [ ] T018 [P] [US3] e2e `apps/web/tests/e2e/recurring-tasks.spec.ts`: skip advances the pending date by one interval with no completion recorded; "no repetir más" removes the badge and completing it creates no successor
+- [X] T018 [P] [US3] e2e `apps/web/tests/e2e/recurring-tasks.spec.ts`: skip advances the pending date by one interval with no completion recorded; "no repetir más" removes the badge and completing it creates no successor
 
 ### Implementation for User Story 3
 
-- [ ] T019 [US3] `apps/web/src/data/taskRepository.ts`: `skipOccurrence(id)` (advance `taskDate` in place by anchor base; stays pending) and `stopRecurrence(id)` (set `recurrence = null`); both stamp `updatedAt` + enqueue outbox
-- [ ] T020 [US3] Skip / "No repetir más" actions on recurring tasks in `apps/web/src/components/TaskItem.tsx` (list) and `apps/web/src/components/TaskCard.tsx` + `TaskDeck.tsx` (deck); styles in `apps/web/src/index.css`
+- [X] T019 [US3] `apps/web/src/data/taskRepository.ts`: `skipOccurrence(id)` (advance `taskDate` in place by anchor base; stays pending) and `stopRecurrence(id)` (set `recurrence = null`); both stamp `updatedAt` + enqueue outbox
+- [X] T020 [US3] Skip / "No repetir más" actions on recurring tasks in `apps/web/src/components/TaskItem.tsx` (list) and `apps/web/src/components/TaskCard.tsx` + `TaskDeck.tsx` (deck); styles in `apps/web/src/index.css`
 
 **Checkpoint**: all three stories independently functional.
 
@@ -104,8 +104,8 @@ successor id and the materialize/skip/stop transitions are test-first.
 
 ## Phase 6: Polish & validation
 
-- [ ] T021 [P] Verify every new/changed view at a narrow mobile viewport (Principle IX); tidy recurrence control + badge + action styles
-- [ ] T022 Full validation: `pnpm test`, `pnpm test:rls`, `pnpm lint`, `pnpm build`, `pnpm test:e2e` all green; features 001–008 regression-free; run `quickstart.md` smoke; mark tasks complete
+- [X] T021 [P] Verify every new/changed view at a narrow mobile viewport (Principle IX); tidy recurrence control + badge + action styles
+- [X] T022 Full validation: `pnpm test`, `pnpm test:rls`, `pnpm lint`, `pnpm build`, `pnpm test:e2e` all green; features 001–008 regression-free; run `quickstart.md` smoke; mark tasks complete
 
 ---
 

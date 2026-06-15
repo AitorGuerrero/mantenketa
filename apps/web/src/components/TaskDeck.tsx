@@ -131,6 +131,25 @@ export function TaskDeck({ ya, memberName, scopeLabel, onViewAsList }: TaskDeckP
         </button>
       </div>
 
+      {top.recurrence != null && (
+        <div className="task-recurrence-actions task-recurrence-actions--deck">
+          <button
+            type="button"
+            className="link-button"
+            onClick={() => void taskRepository.skipOccurrence(top.id)}
+          >
+            Saltar
+          </button>
+          <button
+            type="button"
+            className="link-button"
+            onClick={() => void taskRepository.stopRecurrence(top.id)}
+          >
+            No repetir más
+          </button>
+        </div>
+      )}
+
       <button type="button" className="view-as-list" onClick={onViewAsList}>
         Ver como lista
       </button>

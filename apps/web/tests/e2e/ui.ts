@@ -22,6 +22,12 @@ export async function createTask(
     group?: string
     description?: string
     urgent?: boolean
+    // Recurrencia (feature 009); ausente ⇒ tarea única
+    recurrence?: {
+      interval: number
+      freq: 'daily' | 'weekly' | 'monthly' | 'yearly'
+      anchor: 'completion' | 'dueDate'
+    }
   } = {},
 ): Promise<void> {
   await page.getByRole('button', { name: 'Nueva tarea' }).click()
@@ -37,6 +43,12 @@ export async function createTask(
   }
   if (opts.group !== undefined) {
     await page.getByLabel('Ámbito').selectOption({ label: opts.group })
+  }
+  if (opts.recurrence !== undefined) {
+    await page.getByRole('checkbox', { name: 'Repetir', exact: true }).check()
+    await page.getByLabel('Cada').fill(String(opts.recurrence.interval))
+    await page.getByLabel('Frecuencia').selectOption(opts.recurrence.freq)
+    await page.getByLabel('Contar').selectOption(opts.recurrence.anchor)
   }
   await page.getByRole('button', { name: 'Añadir tarea' }).click()
   // Al guardar con éxito el formulario se cierra y reaparece el botón

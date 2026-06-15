@@ -3,6 +3,7 @@
 
 import { taskRepository } from '../data/taskRepository'
 import { overdueText, todayIsoDate } from '../domain/date'
+import { cadenceLabel } from '../domain/recurrence'
 import { isDone, type Task } from '../domain/task'
 
 function formatDate(isoDate: string): string {
@@ -52,6 +53,11 @@ export function TaskBody({
         {task.urgent && <span className="task-badge task-badge--urgent">Urgente</span>}
         {task.name}
         {scope !== null && <span className="task-badge">{scope}</span>}
+        {task.recurrence != null && (
+          <span className="task-badge task-badge--recurring">
+            🔁 {cadenceLabel(task.recurrence)}
+          </span>
+        )}
       </span>
       {task.taskDate === null ? (
         <span className="task-date task-date--now">Hacer ya</span>
@@ -92,6 +98,8 @@ export function TaskItem({ task, memberName, scopeLabel, overdue = false }: Task
   if (overdue) classes.push('task-item--overdue')
   if (task.urgent) classes.push('task-item--urgent')
 
+  const showRecurrenceActions = task.recurrence != null && !done
+
   return (
     <li className={classes.join(' ')}>
       <input
@@ -108,6 +116,24 @@ export function TaskItem({ task, memberName, scopeLabel, overdue = false }: Task
         scopeLabel={scopeLabel}
         overdue={overdue}
       />
+      {showRecurrenceActions && (
+        <div className="task-recurrence-actions">
+          <button
+            type="button"
+            className="link-button"
+            onClick={() => void taskRepository.skipOccurrence(task.id)}
+          >
+            Saltar
+          </button>
+          <button
+            type="button"
+            className="link-button"
+            onClick={() => void taskRepository.stopRecurrence(task.id)}
+          >
+            No repetir más
+          </button>
+        </div>
+      )}
     </li>
   )
 }
