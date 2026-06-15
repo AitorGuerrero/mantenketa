@@ -10,7 +10,6 @@ import { sortTasks } from '../domain/ordering'
 import { parseNewTask, type NewTaskInput, type Task } from '../domain/task'
 
 import { db } from './db'
-import { currentNucleusId } from './nucleusService'
 import { scheduleFlush } from './sync/syncEngine'
 
 /**
@@ -53,9 +52,8 @@ export class DexieTaskRepository implements TaskRepository {
   async createTask(input: NewTaskInput): Promise<Task> {
     const parsed = parseNewTask(input)
     const now = new Date().toISOString()
-    // Ámbito fijo en la creación (FR-014); 'nucleus' exige núcleo en caché
-    const nucleusId =
-      parsed.scope === 'nucleus' ? await currentNucleusId() : null
+    // Ámbito fijo en la creación (FR-008): null ⇒ personal; en otro caso el
+    // grupo elegido. La UI solo ofrece grupos propios y RLS lo refuerza.
     const task: Task = {
       id: crypto.randomUUID(),
       name: parsed.name,
@@ -64,7 +62,7 @@ export class DexieTaskRepository implements TaskRepository {
       completedBy: null,
       // En anónimo ownerId queda null (modo local puro, FR-002)
       ownerId: getCurrentUserId(),
-      nucleusId,
+      nucleusId: parsed.nucleusId,
       description: parsed.description,
       urgent: parsed.urgent,
       createdAt: now,

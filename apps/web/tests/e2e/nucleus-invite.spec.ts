@@ -50,15 +50,17 @@ async function signIn(page: Page, user: TestUser) {
   await page.reload()
 }
 
-test('A crea el núcleo y genera una invitación', async ({ page }) => {
+test('A crea el grupo y genera una invitación', async ({ page }) => {
   await page.goto('/')
   await signIn(page, userA)
 
-  await page.getByLabel('Nombre del núcleo').fill(NUCLEUS_NAME)
-  await page.getByRole('button', { name: 'Crear núcleo' }).click()
+  await page.getByLabel('Nombre del grupo').fill(NUCLEUS_NAME)
+  await page.getByRole('button', { name: 'Crear grupo' }).click()
 
   await expect(page.getByRole('heading', { name: NUCLEUS_NAME })).toBeVisible()
-  await expect(page.getByLabel('Miembros del núcleo').getByRole('listitem')).toHaveCount(1)
+  await expect(
+    page.getByLabel(`Miembros de ${NUCLEUS_NAME}`).getByRole('listitem'),
+  ).toHaveCount(1)
 
   await page.getByRole('button', { name: 'Generar invitación' }).click()
   const urlInput = page.getByLabel('Enlace de invitación')
@@ -81,17 +83,21 @@ test('B abre la invitación, inicia sesión, acepta y ambos ven dos miembros', a
   // Con sesión (inyectada): puede aceptar
   await signIn(pageB, userB)
   await pageB.getByRole('button', { name: 'Aceptar la invitación' }).click()
-  await expect(pageB.getByText('¡Ya formas parte del núcleo!')).toBeVisible()
+  await expect(pageB.getByText('¡Ya formas parte del grupo!')).toBeVisible()
 
-  // B ve el núcleo con dos miembros
+  // B ve el grupo con dos miembros
   await pageB.goto('/')
   await expect(pageB.getByRole('heading', { name: NUCLEUS_NAME })).toBeVisible()
-  await expect(pageB.getByLabel('Miembros del núcleo').getByRole('listitem')).toHaveCount(2)
+  await expect(
+    pageB.getByLabel(`Miembros de ${NUCLEUS_NAME}`).getByRole('listitem'),
+  ).toHaveCount(2)
 
   // A también, tras recargar
   await page.goto('/')
   await signIn(page, userA)
-  await expect(page.getByLabel('Miembros del núcleo').getByRole('listitem')).toHaveCount(2)
+  await expect(
+    page.getByLabel(`Miembros de ${NUCLEUS_NAME}`).getByRole('listitem'),
+  ).toHaveCount(2)
 })
 
 test('una invitación revocada muestra su mensaje al aceptarla', async ({ page }) => {
@@ -130,17 +136,21 @@ test('una invitación caducada muestra su mensaje al aceptarla', async () => {
   await expect(pageB.getByRole('alert')).toContainText('caducado')
 })
 
-test('B abandona el núcleo y vuelve al estado sin núcleo; el núcleo sobrevive para A', async ({
+test('B abandona el grupo y deja de verlo; el grupo sobrevive para A', async ({
   page,
 }) => {
   await pageB.goto('/')
   pageB.once('dialog', (dialog) => void dialog.accept())
-  await pageB.getByRole('button', { name: 'Abandonar el núcleo' }).click()
+  await pageB.getByRole('button', { name: 'Abandonar el grupo' }).click()
 
-  await expect(pageB.getByRole('button', { name: 'Crear núcleo' })).toBeVisible()
+  // El grupo desaparece de la lista de B; el formulario de crear sigue disponible
+  await expect(pageB.getByRole('heading', { name: NUCLEUS_NAME })).toHaveCount(0)
+  await expect(pageB.getByRole('button', { name: 'Crear grupo' })).toBeVisible()
 
   await page.goto('/')
   await signIn(page, userA)
   await expect(page.getByRole('heading', { name: NUCLEUS_NAME })).toBeVisible()
-  await expect(page.getByLabel('Miembros del núcleo').getByRole('listitem')).toHaveCount(1)
+  await expect(
+    page.getByLabel(`Miembros de ${NUCLEUS_NAME}`).getByRole('listitem'),
+  ).toHaveCount(1)
 })

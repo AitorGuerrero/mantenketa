@@ -11,14 +11,15 @@ import { supabase } from './supabaseClient'
 import { requestSync } from './sync/syncEngine'
 
 /**
- * Gestión del núcleo (contracts/client-services.md). Todas las acciones
- * REQUIEREN conexión y sesión (la Constitución I solo exige offline para los
- * flujos de tareas); la vista se cachea en Dexie para leerse sin red.
+ * Gestión de grupos (contracts/groups.md). Un usuario puede pertenecer a
+ * varios grupos a la vez (feature 008). Todas las acciones REQUIEREN conexión
+ * y sesión (la Constitución I solo exige offline para los flujos de tareas);
+ * la lista de grupos se cachea en Dexie para leerse sin red.
  */
 
-const NUCLEUS_KEY = 'nucleus'
+const GROUPS_KEY = 'groups'
 
-export interface NucleusMember {
+export interface GroupMember {
   userId: string
   displayName: string
   since: string
@@ -31,10 +32,10 @@ export interface PendingInvitation {
   createdBy: string
 }
 
-export interface NucleusView {
+export interface GroupView {
   id: string
   name: string
-  members: NucleusMember[]
+  members: GroupMember[]
   pendingInvitations: PendingInvitation[]
 }
 
@@ -51,9 +52,8 @@ export type NucleusErrorCode =
   | 'revoked'
   | 'already_used'
   | 'already_member'
-  | 'already_in_nucleus'
   | 'blank_name'
-  | 'no_nucleus'
+  | 'not_a_member'
   | 'unknown'
 
 export class NucleusActionError extends Error {
@@ -72,9 +72,8 @@ const KNOWN_CODES: NucleusErrorCode[] = [
   'revoked',
   'already_used',
   'already_member',
-  'already_in_nucleus',
   'blank_name',
-  'no_nucleus',
+  'not_a_member',
 ]
 
 function toActionError(message: string): NucleusActionError {
@@ -96,39 +95,38 @@ export function invitationUrl(token: string): string {
   return `${window.location.origin}/invitacion/${token}`
 }
 
-/** Id del núcleo actual según la caché local (para sellar tareas de ámbito núcleo). */
-export async function currentNucleusId(): Promise<string | null> {
-  const entry = await db.meta.get(NUCLEUS_KEY)
-  const view = (entry?.value as NucleusView | undefined) ?? null
-  return view?.id ?? null
+async function cachedGroups(): Promise<GroupView[]> {
+  const entry = await db.meta.get(GROUPS_KEY)
+  return (entry?.value as GroupView[] | undefined) ?? []
 }
 
-/** Vista viva del núcleo, leída de la caché local (funciona offline). */
-export function observeNucleus(): Observable<NucleusView | null> {
-  return liveQuery(async () => {
-    const entry = await db.meta.get(NUCLEUS_KEY)
-    return (entry?.value as NucleusView | undefined) ?? null
-  })
+/** Ids de los grupos a los que pertenece el usuario (caché local). */
+export async function currentGroupIds(): Promise<string[]> {
+  return (await cachedGroups()).map((g) => g.id)
+}
+
+/** Lista viva de los grupos del usuario, leída de la caché local (offline). */
+export function observeGroups(): Observable<GroupView[]> {
+  return liveQuery(cachedGroups)
 }
 
 /** Rellena la caché desde el servidor (no lanza: si no hay red, se queda la caché). */
-export async function refreshNucleus(): Promise<void> {
+export async function refreshGroups(): Promise<void> {
   if (!supabase || !getCurrentSession() || !navigator.onLine) return
 
   const nuclei = await supabase.from('nuclei').select('id, name')
   if (nuclei.error) return
-  const nucleus = nuclei.data[0]
-  if (!nucleus) {
-    await db.meta.put({ key: NUCLEUS_KEY, value: null })
+  if (nuclei.data.length === 0) {
+    await db.meta.put({ key: GROUPS_KEY, value: [] })
     return
   }
 
   const [memberships, profiles, invitations] = await Promise.all([
-    supabase.from('memberships').select('user_id, since'),
+    supabase.from('memberships').select('nucleus_id, user_id, since'),
     supabase.from('profiles').select('id, display_name, email'),
     supabase
       .from('invitations')
-      .select('token, expires_at, created_by, status')
+      .select('token, expires_at, created_by, status, nucleus_id')
       .eq('status', 'pending'),
   ])
   if (memberships.error || profiles.error || invitations.error) return
@@ -138,17 +136,20 @@ export async function refreshNucleus(): Promise<void> {
   )
   const now = new Date().toISOString()
 
-  const view: NucleusView = {
+  const groups: GroupView[] = nuclei.data.map((nucleus) => ({
     id: nucleus.id,
     name: nucleus.name,
-    members: memberships.data.map((m) => ({
-      userId: m.user_id,
-      displayName: names.get(m.user_id) ?? 'Miembro',
-      since: m.since,
-    })),
+    members: memberships.data
+      .filter((m) => m.nucleus_id === nucleus.id)
+      .map((m) => ({
+        userId: m.user_id,
+        displayName: names.get(m.user_id) ?? 'Miembro',
+        since: m.since,
+      })),
     pendingInvitations: invitations.data
       .filter(
         (inv) =>
+          inv.nucleus_id === nucleus.id &&
           invitationState(
             { status: inv.status as 'pending', expiresAt: inv.expires_at },
             now,
@@ -160,31 +161,30 @@ export async function refreshNucleus(): Promise<void> {
         expiresAt: inv.expires_at,
         createdBy: names.get(inv.created_by) ?? 'Miembro',
       })),
-  }
-  await db.meta.put({ key: NUCLEUS_KEY, value: view })
+  }))
+  await db.meta.put({ key: GROUPS_KEY, value: groups })
 }
 
-export async function createNucleus(name: string): Promise<void> {
+export async function createGroup(name: string): Promise<void> {
   const client = ensureReady()
-  const res = await client.rpc('create_nucleus', { p_name: name })
+  const res = await client.rpc('create_group', { p_name: name })
   if (res.error) throw toActionError(res.error.message)
-  await refreshNucleus()
+  await refreshGroups()
 }
 
-export async function createInvitation(): Promise<PendingInvitation> {
+export async function createInvitation(nucleusId: string): Promise<PendingInvitation> {
   const client = ensureReady()
-  const nucleus = (await db.meta.get(NUCLEUS_KEY))?.value as NucleusView | null
   const userId = getCurrentUserId()
-  if (!nucleus || userId === null) {
-    throw new NucleusActionError('no_nucleus', 'no_nucleus')
+  if (userId === null) {
+    throw new NucleusActionError('unknown', 'Sin sesión')
   }
   const res = await client
     .from('invitations')
-    .insert({ nucleus_id: nucleus.id, created_by: userId })
+    .insert({ nucleus_id: nucleusId, created_by: userId })
     .select('token, expires_at')
     .single()
   if (res.error) throw toActionError(res.error.message)
-  await refreshNucleus()
+  await refreshGroups()
   return {
     token: res.data.token,
     url: invitationUrl(res.data.token),
@@ -200,34 +200,34 @@ export async function revokeInvitation(token: string): Promise<void> {
     .update({ status: 'revoked' })
     .eq('token', token)
   if (res.error) throw toActionError(res.error.message)
-  await refreshNucleus()
+  await refreshGroups()
 }
 
 export async function acceptInvitation(token: string): Promise<void> {
   const client = ensureReady()
   const res = await client.rpc('accept_invitation', { p_token: token })
   if (res.error) throw toActionError(res.error.message)
-  await refreshNucleus()
-  requestSync() // trae las tareas del núcleo recién visible
+  await refreshGroups()
+  requestSync() // trae las tareas del grupo recién visible
 }
 
-export async function leaveNucleus(): Promise<void> {
+export async function leaveGroup(nucleusId: string): Promise<void> {
   const client = ensureReady()
-  const res = await client.rpc('leave_nucleus')
+  const res = await client.rpc('leave_group', { p_nucleus_id: nucleusId })
   if (res.error) throw toActionError(res.error.message)
-  await db.meta.put({ key: NUCLEUS_KEY, value: null })
-  requestSync() // retira de Dexie las tareas del núcleo que ya no vemos
+  await refreshGroups()
+  requestSync() // retira de Dexie las tareas del grupo que ya no vemos
 }
 
 /** Mantiene la caché alineada con la sesión. Llamar una vez desde el arranque. */
-export function startNucleusCache(): void {
+export function startGroupsCache(): void {
   subscribeSession((session) => {
     if (session) {
-      void refreshNucleus()
+      void refreshGroups()
     }
     // En cierre de sesión la limpieza la hace authService (clearLocalData)
   })
   if (getCurrentSession()) {
-    void refreshNucleus()
+    void refreshGroups()
   }
 }

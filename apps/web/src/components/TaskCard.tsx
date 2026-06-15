@@ -29,13 +29,14 @@ export interface TaskCardHandle {
 interface TaskCardProps {
   task: Task
   memberName: (userId: string) => string
+  scopeLabel?: (task: Task) => string | null
   overdue: boolean
   onDone: () => void
   onDefer: () => void
 }
 
 export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskCard(
-  { task, memberName, overdue, onDone, onDefer },
+  { task, memberName, scopeLabel, overdue, onDone, onDefer },
   ref,
 ) {
   const [dx, setDx] = useState(0)
@@ -127,6 +128,7 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
                 <TaskBody
                   task={task}
                   memberName={memberName}
+                  scopeLabel={scopeLabel}
                   overdue={overdue}
                   showDescription={false}
                 />

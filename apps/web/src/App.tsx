@@ -3,7 +3,7 @@
 
 import { AuthMenu } from './components/AuthMenu'
 import { Footer } from './components/Footer'
-import { NucleusPanel } from './components/NucleusPanel'
+import { GroupsPanel } from './components/GroupsPanel'
 import { InvitationPage } from './pages/InvitationPage'
 import { TasksPage } from './pages/TasksPage'
 
@@ -30,7 +30,7 @@ export default function App() {
       ) : (
         <>
           <TasksPage />
-          <NucleusPanel />
+          <GroupsPanel />
         </>
       )}
       <Footer />

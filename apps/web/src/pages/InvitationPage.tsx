@@ -16,9 +16,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   expired: 'La invitación ha caducado. Pide que te generen una nueva.',
   revoked: 'La invitación fue revocada.',
   already_used: 'Esta invitación ya fue utilizada: solo vale una vez.',
-  already_member: 'Ya eres miembro de este núcleo.',
-  already_in_nucleus:
-    'Ya perteneces a un núcleo. Abandónalo antes de unirte a otro.',
+  already_member: 'Ya eres miembro de este grupo.',
 }
 
 export function InvitationPage({ token }: { token: string }) {
@@ -44,11 +42,11 @@ export function InvitationPage({ token }: { token: string }) {
 
   return (
     <section className="invitation-page">
-      <h2>Invitación al núcleo familiar</h2>
+      <h2>Invitación a un grupo</h2>
 
       {accepted ? (
         <>
-          <p>¡Ya formas parte del núcleo! A partir de ahora verás sus tareas compartidas.</p>
+          <p>¡Ya formas parte del grupo! A partir de ahora verás sus tareas compartidas.</p>
           <a href="/">Ir a mis tareas</a>
         </>
       ) : session === null ? (
@@ -66,7 +64,7 @@ export function InvitationPage({ token }: { token: string }) {
         </>
       ) : (
         <>
-          <p>Te han invitado a unirte a un núcleo familiar para compartir tareas.</p>
+          <p>Te han invitado a unirte a un grupo para compartir tareas.</p>
           <button
             type="button"
             onClick={() => {

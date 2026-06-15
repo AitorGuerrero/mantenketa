@@ -6,6 +6,7 @@ import { useRef, useState } from 'react'
 import { taskRepository } from '../data/taskRepository'
 import { orderDeck } from '../domain/deck'
 import type { TaskInGroup } from '../domain/grouping'
+import type { Task } from '../domain/task'
 
 import { TaskCard, type TaskCardHandle } from './TaskCard'
 import { TaskBody } from './TaskItem'
@@ -13,6 +14,7 @@ import { TaskBody } from './TaskItem'
 interface TaskDeckProps {
   ya: TaskInGroup[]
   memberName: (userId: string) => string
+  scopeLabel: (task: Task) => string | null
   onViewAsList: () => void
 }
 
@@ -21,7 +23,7 @@ const STACK_SIZE = 5
 // Opacidad por profundidad (índice 0 = activa); desvanece de la 3.ª a la 5.ª
 const DEPTH_OPACITY = [1, 1, 0.66, 0.4, 0.2]
 
-export function TaskDeck({ ya, memberName, onViewAsList }: TaskDeckProps) {
+export function TaskDeck({ ya, memberName, scopeLabel, onViewAsList }: TaskDeckProps) {
   // Orden de posposición, solo en memoria de sesión (se reinicia al recargar)
   const [deferredIds, setDeferredIds] = useState<string[]>([])
   const cardRef = useRef<TaskCardHandle>(null)
@@ -90,6 +92,7 @@ export function TaskDeck({ ya, memberName, onViewAsList }: TaskDeckProps) {
                     <TaskBody
                       task={task}
                       memberName={memberName}
+                      scopeLabel={scopeLabel}
                       overdue={peekOverdue}
                       showDescription={false}
                     />
@@ -104,6 +107,7 @@ export function TaskDeck({ ya, memberName, onViewAsList }: TaskDeckProps) {
           key={top.id}
           task={top}
           memberName={memberName}
+          scopeLabel={scopeLabel}
           overdue={overdueById.get(top.id) ?? false}
           onDone={() => {
             handleDone(top.id)

@@ -118,7 +118,7 @@ export type Database = {
           {
             foreignKeyName: "memberships_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -233,9 +233,9 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string }
-      create_nucleus: { Args: { p_name: string }; Returns: string }
-      leave_nucleus: { Args: never; Returns: undefined }
-      my_nucleus_id: { Args: never; Returns: string }
+      create_group: { Args: { p_name: string }; Returns: string }
+      leave_group: { Args: { p_nucleus_id: string }; Returns: undefined }
+      my_nucleus_ids: { Args: never; Returns: string[] }
     }
     Enums: {
       [_ in never]: never

@@ -4,8 +4,8 @@
 import { useObservable } from 'dexie-react-hooks'
 import { useState, type FormEvent } from 'react'
 
-import { observeNucleus } from '../data/nucleusService'
-import { ValidationError, type NewTaskInput, type TaskScope } from '../domain/task'
+import { observeGroups } from '../data/nucleusService'
+import { ValidationError, type NewTaskInput } from '../domain/task'
 
 interface CreateTaskFormProps {
   onCreate: (input: NewTaskInput) => Promise<void>
@@ -16,27 +16,35 @@ interface CreateTaskFormProps {
 }
 
 export function CreateTaskForm({ onCreate, onCreated, onCancel }: CreateTaskFormProps) {
-  const nucleus = useObservable(() => observeNucleus(), [])
+  const groups = useObservable(() => observeGroups(), [])
   const [name, setName] = useState('')
   const [taskDate, setTaskDate] = useState('')
   const [description, setDescription] = useState('')
   const [urgent, setUrgent] = useState(false)
-  const [scope, setScope] = useState<TaskScope>('personal')
+  // '' ⇒ personal; en otro caso, id del grupo elegido (FR-008: personal por defecto)
+  const [groupId, setGroupId] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  // Sin núcleo no hay elección de ámbito (FR-014: personal por defecto)
-  const effectiveScope: TaskScope = nucleus != null ? scope : 'personal'
+  const myGroups = groups ?? []
+  // El grupo elegido debe seguir existiendo (p. ej. tras abandonarlo)
+  const effectiveGroupId = myGroups.some((g) => g.id === groupId) ? groupId : ''
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
     try {
-      await onCreate({ name, taskDate, scope: effectiveScope, description, urgent })
+      await onCreate({
+        name,
+        taskDate,
+        nucleusId: effectiveGroupId === '' ? null : effectiveGroupId,
+        description,
+        urgent,
+      })
       setName('')
       setTaskDate('')
       setDescription('')
       setUrgent(false)
-      setScope('personal')
+      setGroupId('')
       onCreated?.()
     } catch (cause) {
       if (cause instanceof ValidationError) {
@@ -100,32 +108,24 @@ export function CreateTaskForm({ onCreate, onCreated, onCancel }: CreateTaskForm
         />
         Urgente
       </label>
-      {nucleus != null && (
-        <fieldset className="scope-field">
-          <legend>Ámbito</legend>
-          <label className="scope-option">
-            <input
-              type="radio"
-              name="scope"
-              checked={scope === 'personal'}
-              onChange={() => {
-                setScope('personal')
-              }}
-            />
-            Personal
-          </label>
-          <label className="scope-option">
-            <input
-              type="radio"
-              name="scope"
-              checked={scope === 'nucleus'}
-              onChange={() => {
-                setScope('nucleus')
-              }}
-            />
-            Del núcleo
-          </label>
-        </fieldset>
+      {myGroups.length > 0 && (
+        <div className="form-field">
+          <label htmlFor="task-scope">Ámbito</label>
+          <select
+            id="task-scope"
+            value={effectiveGroupId}
+            onChange={(event) => {
+              setGroupId(event.target.value)
+            }}
+          >
+            <option value="">Personal</option>
+            {myGroups.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
+              </option>
+            ))}
+          </select>
+        </div>
       )}
       <div className="form-actions">
         <button type="submit">Añadir tarea</button>
