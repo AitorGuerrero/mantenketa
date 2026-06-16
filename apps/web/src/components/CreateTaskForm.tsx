@@ -115,57 +115,62 @@ export function CreateTaskForm({ onCreate, onCreated, onCancel }: CreateTaskForm
           }}
         />
       </div>
-      <label className="urgent-field">
-        <input
-          type="checkbox"
-          checked={urgent}
-          onChange={(event) => {
-            setUrgent(event.target.checked)
-          }}
-        />
-        Urgente
-      </label>
-      <label className="urgent-field">
-        <input
-          type="checkbox"
-          checked={recurring}
-          onChange={(event) => {
-            setRecurring(event.target.checked)
-          }}
-        />
-        Repetir
-      </label>
+      <div className="form-toggles">
+        <label className="toggle-field">
+          <input
+            type="checkbox"
+            checked={urgent}
+            onChange={(event) => {
+              setUrgent(event.target.checked)
+            }}
+          />
+          <span>Urgente</span>
+        </label>
+        <label className="toggle-field">
+          <input
+            type="checkbox"
+            checked={recurring}
+            onChange={(event) => {
+              setRecurring(event.target.checked)
+            }}
+          />
+          <span>Repetir</span>
+        </label>
+      </div>
       {recurring && (
-        <div className="recurrence-fields">
-          <div className="form-field">
-            <label htmlFor="rec-interval">Cada</label>
-            <input
-              id="rec-interval"
-              type="number"
-              min={1}
-              value={interval}
-              onChange={(event) => {
-                setInterval(Math.max(1, Number(event.target.value) || 1))
-              }}
-            />
+        <div className="recurrence-panel">
+          <div className="recurrence-fields">
+            <div className="form-field form-field--interval">
+              <label htmlFor="rec-interval">Cada</label>
+              <input
+                id="rec-interval"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                value={interval}
+                onChange={(event) => {
+                  setInterval(Math.max(1, Number(event.target.value) || 1))
+                }}
+              />
+            </div>
+            <div className="form-field form-field--freq">
+              <label htmlFor="rec-freq">Frecuencia</label>
+              <select
+                id="rec-freq"
+                value={freq}
+                onChange={(event) => {
+                  setFreq(event.target.value as Recurrence['freq'])
+                }}
+              >
+                <option value="daily">días</option>
+                <option value="weekly">semanas</option>
+                <option value="monthly">meses</option>
+                <option value="yearly">años</option>
+              </select>
+            </div>
           </div>
           <div className="form-field">
-            <label htmlFor="rec-freq">Frecuencia</label>
-            <select
-              id="rec-freq"
-              value={freq}
-              onChange={(event) => {
-                setFreq(event.target.value as Recurrence['freq'])
-              }}
-            >
-              <option value="daily">días</option>
-              <option value="weekly">semanas</option>
-              <option value="monthly">meses</option>
-              <option value="yearly">años</option>
-            </select>
-          </div>
-          <div className="form-field">
-            <label htmlFor="rec-anchor">Contar</label>
+            <label htmlFor="rec-anchor">Contar la próxima fecha</label>
             <select
               id="rec-anchor"
               value={anchor}
