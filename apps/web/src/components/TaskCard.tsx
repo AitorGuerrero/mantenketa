@@ -151,6 +151,9 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
                 Sin descripción
               </p>
             )}
+            {task.nucleusId !== null && task.ownerId !== null && (
+              <span className="task-creator">Creada por {memberName(task.ownerId)}</span>
+            )}
             {/* Editar va en el dorso; detiene los gestos de la tarjeta para no
                 voltear/deslizar al pulsar (aria-hidden cuando está de cara). */}
             <button

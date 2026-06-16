@@ -615,6 +615,18 @@ body {
   color: var(--color-text-muted);
 }
 
+/* Quién creó la tarea (solo tareas de grupo, feature) */
+.task-creator {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+/* En el dorso de la tarjeta se centra bajo la descripción */
+.task-card-back .task-creator {
+  align-self: center;
+  text-align: center;
+}
+
 .task-item--done .task-name {
   text-decoration: line-through;
   color: var(--color-text-muted);

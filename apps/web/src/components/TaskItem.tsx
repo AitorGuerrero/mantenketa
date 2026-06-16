@@ -40,6 +40,7 @@ export function TaskBody({
   scopeLabel,
   overdue = false,
   showDescription = true,
+  showCreator = false,
 }: {
   task: Task
   memberName: (userId: string) => string
@@ -49,9 +50,16 @@ export function TaskBody({
   overdue?: boolean
   // En la baraja la descripción va en el dorso (volteo), no en la cara frontal
   showDescription?: boolean
+  // Quién creó la tarea: solo en tareas de grupo (no personales). En la baraja
+  // se muestra en el dorso, así que la cara frontal lo deja en false.
+  showCreator?: boolean
 }) {
   const label = stateLabel(task, memberName)
   const scope = scopeLabel?.(task) ?? null
+  const creator =
+    showCreator && task.nucleusId !== null && task.ownerId !== null
+      ? memberName(task.ownerId)
+      : null
   return (
     <>
       <span className="task-name">
@@ -77,6 +85,7 @@ export function TaskBody({
         </time>
       )}
       {label !== null && <span className="task-state">{label}</span>}
+      {creator !== null && <span className="task-creator">Creada por {creator}</span>}
       {showDescription && task.description !== null && task.description !== '' && (
         <p className="task-description">{task.description}</p>
       )}
@@ -142,6 +151,7 @@ export function TaskItem({ task, memberName, scopeLabel, overdue = false }: Task
         memberName={memberName}
         scopeLabel={scopeLabel}
         overdue={overdue}
+        showCreator
       />
       {!done && (
         <div className="task-recurrence-actions">
