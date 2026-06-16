@@ -5,63 +5,85 @@ import { useObservable } from 'dexie-react-hooks'
 import { useState, type FormEvent } from 'react'
 
 import { observeGroups } from '../data/nucleusService'
-import {
-  ValidationError,
-  type NewTaskInput,
-  type Recurrence,
-} from '../domain/task'
+import { ValidationError, type NewTaskInput, type Recurrence } from '../domain/task'
 
-interface CreateTaskFormProps {
-  onCreate: (input: NewTaskInput) => Promise<void>
+import { type TaskFormInitial } from './taskFormInitial'
+
+interface TaskFormProps {
+  /** 'create' (por defecto) muestra el selector de ámbito; 'edit' no (ámbito fijo). */
+  mode?: 'create' | 'edit'
+  initial?: TaskFormInitial
+  submitLabel?: string
+  onSubmit: (input: NewTaskInput) => Promise<void>
   /** Se invoca tras guardar con éxito (para que el padre cierre el formulario). */
   onCreated?: () => void
   /** Se invoca al cancelar. */
   onCancel?: () => void
 }
 
-export function CreateTaskForm({ onCreate, onCreated, onCancel }: CreateTaskFormProps) {
+const EMPTY: TaskFormInitial = {
+  name: '',
+  taskDate: '',
+  description: '',
+  urgent: false,
+  recurrence: null,
+}
+
+export function TaskForm({
+  mode = 'create',
+  initial,
+  submitLabel = 'Añadir tarea',
+  onSubmit,
+  onCreated,
+  onCancel,
+}: TaskFormProps) {
+  const init = initial ?? EMPTY
   const groups = useObservable(() => observeGroups(), [])
-  const [name, setName] = useState('')
-  const [taskDate, setTaskDate] = useState('')
-  const [description, setDescription] = useState('')
-  const [urgent, setUrgent] = useState(false)
-  // '' ⇒ personal; en otro caso, id del grupo elegido (FR-008: personal por defecto)
+  const [name, setName] = useState(init.name)
+  const [taskDate, setTaskDate] = useState(init.taskDate)
+  const [description, setDescription] = useState(init.description)
+  const [urgent, setUrgent] = useState(init.urgent)
+  // '' ⇒ personal; en otro caso, id del grupo elegido (solo modo crear)
   const [groupId, setGroupId] = useState('')
-  // Recurrencia (feature 009): por defecto no recurrente
-  const [recurring, setRecurring] = useState(false)
-  const [freq, setFreq] = useState<Recurrence['freq']>('weekly')
-  const [interval, setInterval] = useState(1)
-  const [anchor, setAnchor] = useState<Recurrence['anchor']>('completion')
+  // Recurrencia (feature 009/010): prellenada en edición
+  const [recurring, setRecurring] = useState(init.recurrence !== null)
+  const [freq, setFreq] = useState<Recurrence['freq']>(init.recurrence?.freq ?? 'weekly')
+  const [interval, setInterval] = useState(init.recurrence?.interval ?? 1)
+  const [anchor, setAnchor] = useState<Recurrence['anchor']>(
+    init.recurrence?.anchor ?? 'completion',
+  )
   const [error, setError] = useState<string | null>(null)
 
   const myGroups = groups ?? []
   // El grupo elegido debe seguir existiendo (p. ej. tras abandonarlo)
   const effectiveGroupId = myGroups.some((g) => g.id === groupId) ? groupId : ''
+  const showScope = mode === 'create' && myGroups.length > 0
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
     try {
-      const recurrence: Recurrence | null = recurring
-        ? { freq, interval, anchor }
-        : null
-      await onCreate({
+      const recurrence: Recurrence | null = recurring ? { freq, interval, anchor } : null
+      await onSubmit({
         name,
         taskDate,
-        nucleusId: effectiveGroupId === '' ? null : effectiveGroupId,
+        // En edición el ámbito es inmutable; editTask ignora nucleusId
+        nucleusId: showScope && effectiveGroupId !== '' ? effectiveGroupId : null,
         description,
         urgent,
         recurrence,
       })
-      setName('')
-      setTaskDate('')
-      setDescription('')
-      setUrgent(false)
-      setGroupId('')
-      setRecurring(false)
-      setFreq('weekly')
-      setInterval(1)
-      setAnchor('completion')
+      if (mode === 'create') {
+        setName('')
+        setTaskDate('')
+        setDescription('')
+        setUrgent(false)
+        setGroupId('')
+        setRecurring(false)
+        setFreq('weekly')
+        setInterval(1)
+        setAnchor('completion')
+      }
       onCreated?.()
     } catch (cause) {
       if (cause instanceof ValidationError) {
@@ -184,7 +206,7 @@ export function CreateTaskForm({ onCreate, onCreated, onCancel }: CreateTaskForm
           </div>
         </div>
       )}
-      {myGroups.length > 0 && (
+      {showScope && (
         <div className="form-field">
           <label htmlFor="task-scope">Ámbito</label>
           <select
@@ -204,7 +226,7 @@ export function CreateTaskForm({ onCreate, onCreated, onCancel }: CreateTaskForm
         </div>
       )}
       <div className="form-actions">
-        <button type="submit">Añadir tarea</button>
+        <button type="submit">{submitLabel}</button>
         {onCancel && (
           <button
             type="button"

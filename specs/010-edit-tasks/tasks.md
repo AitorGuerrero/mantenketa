@@ -25,10 +25,10 @@ user stories US1 → US2 → US3. Client-only: no migration, RLS or type changes
 
 **Purpose**: The edit primitive and the reusable form that every story builds on.
 
-- [ ] T001 [P] Test-first `apps/web/src/domain/edit.test.ts` for `applyEdit(task, parsed, now, newSeriesId)`: preserves `id`/`ownerId`/`nucleusId`/`completedAt`/`completedBy`/`createdAt`; sets `name`/`taskDate`/`description`/`urgent`/`recurrence` from parsed and `updatedAt = now`; enabling recurrence on a one-off (`seriesId === null`) uses `newSeriesId`; keeps existing `seriesId` when already recurring; disabling recurrence yields `recurrence: null`
-- [ ] T002 `apps/web/src/domain/edit.ts`: implement pure `applyEdit` — makes T001 pass
-- [ ] T003 `apps/web/src/data/taskRepository.ts`: add `editTask(taskId, input)` to the interface and class — validate with `parseNewTask`; in one rw transaction load the task (missing → throw), no-op if completed, else `applyEdit(existing, parsed, now, crypto.randomUUID())`, `put`, enqueue outbox, `scheduleFlush()`; ignore `input.nucleusId` (scope immutable)
-- [ ] T004 Generalize `apps/web/src/components/CreateTaskForm.tsx` → `apps/web/src/components/TaskForm.tsx`: props `mode` ('create'|'edit'), `initial` (name/taskDate/description/urgent/recurrence), `submitLabel`, `onSubmit`, `onCreated`, `onCancel`; pre-fill state from `initial`; render the scope `<select>` only in create mode; update `apps/web/src/pages/TasksPage.tsx` to use `TaskForm` in create mode (behavior unchanged)
+- [X] T001 [P] Test-first `apps/web/src/domain/edit.test.ts` for `applyEdit(task, parsed, now, newSeriesId)`: preserves `id`/`ownerId`/`nucleusId`/`completedAt`/`completedBy`/`createdAt`; sets `name`/`taskDate`/`description`/`urgent`/`recurrence` from parsed and `updatedAt = now`; enabling recurrence on a one-off (`seriesId === null`) uses `newSeriesId`; keeps existing `seriesId` when already recurring; disabling recurrence yields `recurrence: null`
+- [X] T002 `apps/web/src/domain/edit.ts`: implement pure `applyEdit` — makes T001 pass
+- [X] T003 `apps/web/src/data/taskRepository.ts`: add `editTask(taskId, input)` to the interface and class — validate with `parseNewTask`; in one rw transaction load the task (missing → throw), no-op if completed, else `applyEdit(existing, parsed, now, crypto.randomUUID())`, `put`, enqueue outbox, `scheduleFlush()`; ignore `input.nucleusId` (scope immutable)
+- [X] T004 Generalize `apps/web/src/components/CreateTaskForm.tsx` → `apps/web/src/components/TaskForm.tsx`: props `mode` ('create'|'edit'), `initial` (name/taskDate/description/urgent/recurrence), `submitLabel`, `onSubmit`, `onCreated`, `onCancel`; pre-fill state from `initial`; render the scope `<select>` only in create mode; update `apps/web/src/pages/TasksPage.tsx` to use `TaskForm` in create mode (behavior unchanged)
 
 **Checkpoint**: editing works at the data layer and the form can render pre-filled.
 
@@ -42,12 +42,12 @@ user stories US1 → US2 → US3. Client-only: no migration, RLS or type changes
 
 ### Tests for User Story 1 ⚠️ (write FIRST, confirm FAILING)
 
-- [ ] T005 [P] [US1] e2e `apps/web/tests/e2e/edit-tasks.spec.ts`: open "Editar" on a pending list task → form pre-filled; change name + set date + toggle urgent + save → reflected in place, no duplicate; clear date + save → task in "Para hacer ya"; blank name + save → validation message, unchanged; cancel → unchanged
+- [X] T005 [P] [US1] e2e `apps/web/tests/e2e/edit-tasks.spec.ts`: open "Editar" on a pending list task → form pre-filled; change name + set date + toggle urgent + save → reflected in place, no duplicate; clear date + save → task in "Para hacer ya"; blank name + save → validation message, unchanged; cancel → unchanged
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] `apps/web/src/components/TaskItem.tsx`: show an "Editar" control on pending tasks (hidden when completed); toggling it renders `TaskForm` in edit mode in place of the row, pre-filled, submit label "Guardar"; on submit call `taskRepository.editTask(task.id, input)` and close; cancel restores the row
-- [ ] T007 [US1] `apps/web/src/index.css`: styles for the "Editar" affordance and the in-place edit form (mobile-first)
+- [X] T006 [US1] `apps/web/src/components/TaskItem.tsx`: show an "Editar" control on pending tasks (hidden when completed); toggling it renders `TaskForm` in edit mode in place of the row, pre-filled, submit label "Guardar"; on submit call `taskRepository.editTask(task.id, input)` and close; cancel restores the row
+- [X] T007 [US1] `apps/web/src/index.css`: styles for the "Editar" affordance and the in-place edit form (mobile-first)
 
 **Checkpoint**: pending tasks are editable from the list (MVP).
 
@@ -61,11 +61,11 @@ user stories US1 → US2 → US3. Client-only: no migration, RLS or type changes
 
 ### Tests for User Story 2 ⚠️ (write FIRST, confirm FAILING)
 
-- [ ] T008 [P] [US2] Extend `apps/web/tests/e2e/edit-tasks.spec.ts`: enable recurrence via edit → cadence badge appears and completing generates the next occurrence; change cadence; disable recurrence → badge gone and no successor on completion; setting "en la fecha prevista" with no date → rejected with the creation message
+- [X] T008 [P] [US2] Extend `apps/web/tests/e2e/edit-tasks.spec.ts`: enable recurrence via edit → cadence badge appears and completing generates the next occurrence; change cadence; disable recurrence → badge gone and no successor on completion; setting "en la fecha prevista" with no date → rejected with the creation message
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] In `apps/web/src/components/TaskForm.tsx`, confirm/wire edit-mode pre-fill of the recurrence controls (Repetir + cada N + frecuencia + ancla) from `initial.recurrence`; the persistence (series id on enable, null on disable) is handled by `applyEdit`/`editTask` from Phase 1 — verify it end-to-end
+- [X] T009 [US2] In `apps/web/src/components/TaskForm.tsx`, confirm/wire edit-mode pre-fill of the recurrence controls (Repetir + cada N + frecuencia + ancla) from `initial.recurrence`; the persistence (series id on enable, null on disable) is handled by `applyEdit`/`editTask` from Phase 1 — verify it end-to-end
 
 **Checkpoint**: recurrence is editable; US1 + US2 work.
 
@@ -79,11 +79,11 @@ user stories US1 → US2 → US3. Client-only: no migration, RLS or type changes
 
 ### Tests for User Story 3 ⚠️ (write FIRST, confirm FAILING)
 
-- [ ] T010 [P] [US3] Extend `apps/web/tests/e2e/edit-tasks.spec.ts`: a completed task shows no "Editar" and after revert it reappears; (touch/deck project) the top card exposes "Editar" and editing it updates the task
+- [X] T010 [P] [US3] Extend `apps/web/tests/e2e/edit-tasks.spec.ts`: a completed task shows no "Editar" and after revert it reappears; (touch/deck project) the top card exposes "Editar" and editing it updates the task
 
 ### Implementation for User Story 3
 
-- [ ] T011 [US3] `apps/web/src/components/TaskCard.tsx` + `apps/web/src/components/TaskDeck.tsx`: add an "Editar" action for the deck's top (pending) card that shows `TaskForm` in edit mode for that task until save/cancel; styles in `apps/web/src/index.css`
+- [X] T011 [US3] `apps/web/src/components/TaskCard.tsx` + `apps/web/src/components/TaskDeck.tsx`: add an "Editar" action for the deck's top (pending) card that shows `TaskForm` in edit mode for that task until save/cancel; styles in `apps/web/src/index.css`
 
 **Checkpoint**: edit available in list and deck; pending-only enforced; group propagation works (no extra code — existing sync/RLS).
 
@@ -91,8 +91,8 @@ user stories US1 → US2 → US3. Client-only: no migration, RLS or type changes
 
 ## Phase 5: Polish & validation
 
-- [ ] T012 [P] Verify the edit affordance and in-place form at a narrow mobile viewport (Principle IX); tidy styles and copy
-- [ ] T013 Full validation: `pnpm test`, `pnpm test:rls`, `pnpm lint`, `pnpm build`, `pnpm test:e2e` all green; features 001–009 regression-free; run `quickstart.md` smoke; mark tasks complete
+- [X] T012 [P] Verify the edit affordance and in-place form at a narrow mobile viewport (Principle IX); tidy styles and copy
+- [X] T013 Full validation: `pnpm test`, `pnpm test:rls`, `pnpm lint`, `pnpm build`, `pnpm test:e2e` all green; features 001–009 regression-free; run `quickstart.md` smoke; mark tasks complete
 
 ---
 

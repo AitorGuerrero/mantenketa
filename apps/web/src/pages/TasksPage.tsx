@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 
-import { CreateTaskForm } from '../components/CreateTaskForm'
+import { TaskForm } from '../components/TaskForm'
 import { TaskGroups } from '../components/TaskGroups'
 import { taskRepository } from '../data/taskRepository'
 import type { NewTaskInput } from '../domain/task'
@@ -18,8 +18,8 @@ export function TasksPage() {
   return (
     <section className="tasks-page">
       {creating ? (
-        <CreateTaskForm
-          onCreate={handleCreate}
+        <TaskForm
+          onSubmit={handleCreate}
           onCreated={() => {
             setCreating(false)
           }}

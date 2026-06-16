@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Aitor Guerrero
 
+import { useState } from 'react'
+
 import { taskRepository } from '../data/taskRepository'
 import { overdueText, todayIsoDate } from '../domain/date'
 import { cadenceLabel } from '../domain/recurrence'
-import { isDone, type Task } from '../domain/task'
+import { isDone, type NewTaskInput, type Task } from '../domain/task'
+
+import { TaskForm } from './TaskForm'
+import { taskToFormInitial } from './taskFormInitial'
 
 function formatDate(isoDate: string): string {
   const [year, month, day] = isoDate.split('-').map(Number)
@@ -88,9 +93,31 @@ interface TaskItemProps {
 
 export function TaskItem({ task, memberName, scopeLabel, overdue = false }: TaskItemProps) {
   const done = isDone(task)
+  const [editing, setEditing] = useState(false)
 
   function handleToggle() {
     void (done ? taskRepository.revert(task.id) : taskRepository.markDone(task.id))
+  }
+
+  if (editing) {
+    return (
+      <li className="task-item task-item--editing">
+        <TaskForm
+          mode="edit"
+          initial={taskToFormInitial(task)}
+          submitLabel="Guardar"
+          onSubmit={async (input: NewTaskInput) => {
+            await taskRepository.editTask(task.id, input)
+          }}
+          onCreated={() => {
+            setEditing(false)
+          }}
+          onCancel={() => {
+            setEditing(false)
+          }}
+        />
+      </li>
+    )
   }
 
   const classes = ['task-item']
@@ -116,22 +143,35 @@ export function TaskItem({ task, memberName, scopeLabel, overdue = false }: Task
         scopeLabel={scopeLabel}
         overdue={overdue}
       />
-      {showRecurrenceActions && (
+      {!done && (
         <div className="task-recurrence-actions">
           <button
             type="button"
             className="link-button"
-            onClick={() => void taskRepository.skipOccurrence(task.id)}
+            onClick={() => {
+              setEditing(true)
+            }}
           >
-            Saltar
+            Editar
           </button>
-          <button
-            type="button"
-            className="link-button"
-            onClick={() => void taskRepository.stopRecurrence(task.id)}
-          >
-            No repetir más
-          </button>
+          {showRecurrenceActions && (
+            <>
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => void taskRepository.skipOccurrence(task.id)}
+              >
+                Saltar
+              </button>
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => void taskRepository.stopRecurrence(task.id)}
+              >
+                No repetir más
+              </button>
+            </>
+          )}
         </div>
       )}
     </li>
