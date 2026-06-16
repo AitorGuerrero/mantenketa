@@ -85,9 +85,15 @@ test('una tarea del núcleo creada por A aparece en B sin recargar (SC-003) y la
   const shared = pageB.getByRole('listitem').filter({ hasText: 'Comprar bombillas' })
   await expect(shared).toBeVisible({ timeout: 5000 })
   await expect(shared).toContainText(NUCLEUS_NAME)
+  // Tarea de grupo: se ve quién la creó (A, mostrado por su email al no tener nombre)
+  await expect(shared).toContainText(`Creada por ${userA.email}`)
 
   // La personal de A nunca aparece en B
   await expect(pageB.getByText('Solo mía')).toHaveCount(0)
+
+  // La personal (no de grupo) no muestra "Creada por"
+  const mine = pageA.getByRole('listitem').filter({ hasText: 'Solo mía' })
+  await expect(mine).not.toContainText('Creada por')
 })
 
 test('B la marca hecha y A ve quién la completó sin recargar (FR-016)', async () => {
