@@ -6,9 +6,10 @@ import { liveQuery, type Observable } from 'dexie'
 import { getCurrentUserId } from '../auth/sessionStore'
 import { markDone as toDone, revert as toOutstanding } from '../domain/completion'
 import { todayIsoDate } from '../domain/date'
+import { applyEdit } from '../domain/edit'
 import { sortTasks } from '../domain/ordering'
 import { nextOccurrenceDate, successorId } from '../domain/recurrence'
-import { parseNewTask, type NewTaskInput, type Task } from '../domain/task'
+import { isDone, parseNewTask, type NewTaskInput, type Task } from '../domain/task'
 
 import { db } from './db'
 import { scheduleFlush } from './sync/syncEngine'
@@ -43,6 +44,13 @@ export interface TaskRepository {
    * Idempotente: sin efecto si ya está pendiente.
    */
   revert(taskId: string): Promise<Task>
+
+  /**
+   * Edita una tarea pendiente (feature 010): nombre, fecha, descripción,
+   * urgente y recurrencia. Conserva identidad, dueño, ámbito y completado.
+   * No-op si la tarea está completada. Valida igual que la creación.
+   */
+  editTask(taskId: string, input: NewTaskInput): Promise<Task>
 
   /**
    * Salta la ocurrencia actual de una serie recurrente sin completarla
@@ -145,6 +153,30 @@ export class DexieTaskRepository implements TaskRepository {
           await db.tasks.delete(succId)
         }
       }
+      return stamped
+    })
+    scheduleFlush()
+    return result
+  }
+
+  async editTask(taskId: string, input: NewTaskInput): Promise<Task> {
+    // Misma validación que crear (nombre, fecha, ancla dueDate exige fecha)
+    const parsed = parseNewTask(input)
+    const result = await db.transaction('rw', db.tasks, db.outbox, async () => {
+      const existing = await db.tasks.get(taskId)
+      if (!existing) {
+        throw new Error(`Tarea no encontrada: ${taskId}`)
+      }
+      // Solo se editan pendientes (FR-007); defensivo, la UI ya lo impide
+      if (isDone(existing)) return existing
+      const stamped = applyEdit(
+        existing,
+        parsed,
+        new Date().toISOString(),
+        crypto.randomUUID(),
+      )
+      await db.tasks.put(stamped)
+      await this.enqueuePush(stamped)
       return stamped
     })
     scheduleFlush()

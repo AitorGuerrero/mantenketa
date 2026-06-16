@@ -33,10 +33,12 @@ interface TaskCardProps {
   overdue: boolean
   onDone: () => void
   onDefer: () => void
+  /** Abrir la edición (enlace en el dorso de la tarjeta, feature 010). */
+  onEdit: () => void
 }
 
 export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskCard(
-  { task, memberName, scopeLabel, overdue, onDone, onDefer },
+  { task, memberName, scopeLabel, overdue, onDone, onDefer, onEdit },
   ref,
 ) {
   const [dx, setDx] = useState(0)
@@ -149,6 +151,22 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
                 Sin descripción
               </p>
             )}
+            {/* Editar va en el dorso; detiene los gestos de la tarjeta para no
+                voltear/deslizar al pulsar (aria-hidden cuando está de cara). */}
+            <button
+              type="button"
+              className="link-button task-card-edit"
+              tabIndex={flipped ? 0 : -1}
+              onPointerDown={(e) => {
+                e.stopPropagation()
+              }}
+              onClick={(e) => {
+                e.stopPropagation()
+                onEdit()
+              }}
+            >
+              Editar
+            </button>
           </div>
         </div>
       </article>

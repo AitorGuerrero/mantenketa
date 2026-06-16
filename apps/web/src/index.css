@@ -297,6 +297,14 @@ body {
   font-style: italic;
 }
 
+/* Enlace "Editar" en el dorso de la tarjeta (feature 010) */
+.task-card-edit {
+  align-self: center;
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+  padding: 0.25rem 0.5rem;
+}
+
 /* Al promocionar a primera posición, la nueva tarjeta entra escalando */
 .task-card--enter {
   animation: card-promote 0.25s ease-out;
@@ -550,8 +558,21 @@ body {
 
 .task-recurrence-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   margin-top: 0.35rem;
+}
+
+/* Edición en sitio: la fila cede el sitio al formulario (sin doble tarjeta) */
+.task-item--editing {
+  display: block;
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+.task-item--editing .create-task-form {
+  margin-bottom: 0;
 }
 
 .task-recurrence-actions--deck {

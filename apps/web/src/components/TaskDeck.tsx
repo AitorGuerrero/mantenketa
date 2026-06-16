@@ -9,6 +9,8 @@ import type { TaskInGroup } from '../domain/grouping'
 import type { Task } from '../domain/task'
 
 import { TaskCard, type TaskCardHandle } from './TaskCard'
+import { TaskForm } from './TaskForm'
+import { taskToFormInitial } from './taskFormInitial'
 import { TaskBody } from './TaskItem'
 
 interface TaskDeckProps {
@@ -26,6 +28,7 @@ const DEPTH_OPACITY = [1, 1, 0.66, 0.4, 0.2]
 export function TaskDeck({ ya, memberName, scopeLabel, onViewAsList }: TaskDeckProps) {
   // Orden de posposición, solo en memoria de sesión (se reinicia al recargar)
   const [deferredIds, setDeferredIds] = useState<string[]>([])
+  const [editing, setEditing] = useState(false)
   const cardRef = useRef<TaskCardHandle>(null)
 
   const overdueById = new Map(ya.map((g) => [g.task.id, g.isOverdue]))
@@ -44,6 +47,29 @@ export function TaskDeck({ ya, memberName, scopeLabel, onViewAsList }: TaskDeckP
         <button type="button" className="view-as-list" onClick={onViewAsList}>
           Ver como lista
         </button>
+      </section>
+    )
+  }
+
+  // Editar la tarjeta superior: el formulario reemplaza la baraja (feature 010)
+  if (editing) {
+    return (
+      <section className="task-group" aria-label="Para hacer ya">
+        <h2 className="task-group-title">Para hacer ya</h2>
+        <TaskForm
+          mode="edit"
+          initial={taskToFormInitial(top)}
+          submitLabel="Guardar"
+          onSubmit={async (input) => {
+            await taskRepository.editTask(top.id, input)
+          }}
+          onCreated={() => {
+            setEditing(false)
+          }}
+          onCancel={() => {
+            setEditing(false)
+          }}
+        />
       </section>
     )
   }
@@ -114,6 +140,9 @@ export function TaskDeck({ ya, memberName, scopeLabel, onViewAsList }: TaskDeckP
           }}
           onDefer={() => {
             handleDefer(top.id)
+          }}
+          onEdit={() => {
+            setEditing(true)
           }}
         />
       </div>
