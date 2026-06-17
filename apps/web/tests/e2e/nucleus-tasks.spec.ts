@@ -98,8 +98,10 @@ test('una tarea del núcleo creada por A aparece en B sin recargar (SC-003) y la
 
 test('B la marca hecha y A ve quién la completó sin recargar (FR-016)', async () => {
   await pageB.getByRole('checkbox', { name: 'Comprar bombillas' }).click()
-  await expect(pageB.getByText(`por ${userB.email}`)).toBeVisible()
+  await expect(pageB.getByText(`Completada por ${userB.email}`)).toBeVisible()
 
   // A recibe el cambio por Realtime: completada y con autor
-  await expect(pageA.getByText(`por ${userB.email}`)).toBeVisible({ timeout: 5000 })
+  await expect(pageA.getByText(`Completada por ${userB.email}`)).toBeVisible({
+    timeout: 5000,
+  })
 })

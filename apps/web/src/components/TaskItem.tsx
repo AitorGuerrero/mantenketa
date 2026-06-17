@@ -21,15 +21,11 @@ function formatDate(isoDate: string): string {
 }
 
 // null para tareas pendientes: el grupo ("ya"/"pronto") ya indica que lo están,
-// así que "Pendiente" no aporta información. Las hechas muestran su fecha/autor.
-function stateLabel(task: Task, memberName: (userId: string) => string): string | null {
+// así que "Pendiente" no aporta información. Quién la completó se muestra en su
+// propia línea (paridad con "Creada por"), no aquí.
+function stateLabel(task: Task): string | null {
   if (!isDone(task) || task.completedAt === null) return null
-  const base = `Hecha el ${formatDate(task.completedAt)}`
-  // En tareas del núcleo importa quién la hizo (FR-016)
-  if (task.nucleusId !== null && task.completedBy !== null) {
-    return `${base} por ${memberName(task.completedBy)}`
-  }
-  return base
+  return `Hecha el ${formatDate(task.completedAt)}`
 }
 
 /** Contenido visual de una tarea (sin contenedor): nombre, insignias, fecha, estado.
@@ -54,11 +50,16 @@ export function TaskBody({
   // se muestra en el dorso, así que la cara frontal lo deja en false.
   showCreator?: boolean
 }) {
-  const label = stateLabel(task, memberName)
+  const label = stateLabel(task)
   const scope = scopeLabel?.(task) ?? null
   const creator =
     showCreator && task.nucleusId !== null && task.ownerId !== null
       ? memberName(task.ownerId)
+      : null
+  // Quién la completó: tareas de grupo ya hechas (FR-016)
+  const completer =
+    showCreator && isDone(task) && task.nucleusId !== null && task.completedBy !== null
+      ? memberName(task.completedBy)
       : null
   return (
     <>
@@ -86,6 +87,9 @@ export function TaskBody({
       )}
       {label !== null && <span className="task-state">{label}</span>}
       {creator !== null && <span className="task-creator">Creada por {creator}</span>}
+      {completer !== null && (
+        <span className="task-creator">Completada por {completer}</span>
+      )}
       {showDescription && task.description !== null && task.description !== '' && (
         <p className="task-description">{task.description}</p>
       )}
