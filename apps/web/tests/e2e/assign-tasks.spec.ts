@@ -13,7 +13,7 @@ import {
 } from '../integration/helpers'
 
 import { injectSession, supabaseConfigured } from './session'
-import { createTask, taskRow } from './ui'
+import { createTask, swipeRow, taskRow, yaList } from './ui'
 
 // Feature 012 — asignar una tarea de grupo a un miembro. Requiere grupo (sesión
 // + Supabase). Igual que nucleus-tasks: dos usuarios en un mismo núcleo.
@@ -118,4 +118,23 @@ test('A reasigna la tarea a sí mismo al editar; deja de ser de B (FR-004)', asy
   const onB = taskRow(pageB, 'Pintar valla')
   await expect(onB).toContainText(`Asignada a ${userA.email}`, { timeout: 10000 })
   await expect(onB).not.toContainText('Para mí')
+})
+
+test('una tarea asignada a otra persona se atenúa y no se puede completar (feature 014)', async () => {
+  // A crea una tarea de grupo asignada a B
+  await createTask(pageA, 'Cosa de B', { group: NUCLEUS_NAME, assignee: userB.email })
+
+  // Para A está asignada a otra persona ⇒ atenuada y bloqueada
+  const onA = taskRow(pageA, 'Cosa de B')
+  await expect(onA).toHaveClass(/task-item--others/)
+  // Deslizar a la derecha no la completa: sigue pendiente en "ya"
+  await swipeRow(pageA, onA, 'right')
+  await expect(yaList(pageA).getByRole('listitem').filter({ hasText: 'Cosa de B' })).toHaveCount(1)
+  await expect(onA).not.toContainText('Hecha')
+
+  // Para B (su asignada) no se atenúa: es accionable y resaltada
+  const onB = taskRow(pageB, 'Cosa de B')
+  await expect(onB).toBeVisible({ timeout: 5000 })
+  await expect(onB).not.toHaveClass(/task-item--others/)
+  await expect(onB).toHaveClass(/task-item--mine/)
 })

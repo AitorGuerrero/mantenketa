@@ -34,6 +34,8 @@ interface TaskCardProps {
   projectName?: (task: Task) => string | null
   currentUserId?: string | null
   overdue: boolean
+  /** Si false, la tarjeta se atenúa y no se puede completar (feature 014). */
+  actionable?: boolean
   onDone: () => void
   onDefer: () => void
   /** Abrir la edición (enlace en el dorso de la tarjeta, feature 010). */
@@ -48,6 +50,7 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
     projectName,
     currentUserId = null,
     overdue,
+    actionable = true,
     onDone,
     onDefer,
     onEdit,
@@ -62,6 +65,9 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
 
   function fly(kind: 'done' | 'defer') {
     if (flying !== null) return
+    // No se puede completar una tarea asignada a otra persona (feature 014);
+    // posponer sí (solo reordena la sesión).
+    if (kind === 'done' && !actionable) return
     if (prefersReducedMotion()) {
       if (kind === 'done') onDone()
       else onDefer()
@@ -99,6 +105,11 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
       setFlipped((f) => !f)
       return
     }
+    // Deslizar a la derecha = hecha; bloqueado si es de otra persona (feature 014)
+    if (outcome === 'done' && !actionable) {
+      setDx(0)
+      return
+    }
     fly(outcome)
   }
 
@@ -117,7 +128,8 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
 
   const style = {
     transform: `translateX(${String(dx)}px) rotate(${String(dx / 24)}deg)`,
-    opacity: flying !== null ? 0 : 1,
+    // Atenuada al 50% si es de otra persona (feature 014); 0 al volar fuera
+    opacity: flying !== null ? 0 : actionable ? 1 : 0.5,
   }
 
   // El contenedor anima el escalado de entrada (al pasar a primera posición,

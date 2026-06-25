@@ -4,7 +4,7 @@
 import { useState } from 'react'
 
 import { taskRepository } from '../data/taskRepository'
-import { assignedToMe } from '../domain/assignment'
+import { assignedToMe, assignedToOther } from '../domain/assignment'
 import { overdueText, todayIsoDate } from '../domain/date'
 import { cadenceLabel } from '../domain/recurrence'
 import { isDone, type NewTaskInput, type Task } from '../domain/task'
@@ -141,14 +141,18 @@ export function TaskItem({
 }: TaskItemProps) {
   const done = isDone(task)
   const [editing, setEditing] = useState(false)
+  // Asignada a otra persona (feature 014): se atenúa y no se puede completar
+  const others = assignedToOther(task, currentUserId)
 
   // El deslizamiento es la única forma de completar/devolver en la lista
   // (feature 011, sustituye al checkbox): pendiente → derecha = hecha (verde);
   // hecha → izquierda = devolver a pendiente (gris). Mientras se edita la fila
-  // es el formulario, así que no hay acción. Funciona con ratón y con el dedo.
-  const action: SwipeAction | null = editing
-    ? null
-    : done
+  // es el formulario, así que no hay acción. Si es de otra persona, tampoco
+  // (feature 014). Funciona con ratón y con el dedo.
+  const action: SwipeAction | null =
+    editing || others
+      ? null
+      : done
       ? {
           direction: 'left',
           onAction: () => {
@@ -192,6 +196,7 @@ export function TaskItem({
   if (overdue) classes.push('task-item--overdue')
   if (task.urgent) classes.push('task-item--urgent')
   if (assignedToMe(task, currentUserId)) classes.push('task-item--mine')
+  if (others) classes.push('task-item--others')
   if (swipeEnabled) {
     classes.push('task-item--swipable')
     classes.push(swipe.flying ? 'task-item--flying' : 'task-item--settling')

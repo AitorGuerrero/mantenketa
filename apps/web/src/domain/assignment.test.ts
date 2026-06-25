@@ -3,7 +3,13 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { assignedToMe, filterMine, isMine, normalizeAssignee } from './assignment'
+import {
+  assignedToMe,
+  assignedToOther,
+  filterMine,
+  isMine,
+  normalizeAssignee,
+} from './assignment'
 import type { Task } from './task'
 
 let seq = 0
@@ -64,6 +70,24 @@ describe('assignedToMe', () => {
 
   it('falso sin sesión (userId null)', () => {
     expect(assignedToMe(makeTask({ nucleusId: 'grp', assigneeId: 'me' }), null)).toBe(false)
+  })
+})
+
+describe('assignedToOther', () => {
+  it('verdadero si la tarea de grupo está asignada a otra persona', () => {
+    expect(assignedToOther(makeTask({ nucleusId: 'grp', assigneeId: 'bob' }), 'me')).toBe(true)
+  })
+
+  it('falso si está asignada a mí', () => {
+    expect(assignedToOther(makeTask({ nucleusId: 'grp', assigneeId: 'me' }), 'me')).toBe(false)
+  })
+
+  it('falso si no tiene asignado (la hace cualquiera)', () => {
+    expect(assignedToOther(makeTask({ nucleusId: 'grp', assigneeId: null }), 'me')).toBe(false)
+  })
+
+  it('falso en tareas personales', () => {
+    expect(assignedToOther(makeTask({ nucleusId: null, assigneeId: 'bob' }), 'me')).toBe(false)
   })
 })
 

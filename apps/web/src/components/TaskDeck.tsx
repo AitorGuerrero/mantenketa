@@ -4,6 +4,7 @@
 import { useRef, useState } from 'react'
 
 import { taskRepository } from '../data/taskRepository'
+import { assignedToOther } from '../domain/assignment'
 import { orderDeck } from '../domain/deck'
 import type { TaskInGroup } from '../domain/grouping'
 import type { Task } from '../domain/task'
@@ -95,6 +96,10 @@ export function TaskDeck({
   // delante para el apilado correcto
   const peeks = visible.slice(1)
 
+  // La carta activa asignada a otra persona se atenúa y no se puede completar
+  // (feature 014); posponer sigue permitido (solo reordena la sesión).
+  const topActionable = !assignedToOther(top, currentUserId)
+
   return (
     <section className="task-group" aria-label="Para hacer ya">
       <h2 className="task-group-title">Para hacer ya</h2>
@@ -148,6 +153,7 @@ export function TaskDeck({
           projectName={projectName}
           currentUserId={currentUserId}
           overdue={overdueById.get(top.id) ?? false}
+          actionable={topActionable}
           onDone={() => {
             handleDone(top.id)
           }}
@@ -168,7 +174,11 @@ export function TaskDeck({
         >
           <span aria-hidden="true">←</span> Posponer
         </button>
-        <button type="button" onClick={() => cardRef.current?.fly('done')}>
+        <button
+          type="button"
+          disabled={!topActionable}
+          onClick={() => cardRef.current?.fly('done')}
+        >
           Hecha <span aria-hidden="true">→</span>
         </button>
       </div>

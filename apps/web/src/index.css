@@ -381,6 +381,12 @@ body {
   color: var(--color-text-muted);
 }
 
+/* "Hecha" deshabilitada: la tarea es de otra persona (feature 014) */
+.task-card-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .all-done {
   font-weight: 600;
   color: var(--color-primary);
@@ -561,6 +567,11 @@ body {
 .task-item--mine {
   border-color: #6d28d9;
   background: color-mix(in srgb, #6d28d9 7%, transparent);
+}
+
+/* Asignada a otra persona (feature 014): atenuada, no puedo realizarla */
+.task-item--others {
+  opacity: 0.5;
 }
 
 /* Proyecto (feature 013): distintivo azul, distinto del resto de badges */
