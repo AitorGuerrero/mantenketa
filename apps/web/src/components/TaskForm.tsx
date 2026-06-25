@@ -5,6 +5,7 @@ import { useObservable } from 'dexie-react-hooks'
 import { useState, type FormEvent } from 'react'
 
 import { observeGroups } from '../data/nucleusService'
+import { observeProjects } from '../data/projectService'
 import { ValidationError, type NewTaskInput, type Recurrence } from '../domain/task'
 
 import { type TaskFormInitial } from './taskFormInitial'
@@ -29,6 +30,7 @@ const EMPTY: TaskFormInitial = {
   recurrence: null,
   nucleusId: null,
   assigneeId: '',
+  projectId: '',
 }
 
 export function TaskForm({
@@ -41,6 +43,7 @@ export function TaskForm({
 }: TaskFormProps) {
   const init = initial ?? EMPTY
   const groups = useObservable(() => observeGroups(), [])
+  const projects = useObservable(() => observeProjects(), [])
   const [name, setName] = useState(init.name)
   const [taskDate, setTaskDate] = useState(init.taskDate)
   const [description, setDescription] = useState(init.description)
@@ -49,6 +52,8 @@ export function TaskForm({
   const [groupId, setGroupId] = useState('')
   // Asignado (feature 012): '' ⇒ sin asignar; en otro caso, userId del miembro
   const [assignee, setAssignee] = useState(init.assigneeId)
+  // Proyecto (feature 013): '' ⇒ sin proyecto; en otro caso, id del proyecto
+  const [project, setProject] = useState(init.projectId)
   // Recurrencia (feature 009/010): prellenada en edición
   const [recurring, setRecurring] = useState(init.recurrence !== null)
   const [freq, setFreq] = useState<Recurrence['freq']>(init.recurrence?.freq ?? 'weekly')
@@ -72,6 +77,13 @@ export function TaskForm({
     ? assignee
     : ''
 
+  // Proyecto (feature 013): se ofrecen los proyectos del ámbito activo (personal
+  // ⇒ nucleusId null; grupo ⇒ ese grupo). El proyecto elegido debe seguir
+  // existiendo en ese ámbito; si no, se considera "sin proyecto".
+  const scopeNucleusId = scopeGroupId === '' ? null : scopeGroupId
+  const scopeProjects = (projects ?? []).filter((p) => p.nucleusId === scopeNucleusId)
+  const effectiveProject = scopeProjects.some((p) => p.id === project) ? project : ''
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
@@ -84,6 +96,8 @@ export function TaskForm({
         nucleusId: showScope && effectiveGroupId !== '' ? effectiveGroupId : null,
         // Asignado solo si la tarea es de grupo; '' ⇒ sin asignar (feature 012)
         assigneeId: activeGroup && effectiveAssignee !== '' ? effectiveAssignee : null,
+        // Proyecto del ámbito activo; '' ⇒ sin proyecto (feature 013)
+        projectId: effectiveProject !== '' ? effectiveProject : null,
         description,
         urgent,
         recurrence,
@@ -95,6 +109,7 @@ export function TaskForm({
         setUrgent(false)
         setGroupId('')
         setAssignee('')
+        setProject('')
         setRecurring(false)
         setFreq('weekly')
         setInterval(1)
@@ -255,6 +270,25 @@ export function TaskForm({
             {activeGroup.members.map((member) => (
               <option key={member.userId} value={member.userId}>
                 {member.displayName}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {scopeProjects.length > 0 && (
+        <div className="form-field">
+          <label htmlFor="task-project">Proyecto</label>
+          <select
+            id="task-project"
+            value={effectiveProject}
+            onChange={(event) => {
+              setProject(event.target.value)
+            }}
+          >
+            <option value="">Sin proyecto</option>
+            {scopeProjects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
               </option>
             ))}
           </select>

@@ -31,6 +31,7 @@ interface TaskCardProps {
   task: Task
   memberName: (userId: string) => string
   scopeLabel?: (task: Task) => string | null
+  projectName?: (task: Task) => string | null
   currentUserId?: string | null
   overdue: boolean
   onDone: () => void
@@ -40,7 +41,17 @@ interface TaskCardProps {
 }
 
 export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskCard(
-  { task, memberName, scopeLabel, currentUserId = null, overdue, onDone, onDefer, onEdit },
+  {
+    task,
+    memberName,
+    scopeLabel,
+    projectName,
+    currentUserId = null,
+    overdue,
+    onDone,
+    onDefer,
+    onEdit,
+  },
   ref,
 ) {
   const [dx, setDx] = useState(0)
@@ -133,6 +144,7 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
                   task={task}
                   memberName={memberName}
                   scopeLabel={scopeLabel}
+                  projectName={projectName}
                   overdue={overdue}
                   showDescription={false}
                   currentUserId={currentUserId}

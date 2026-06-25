@@ -37,6 +37,8 @@ export const TaskSchema = z.object({
   // Asignado (feature 012): id del miembro responsable. Solo en tareas de grupo;
   // null ⇒ sin asignar (lo hace cualquiera) o tarea personal.
   assigneeId: z.string().nullable(),
+  // Proyecto (feature 013): id del proyecto contenedor; null ⇒ sin proyecto.
+  projectId: z.string().nullable(),
   // Descripción opcional (texto libre multilínea); null ⇒ sin descripción
   description: z.string().nullable(),
   // Urgente (feature 007): adelanta en "Para hacer ya" y se marca claramente
@@ -68,6 +70,11 @@ export const NewTaskInputSchema = z.object({
   // Asignado (feature 012): ausente ⇒ sin asignar. La normalización "solo en
   // grupo" la aplica la capa de datos (normalizeAssignee), que conoce el ámbito.
   assigneeId: z.preprocess(
+    (value) => (value === undefined ? null : value),
+    z.string().nullable(),
+  ),
+  // Proyecto (feature 013): ausente ⇒ sin proyecto.
+  projectId: z.preprocess(
     (value) => (value === undefined ? null : value),
     z.string().nullable(),
   ),
@@ -104,6 +111,8 @@ export interface NewTaskInput {
   nucleusId?: string | null
   // null o ausente ⇒ sin asignar; en otro caso, id del miembro responsable (feature 012)
   assigneeId?: string | null
+  // null o ausente ⇒ sin proyecto; en otro caso, id del proyecto (feature 013)
+  projectId?: string | null
   description?: string | null
   urgent?: boolean
   // null o ausente ⇒ tarea única; en otro caso, patrón de recurrencia (feature 009)

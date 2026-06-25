@@ -40,12 +40,15 @@ export function TaskBody({
   showDescription = true,
   showCreator = false,
   currentUserId = null,
+  projectName,
 }: {
   task: Task
   memberName: (userId: string) => string
   // Etiqueta de ámbito (feature 008): "Personal" o el nombre del grupo; null ⇒
   // no mostrar (p. ej. el usuario no pertenece a ningún grupo)
   scopeLabel?: ((task: Task) => string | null) | undefined
+  // Nombre del proyecto de la tarea (feature 013); null ⇒ sin proyecto
+  projectName?: ((task: Task) => string | null) | undefined
   overdue?: boolean
   // En la baraja la descripción va en el dorso (volteo), no en la cara frontal
   showDescription?: boolean
@@ -57,6 +60,7 @@ export function TaskBody({
 }) {
   const label = stateLabel(task)
   const scope = scopeLabel?.(task) ?? null
+  const projectLabel = projectName?.(task) ?? null
   const creator =
     showCreator && task.nucleusId !== null && task.ownerId !== null
       ? memberName(task.ownerId)
@@ -82,6 +86,9 @@ export function TaskBody({
         {mine && <span className="task-badge task-badge--mine">Para mí</span>}
         {task.name}
         {scope !== null && <span className="task-badge">{scope}</span>}
+        {projectLabel !== null && (
+          <span className="task-badge task-badge--project">📁 {projectLabel}</span>
+        )}
         {task.recurrence != null && (
           <span className="task-badge task-badge--recurring">
             🔁 {cadenceLabel(task.recurrence)}
@@ -119,6 +126,7 @@ interface TaskItemProps {
   task: Task
   memberName: (userId: string) => string
   scopeLabel?: (task: Task) => string | null
+  projectName?: (task: Task) => string | null
   overdue?: boolean
   currentUserId?: string | null
 }
@@ -127,6 +135,7 @@ export function TaskItem({
   task,
   memberName,
   scopeLabel,
+  projectName,
   overdue = false,
   currentUserId = null,
 }: TaskItemProps) {
@@ -213,6 +222,7 @@ export function TaskItem({
         task={task}
         memberName={memberName}
         scopeLabel={scopeLabel}
+        projectName={projectName}
         overdue={overdue}
         showCreator
         currentUserId={currentUserId}

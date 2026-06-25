@@ -16,6 +16,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     ownerId: 'owner-1',
     nucleusId: 'group-1',
     assigneeId: null,
+    projectId: null,
     description: 'desc',
     urgent: false,
     recurrence: null,
@@ -132,5 +133,19 @@ describe('applyEdit — edición pura de una tarea (feature 010)', () => {
     const parsed = parseNewTask({ name: 'X', assigneeId: 'bob' })
 
     expect(applyEdit(task, parsed, NOW, NEW_SERIES).assigneeId).toBeNull()
+  })
+
+  it('cambia el proyecto al editar (feature 013)', () => {
+    const task = makeTask({ projectId: 'cocina' })
+    const parsed = parseNewTask({ name: 'X', projectId: 'baño' })
+
+    expect(applyEdit(task, parsed, NOW, NEW_SERIES).projectId).toBe('baño')
+  })
+
+  it('permite quitar el proyecto al editar', () => {
+    const task = makeTask({ projectId: 'cocina' })
+    const parsed = parseNewTask({ name: 'X' }) // sin projectId ⇒ sin proyecto
+
+    expect(applyEdit(task, parsed, NOW, NEW_SERIES).projectId).toBeNull()
   })
 })

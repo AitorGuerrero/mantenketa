@@ -16,6 +16,8 @@ export interface TaskFormInitial {
   nucleusId: string | null
   // Asignado actual ('' ⇒ sin asignar) para preseleccionarlo al editar.
   assigneeId: string
+  // Proyecto actual ('' ⇒ sin proyecto) para preseleccionarlo (feature 013).
+  projectId: string
 }
 
 /** Construye los valores iniciales del formulario a partir de una tarea. */
@@ -28,5 +30,6 @@ export function taskToFormInitial(task: Task): TaskFormInitial {
     recurrence: task.recurrence,
     nucleusId: task.nucleusId,
     assigneeId: task.assigneeId ?? '',
+    projectId: task.projectId ?? '',
   }
 }

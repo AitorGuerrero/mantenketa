@@ -8,6 +8,7 @@ import { registerSW } from 'virtual:pwa-register'
 import App from './App'
 import { initAuth } from './auth/authService'
 import { startGroupsCache } from './data/nucleusService'
+import { startProjectsCache } from './data/projectService'
 import { startSync } from './data/sync/syncEngine'
 import './index.css'
 
@@ -15,6 +16,7 @@ registerSW({ immediate: true })
 initAuth()
 startSync()
 startGroupsCache()
+startProjectsCache()
 
 const rootElement = document.getElementById('root')
 if (!rootElement) {

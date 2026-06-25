@@ -7,6 +7,7 @@ import { getCurrentSession, getCurrentUserId, subscribeSession } from '../auth/s
 import { invitationState } from '../domain/invitation'
 
 import { db } from './db'
+import { refreshProjects } from './projectService'
 import { supabase } from './supabaseClient'
 import { requestSync } from './sync/syncEngine'
 
@@ -209,6 +210,7 @@ export async function acceptInvitation(token: string): Promise<void> {
   if (res.error) throw toActionError(res.error.message)
   await refreshGroups()
   requestSync() // trae las tareas del grupo recién visible
+  void refreshProjects() // y sus proyectos (feature 013)
 }
 
 export async function leaveGroup(nucleusId: string): Promise<void> {
@@ -217,6 +219,7 @@ export async function leaveGroup(nucleusId: string): Promise<void> {
   if (res.error) throw toActionError(res.error.message)
   await refreshGroups()
   requestSync() // retira de Dexie las tareas del grupo que ya no vemos
+  void refreshProjects() // y oculta los proyectos de ese grupo (feature 013)
 }
 
 /** Mantiene la caché alineada con la sesión. Llamar una vez desde el arranque. */
