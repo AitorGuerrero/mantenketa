@@ -160,7 +160,16 @@ export function TaskItem({ task, memberName, scopeLabel, overdue = false }: Task
       className={classes.join(' ')}
       style={
         swipeEnabled
-          ? { transform: `translateX(${String(swipe.dx)}px)`, opacity: swipe.flying ? 0 : 1 }
+          ? {
+              transform: `translateX(${String(swipe.dx)}px)`,
+              opacity: swipe.flying ? 0 : 1,
+              // Al deslizar a la derecha la fila se tiñe de verde (color de
+              // marca/"hecha") de forma gradual, hasta pleno al cruzar el umbral.
+              background:
+                swipe.progress > 0
+                  ? `color-mix(in srgb, var(--color-primary) ${String(Math.round(swipe.progress * 85))}%, var(--color-surface))`
+                  : undefined,
+            }
           : undefined
       }
       {...(swipeEnabled ? swipe.handlers : {})}

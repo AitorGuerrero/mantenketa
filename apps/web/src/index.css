@@ -442,14 +442,16 @@ body {
 .task-item--settling {
   transition:
     transform 0.2s ease-out,
-    opacity 0.2s ease-out;
+    opacity 0.2s ease-out,
+    background-color 0.2s ease-out;
 }
 
 /* Salida tras cruzar el umbral: vuela desde la posición actual hasta fuera */
 .task-item--flying {
   transition:
     transform 0.32s ease-in,
-    opacity 0.32s ease-in;
+    opacity 0.32s ease-in,
+    background-color 0.32s ease-in;
 }
 
 @media (prefers-reduced-motion: reduce) {

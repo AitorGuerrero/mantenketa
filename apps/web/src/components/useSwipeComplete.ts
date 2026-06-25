@@ -23,6 +23,9 @@ function prefersReducedMotion(): boolean {
 export interface SwipeComplete {
   /** Desplazamiento horizontal actual de la fila (px). */
   dx: number
+  /** Progreso hacia "hecha" (0..1): fracción del umbral arrastrada a la derecha.
+   *  Sirve para teñir la fila de verde gradualmente. La izquierda da 0. */
+  progress: number
   /** El usuario está arrastrando la fila ahora mismo. */
   dragging: boolean
   /** La fila vuela hacia fuera tras cruzar el umbral; al terminar se completa. */
@@ -109,8 +112,12 @@ export function useSwipeComplete(onComplete: () => void, enabled: boolean): Swip
     if (flying) onComplete()
   }
 
+  // Al cruzar el umbral (o volando) llega a 1 → verde pleno; la izquierda da 0.
+  const progress = enabled ? Math.max(0, Math.min(1, dx / SWIPE_THRESHOLD)) : 0
+
   return {
     dx: enabled ? dx : 0,
+    progress,
     dragging: enabled && dragging,
     flying: enabled && flying,
     handlers: {
