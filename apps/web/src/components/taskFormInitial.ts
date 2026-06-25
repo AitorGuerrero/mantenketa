@@ -10,6 +10,12 @@ export interface TaskFormInitial {
   description: string
   urgent: boolean
   recurrence: Recurrence | null
+  // Ámbito de la tarea editada (feature 012): null ⇒ personal. Aunque es
+  // inmutable, el formulario lo necesita para mostrar el selector de asignado
+  // con los miembros del grupo correcto.
+  nucleusId: string | null
+  // Asignado actual ('' ⇒ sin asignar) para preseleccionarlo al editar.
+  assigneeId: string
 }
 
 /** Construye los valores iniciales del formulario a partir de una tarea. */
@@ -20,5 +26,7 @@ export function taskToFormInitial(task: Task): TaskFormInitial {
     description: task.description ?? '',
     urgent: task.urgent,
     recurrence: task.recurrence,
+    nucleusId: task.nucleusId,
+    assigneeId: task.assigneeId ?? '',
   }
 }

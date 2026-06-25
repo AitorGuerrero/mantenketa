@@ -113,3 +113,20 @@ db.version(6)
         row.seriesId ??= null
       })
   })
+
+// Feature 012: asignado de tareas de grupo (sin índice; backfill a null)
+db.version(7)
+  .stores({
+    tasks: 'id, taskDate, completedAt, createdAt, updatedAt, nucleusId',
+    outbox: '++seq, taskId',
+    meta: 'key',
+  })
+  .upgrade(async (tx) => {
+    await tx
+      .table<Task, string>('tasks')
+      .toCollection()
+      .modify((task) => {
+        const row = task as Partial<Task>
+        row.assigneeId ??= null
+      })
+  })

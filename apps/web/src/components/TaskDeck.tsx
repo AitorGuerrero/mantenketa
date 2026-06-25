@@ -17,6 +17,7 @@ interface TaskDeckProps {
   ya: TaskInGroup[]
   memberName: (userId: string) => string
   scopeLabel: (task: Task) => string | null
+  currentUserId: string | null
   onViewAsList: () => void
 }
 
@@ -25,7 +26,13 @@ const STACK_SIZE = 5
 // Opacidad por profundidad (índice 0 = activa); desvanece de la 3.ª a la 5.ª
 const DEPTH_OPACITY = [1, 1, 0.66, 0.4, 0.2]
 
-export function TaskDeck({ ya, memberName, scopeLabel, onViewAsList }: TaskDeckProps) {
+export function TaskDeck({
+  ya,
+  memberName,
+  scopeLabel,
+  currentUserId,
+  onViewAsList,
+}: TaskDeckProps) {
   // Orden de posposición, solo en memoria de sesión (se reinicia al recargar)
   const [deferredIds, setDeferredIds] = useState<string[]>([])
   const [editing, setEditing] = useState(false)
@@ -121,6 +128,7 @@ export function TaskDeck({ ya, memberName, scopeLabel, onViewAsList }: TaskDeckP
                       scopeLabel={scopeLabel}
                       overdue={peekOverdue}
                       showDescription={false}
+                      currentUserId={currentUserId}
                     />
                   </li>
                 </ul>
@@ -134,6 +142,7 @@ export function TaskDeck({ ya, memberName, scopeLabel, onViewAsList }: TaskDeckP
           task={top}
           memberName={memberName}
           scopeLabel={scopeLabel}
+          currentUserId={currentUserId}
           overdue={overdueById.get(top.id) ?? false}
           onDone={() => {
             handleDone(top.id)

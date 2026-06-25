@@ -15,6 +15,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     completedBy: null,
     ownerId: 'owner-1',
     nucleusId: 'group-1',
+    assigneeId: null,
     description: 'desc',
     urgent: false,
     recurrence: null,
@@ -110,5 +111,26 @@ describe('applyEdit — edición pura de una tarea (feature 010)', () => {
     const parsed = parseNewTask({ name: 'X' })
 
     expect(applyEdit(task, parsed, NOW, NEW_SERIES).recurrence).toBeNull()
+  })
+
+  it('reasigna una tarea de grupo al asignado de la entrada (feature 012)', () => {
+    const task = makeTask({ nucleusId: 'group-1', assigneeId: 'ana' })
+    const parsed = parseNewTask({ name: 'X', assigneeId: 'bob' })
+
+    expect(applyEdit(task, parsed, NOW, NEW_SERIES).assigneeId).toBe('bob')
+  })
+
+  it('permite limpiar el asignado de una tarea de grupo', () => {
+    const task = makeTask({ nucleusId: 'group-1', assigneeId: 'ana' })
+    const parsed = parseNewTask({ name: 'X' }) // sin assigneeId ⇒ sin asignar
+
+    expect(applyEdit(task, parsed, NOW, NEW_SERIES).assigneeId).toBeNull()
+  })
+
+  it('en una tarea personal el asignado se ignora (queda null)', () => {
+    const task = makeTask({ nucleusId: null, assigneeId: null })
+    const parsed = parseNewTask({ name: 'X', assigneeId: 'bob' })
+
+    expect(applyEdit(task, parsed, NOW, NEW_SERIES).assigneeId).toBeNull()
   })
 })

@@ -15,6 +15,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     completedBy: null,
     ownerId: 'user-a',
     nucleusId: null,
+    assigneeId: null,
     description: null,
     urgent: false,
     recurrence: null,

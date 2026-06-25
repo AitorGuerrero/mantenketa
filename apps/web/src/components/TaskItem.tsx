@@ -4,6 +4,7 @@
 import { useState } from 'react'
 
 import { taskRepository } from '../data/taskRepository'
+import { assignedToMe } from '../domain/assignment'
 import { overdueText, todayIsoDate } from '../domain/date'
 import { cadenceLabel } from '../domain/recurrence'
 import { isDone, type NewTaskInput, type Task } from '../domain/task'
@@ -38,6 +39,7 @@ export function TaskBody({
   overdue = false,
   showDescription = true,
   showCreator = false,
+  currentUserId = null,
 }: {
   task: Task
   memberName: (userId: string) => string
@@ -50,6 +52,8 @@ export function TaskBody({
   // Quién creó la tarea: solo en tareas de grupo (no personales). En la baraja
   // se muestra en el dorso, así que la cara frontal lo deja en false.
   showCreator?: boolean
+  // Usuario actual, para resaltar lo asignado a mí (feature 012)
+  currentUserId?: string | null
 }) {
   const label = stateLabel(task)
   const scope = scopeLabel?.(task) ?? null
@@ -62,10 +66,20 @@ export function TaskBody({
     showCreator && isDone(task) && task.nucleusId !== null && task.completedBy !== null
       ? memberName(task.completedBy)
       : null
+  // Asignado (feature 012): solo en tareas de grupo. "ti" si soy yo. La insignia
+  // "Para mí" siempre se muestra (resalta), el texto solo donde se muestra autor.
+  const mine = assignedToMe(task, currentUserId)
+  const assigneeName =
+    task.nucleusId !== null && task.assigneeId !== null
+      ? mine
+        ? 'ti'
+        : memberName(task.assigneeId)
+      : null
   return (
     <>
       <span className="task-name">
         {task.urgent && <span className="task-badge task-badge--urgent">Urgente</span>}
+        {mine && <span className="task-badge task-badge--mine">Para mí</span>}
         {task.name}
         {scope !== null && <span className="task-badge">{scope}</span>}
         {task.recurrence != null && (
@@ -88,6 +102,9 @@ export function TaskBody({
       )}
       {label !== null && <span className="task-state">{label}</span>}
       {creator !== null && <span className="task-creator">Creada por {creator}</span>}
+      {showCreator && assigneeName !== null && (
+        <span className="task-creator task-assignee">Asignada a {assigneeName}</span>
+      )}
       {completer !== null && (
         <span className="task-creator">Completada por {completer}</span>
       )}
@@ -103,9 +120,16 @@ interface TaskItemProps {
   memberName: (userId: string) => string
   scopeLabel?: (task: Task) => string | null
   overdue?: boolean
+  currentUserId?: string | null
 }
 
-export function TaskItem({ task, memberName, scopeLabel, overdue = false }: TaskItemProps) {
+export function TaskItem({
+  task,
+  memberName,
+  scopeLabel,
+  overdue = false,
+  currentUserId = null,
+}: TaskItemProps) {
   const done = isDone(task)
   const [editing, setEditing] = useState(false)
 
@@ -158,6 +182,7 @@ export function TaskItem({ task, memberName, scopeLabel, overdue = false }: Task
   if (done) classes.push('task-item--done')
   if (overdue) classes.push('task-item--overdue')
   if (task.urgent) classes.push('task-item--urgent')
+  if (assignedToMe(task, currentUserId)) classes.push('task-item--mine')
   if (swipeEnabled) {
     classes.push('task-item--swipable')
     classes.push(swipe.flying ? 'task-item--flying' : 'task-item--settling')
@@ -190,6 +215,7 @@ export function TaskItem({ task, memberName, scopeLabel, overdue = false }: Task
         scopeLabel={scopeLabel}
         overdue={overdue}
         showCreator
+        currentUserId={currentUserId}
       />
       {!done && (
         <div className="task-recurrence-actions">
