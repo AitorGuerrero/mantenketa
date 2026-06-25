@@ -31,6 +31,19 @@ export function assignedToMe(task: Task, userId: string | null): boolean {
 }
 
 /**
+ * La tarea (de grupo) está asignada explícitamente a OTRA persona, no a mí.
+ * Sirve para atenuarla y bloquear su completado (feature 014). Las personales,
+ * las de grupo sin asignar y las asignadas a mí devuelven false.
+ */
+export function assignedToOther(task: Task, userId: string | null): boolean {
+  return (
+    task.nucleusId !== null &&
+    task.assigneeId !== null &&
+    task.assigneeId !== userId
+  )
+}
+
+/**
  * La tarea es "mía" a efectos del filtro "Solo mías": las personales (sin grupo)
  * son mías por definición; las de grupo, solo si están asignadas a mí. Las de
  * grupo sin asignar o asignadas a otra persona no son mías.
