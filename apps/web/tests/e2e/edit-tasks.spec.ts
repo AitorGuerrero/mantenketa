@@ -3,7 +3,7 @@
 
 import { devices, expect, test, type BrowserContext, type Page } from '@playwright/test'
 
-import { createTask, hechasList, isoDay, prontoList, yaList } from './ui'
+import { completeTask, createTask, hechasList, isoDay, prontoList, revertTask, yaList } from './ui'
 
 // Feature 010 — editar tareas. Funciona en local/anónimo (no requiere sesión).
 
@@ -84,7 +84,7 @@ test('US2: activar recurrencia al editar; al completar nace la sucesora', async 
 
   await expect(row(page, 'Regar')).toContainText('cada 2 semanas')
 
-  await page.getByRole('checkbox', { name: 'Regar' }).first().click()
+  await completeTask(page, 'Regar')
   const successor = prontoList(page).getByRole('listitem').filter({ hasText: 'Regar' })
   await expect(successor).toHaveCount(1)
   await expect(successor).toContainText('cada 2 semanas')
@@ -102,7 +102,7 @@ test('US2: desactivar recurrencia; al completar no nace sucesora', async ({ page
 
   await expect(row(page, 'Riego')).not.toContainText('cada semana')
 
-  await page.getByRole('checkbox', { name: 'Riego' }).first().click()
+  await completeTask(page, 'Riego')
   await expect(prontoList(page).getByRole('listitem').filter({ hasText: 'Riego' })).toHaveCount(0)
 })
 
@@ -124,13 +124,13 @@ test('US3: una tarea completada no ofrece "Editar"; al revertir reaparece', asyn
   await page.goto('/')
   await createTask(page, 'Acabada')
 
-  await page.getByRole('checkbox', { name: 'Acabada' }).click()
+  await completeTask(page, 'Acabada')
   const done = hechasList(page).getByRole('listitem').filter({ hasText: 'Acabada' })
   await expect(done).toBeVisible()
   await expect(done.getByRole('button', { name: 'Editar' })).toHaveCount(0)
 
-  // Revertir (mismo checkbox) → vuelve a pendiente y reaparece "Editar"
-  await page.getByRole('checkbox', { name: 'Acabada' }).click()
+  // Devolver (deslizar a la izquierda) → vuelve a pendiente y reaparece "Editar"
+  await revertTask(page, 'Acabada')
   await expect(row(page, 'Acabada').getByRole('button', { name: 'Editar' })).toBeVisible()
 })
 

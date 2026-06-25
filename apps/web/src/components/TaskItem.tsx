@@ -10,6 +10,7 @@ import { isDone, type NewTaskInput, type Task } from '../domain/task'
 
 import { TaskForm } from './TaskForm'
 import { taskToFormInitial } from './taskFormInitial'
+import { useSwipeAction, type SwipeAction } from './useSwipeAction'
 
 function formatDate(isoDate: string): string {
   const [year, month, day] = isoDate.split('-').map(Number)
@@ -108,9 +109,29 @@ export function TaskItem({ task, memberName, scopeLabel, overdue = false }: Task
   const done = isDone(task)
   const [editing, setEditing] = useState(false)
 
-  function handleToggle() {
-    void (done ? taskRepository.revert(task.id) : taskRepository.markDone(task.id))
-  }
+  // El deslizamiento es la única forma de completar/devolver en la lista
+  // (feature 011, sustituye al checkbox): pendiente → derecha = hecha (verde);
+  // hecha → izquierda = devolver a pendiente (gris). Mientras se edita la fila
+  // es el formulario, así que no hay acción. Funciona con ratón y con el dedo.
+  const action: SwipeAction | null = editing
+    ? null
+    : done
+      ? {
+          direction: 'left',
+          onAction: () => {
+            void taskRepository.revert(task.id)
+          },
+          tint: 'var(--color-text-muted)',
+        }
+      : {
+          direction: 'right',
+          onAction: () => {
+            void taskRepository.markDone(task.id)
+          },
+          tint: 'var(--color-primary)',
+        }
+  const swipe = useSwipeAction(action)
+  const swipeEnabled = action !== null
 
   if (editing) {
     return (
@@ -137,19 +158,32 @@ export function TaskItem({ task, memberName, scopeLabel, overdue = false }: Task
   if (done) classes.push('task-item--done')
   if (overdue) classes.push('task-item--overdue')
   if (task.urgent) classes.push('task-item--urgent')
+  if (swipeEnabled) {
+    classes.push('task-item--swipable')
+    classes.push(swipe.flying ? 'task-item--flying' : 'task-item--settling')
+  }
 
   const showRecurrenceActions = task.recurrence != null && !done
 
   return (
-    <li className={classes.join(' ')}>
-      <input
-        type="checkbox"
-        className="task-toggle"
-        checked={done}
-        aria-label={task.name}
-        title={done ? 'Devolver a pendiente' : 'Marcar como hecha'}
-        onChange={handleToggle}
-      />
+    <li
+      className={classes.join(' ')}
+      style={
+        swipeEnabled
+          ? {
+              transform: `translateX(${String(swipe.dx)}px)`,
+              opacity: swipe.flying ? 0 : 1,
+              // Al arrastrar en la dirección de la acción la fila se tiñe hacia
+              // su color (verde = hecha, gris = devolver), pleno al cruzar.
+              background:
+                swipe.progress > 0
+                  ? `color-mix(in srgb, ${swipe.tint} ${String(Math.round(swipe.progress * 85))}%, var(--color-surface))`
+                  : undefined,
+            }
+          : undefined
+      }
+      {...(swipeEnabled ? swipe.handlers : {})}
+    >
       <TaskBody
         task={task}
         memberName={memberName}
