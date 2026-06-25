@@ -431,6 +431,34 @@ body {
   border-radius: 0.5rem;
 }
 
+/* Deslizar a la derecha = hecha en la lista (feature 011, solo táctil). pan-y
+   deja el scroll vertical al navegador y entrega el gesto horizontal al JS. */
+.task-item--swipable {
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.task-item--settling {
+  transition:
+    transform 0.2s ease-out,
+    opacity 0.2s ease-out;
+}
+
+/* Salida tras cruzar el umbral: vuela desde la posición actual hasta fuera */
+.task-item--flying {
+  transition:
+    transform 0.32s ease-in,
+    opacity 0.32s ease-in;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-item--settling,
+  .task-item--flying {
+    transition: none;
+  }
+}
+
 .task-item--overdue {
   border-color: #c0392b;
   background: color-mix(in srgb, #c0392b 8%, transparent);

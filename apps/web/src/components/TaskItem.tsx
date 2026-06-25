@@ -10,6 +10,8 @@ import { isDone, type NewTaskInput, type Task } from '../domain/task'
 
 import { TaskForm } from './TaskForm'
 import { taskToFormInitial } from './taskFormInitial'
+import { useCoarsePointer } from './useCoarsePointer'
+import { useSwipeComplete } from './useSwipeComplete'
 
 function formatDate(isoDate: string): string {
   const [year, month, day] = isoDate.split('-').map(Number)
@@ -107,10 +109,19 @@ interface TaskItemProps {
 export function TaskItem({ task, memberName, scopeLabel, overdue = false }: TaskItemProps) {
   const done = isDone(task)
   const [editing, setEditing] = useState(false)
+  const touch = useCoarsePointer()
 
   function handleToggle() {
     void (done ? taskRepository.revert(task.id) : taskRepository.markDone(task.id))
   }
+
+  // Deslizar a la derecha = hecha, igual que la baraja (feature 011). Solo en
+  // táctil y solo en filas pendientes; la izquierda no actúa. El checkbox sigue
+  // siendo el camino sin gesto. Mientras se edita, la fila es el formulario.
+  const swipeEnabled = touch && !done && !editing
+  const swipe = useSwipeComplete(() => {
+    void taskRepository.markDone(task.id)
+  }, swipeEnabled)
 
   if (editing) {
     return (
@@ -137,11 +148,23 @@ export function TaskItem({ task, memberName, scopeLabel, overdue = false }: Task
   if (done) classes.push('task-item--done')
   if (overdue) classes.push('task-item--overdue')
   if (task.urgent) classes.push('task-item--urgent')
+  if (swipeEnabled) {
+    classes.push('task-item--swipable')
+    classes.push(swipe.flying ? 'task-item--flying' : 'task-item--settling')
+  }
 
   const showRecurrenceActions = task.recurrence != null && !done
 
   return (
-    <li className={classes.join(' ')}>
+    <li
+      className={classes.join(' ')}
+      style={
+        swipeEnabled
+          ? { transform: `translateX(${String(swipe.dx)}px)`, opacity: swipe.flying ? 0 : 1 }
+          : undefined
+      }
+      {...(swipeEnabled ? swipe.handlers : {})}
+    >
       <input
         type="checkbox"
         className="task-toggle"
