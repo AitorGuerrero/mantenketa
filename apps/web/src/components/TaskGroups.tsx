@@ -107,7 +107,7 @@ export function TaskGroups() {
               setOnlyMine(event.target.checked)
             }}
           />
-          <span>Solo mías</span>
+          <span>Mis tareas</span>
         </label>
       )}
       {touch && !forceList ? (

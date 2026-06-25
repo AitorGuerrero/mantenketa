@@ -95,6 +95,9 @@ async function flushOutbox(): Promise<void> {
             urgent: task.urgent,
             recurrence: task.recurrence,
             series_id: task.seriesId,
+            // Asignado (feature 012): mutable, debe viajar en el UPDATE (no solo
+            // en el INSERT) para que reasignar al editar se propague
+            assignee_id: task.assigneeId,
             updated_at: task.updatedAt,
           })
           .eq('id', task.id)

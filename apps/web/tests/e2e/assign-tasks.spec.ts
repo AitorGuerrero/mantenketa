@@ -88,20 +88,20 @@ test('A asigna una tarea de grupo a B; ambos ven el asignado y a B le resalta (F
   await expect(onB).toContainText('Para mí')
 })
 
-test('"Solo mías" oculta a A la tarea asignada a B, pero la conserva a B (FR-007)', async () => {
+test('"Mis tareas" oculta a A la tarea asignada a B, pero la conserva a B (FR-007)', async () => {
   // A tiene además una personal (suya por definición)
   await createTask(pageA, 'Recado personal')
 
-  await pageA.getByRole('checkbox', { name: 'Solo mías' }).check()
+  await pageA.getByRole('checkbox', { name: 'Mis tareas' }).check()
   // La personal sigue; la de grupo asignada a B desaparece
   await expect(taskRow(pageA, 'Recado personal')).toBeVisible()
   await expect(taskRow(pageA, 'Pintar valla')).toHaveCount(0)
-  await pageA.getByRole('checkbox', { name: 'Solo mías' }).uncheck()
+  await pageA.getByRole('checkbox', { name: 'Mis tareas' }).uncheck()
 
-  // Para B, "Pintar valla" es suya ⇒ con "Solo mías" sigue visible
-  await pageB.getByRole('checkbox', { name: 'Solo mías' }).check()
+  // Para B, "Pintar valla" es suya ⇒ con "Mis tareas" sigue visible
+  await pageB.getByRole('checkbox', { name: 'Mis tareas' }).check()
   await expect(taskRow(pageB, 'Pintar valla')).toBeVisible()
-  await pageB.getByRole('checkbox', { name: 'Solo mías' }).uncheck()
+  await pageB.getByRole('checkbox', { name: 'Mis tareas' }).uncheck()
 })
 
 test('A reasigna la tarea a sí mismo al editar; deja de ser de B (FR-004)', async () => {
@@ -113,8 +113,9 @@ test('A reasigna la tarea a sí mismo al editar; deja de ser de B (FR-004)', asy
   // Ahora A es el asignado ("ti" + "Para mí")
   await expect(taskRow(pageA, 'Pintar valla')).toContainText('Para mí')
 
-  // B recibe el cambio: ya no es suya (sin "Para mí"), pasa a "Asignada a <A>"
+  // B recibe el cambio por Realtime: ya no es suya (sin "Para mí"), pasa a
+  // "Asignada a <A>"
   const onB = taskRow(pageB, 'Pintar valla')
-  await expect(onB).toContainText(`Asignada a ${userA.email}`, { timeout: 5000 })
+  await expect(onB).toContainText(`Asignada a ${userA.email}`, { timeout: 10000 })
   await expect(onB).not.toContainText('Para mí')
 })

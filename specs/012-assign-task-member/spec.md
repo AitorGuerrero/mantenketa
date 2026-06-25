@@ -11,7 +11,7 @@ debe poder asignar a una persona del grupo."
 
 Clarified: assignment is **optional** (default *Sin asignar* — anyone in the
 group); it can also be changed when **editing**; and beyond storing it, tasks
-assigned to me are **highlighted** and can be **filtered** ("Solo mías").
+assigned to me are **highlighted** and can be **filtered** ("Mis tareas").
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -57,14 +57,14 @@ cleared without recreating the task.
 ### User Story 3 - Spot and focus on my tasks (Priority: P2)
 
 A group task assigned to the current user is **highlighted** ("Para mí" badge)
-so it stands out in the lists and the deck. A **"Solo mías"** toggle filters the
+so it stands out in the lists and the deck. A **"Mis tareas"** toggle filters the
 view to the tasks that are mine — personal tasks plus group tasks assigned to me
 — hiding group tasks assigned to others or unassigned.
 
 **Acceptance Scenarios**:
 
 1. **Given** a group task assigned to me, **When** it is shown, **Then** it carries a "Para mí" highlight (and reads "Asignada a ti").
-2. **Given** the "Solo mías" toggle is on, **When** the lists render, **Then** only personal tasks and group tasks assigned to me are shown.
+2. **Given** the "Mis tareas" toggle is on, **When** the lists render, **Then** only personal tasks and group tasks assigned to me are shown.
 3. **Given** the toggle is off, **When** the lists render, **Then** all visible tasks are shown (current behavior).
 4. **Given** the user belongs to no group, **When** the home renders, **Then** the toggle is not offered (everything is already personal/mine).
 
@@ -86,12 +86,12 @@ view to the tasks that are mine — personal tasks plus group tasks assigned to 
 - **FR-004**: Editing a group task MUST allow setting/changing/clearing its assignee while preserving identity, scope and completion.
 - **FR-005**: A task's assignee MUST be displayed wherever the task is shown (list rows and deck card), as "Asignada a <persona>" ("ti" for the current user).
 - **FR-006**: A group task assigned to the current user MUST be visually highlighted ("Para mí").
-- **FR-007**: A "Solo mías" filter MUST narrow the view to the current user's tasks (personal tasks + group tasks assigned to them); it is only offered when the user belongs to ≥1 group.
+- **FR-007**: A "Mis tareas" filter MUST narrow the view to the current user's tasks (personal tasks + group tasks assigned to them); it is only offered when the user belongs to ≥1 group.
 - **FR-008**: A recurring task's successor MUST inherit the assignee.
 
 ## Success Criteria *(mandatory)*
 
 - **SC-001**: Assigning a member on creation is reflected locally within 1 s and visible to other members within 5 s via Realtime.
 - **SC-002**: Changing scope to Personal never produces an assigned task.
-- **SC-003**: With "Solo mías" on, no group task assigned to another member (or unassigned) is shown.
+- **SC-003**: With "Mis tareas" on, no group task assigned to another member (or unassigned) is shown.
 - **SC-004**: Existing tasks (created before this feature) appear unassigned and behave exactly as before.
