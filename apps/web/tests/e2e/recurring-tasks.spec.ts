@@ -3,7 +3,7 @@
 
 import { expect, test } from '@playwright/test'
 
-import { createTask, hechasList, isoDay, prontoList, yaList } from './ui'
+import { completeTask, createTask, hechasList, isoDay, prontoList, yaList } from './ui'
 
 // Feature 009 — recurrencia. Funciona en local/anónimo (no requiere sesión):
 // US1 materializar al completar, US2 ancla fecha prevista (validación),
@@ -22,7 +22,7 @@ test('US1: al completar una recurrente nace la siguiente instancia (FR-006)', as
   await expect(inYa).toContainText('cada semana')
 
   // Completar: la instancia pasa a "hechas" y aparece una nueva pendiente
-  await page.getByRole('checkbox', { name: 'Regar plantas' }).first().click()
+  await completeTask(page, 'Regar plantas')
 
   await expect(hechasList(page)).toContainText('Regar plantas')
   // La sucesora (fecha = hoy + 7 días) cae en "pronto", recurrente
@@ -54,7 +54,7 @@ test('US2: con fecha prevista, completar genera la sucesora recurrente', async (
     recurrence: { interval: 1, freq: 'monthly', anchor: 'dueDate' },
   })
 
-  await page.getByRole('checkbox', { name: 'Pagar alquiler' }).first().click()
+  await completeTask(page, 'Pagar alquiler')
   await expect(hechasList(page)).toContainText('Pagar alquiler')
   // La sucesora (mes siguiente) queda pendiente y recurrente en "pronto"
   const successor = prontoList(page)
@@ -98,7 +98,7 @@ test('US3: "No repetir más" convierte la tarea en única (sin sucesora)', async
   await expect(row).not.toContainText('cada semana')
 
   // Completarla no crea ninguna sucesora
-  await page.getByRole('checkbox', { name: 'Tarea fija' }).first().click()
+  await completeTask(page, 'Tarea fija')
   await expect(hechasList(page)).toContainText('Tarea fija')
   await expect(prontoList(page).getByRole('listitem').filter({ hasText: 'Tarea fija' })).toHaveCount(0)
   await expect(yaList(page).getByRole('listitem').filter({ hasText: 'Tarea fija' })).toHaveCount(0)

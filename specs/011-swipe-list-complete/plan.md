@@ -4,15 +4,17 @@
 
 ## Summary
 
-Bring the deck's "swipe right = done" flick to pending **list rows** on touch
-devices. The deck (feature 004) already owns the gesture decision in the pure
-`domain/deck.ts#swipeOutcome`; this feature reuses it — only the `done`
-(rightward) outcome acts, left/short snaps back. A small `useSwipeComplete` hook
-encapsulates the pointer plumbing (drag tracking, scroll-vs-swipe direction
-detection, fly-out + reduced-motion fallback) and `TaskItem` wires it onto its
-`<li>` when the row is **pending** and the primary pointer is **coarse**. No
-backend, domain-model or data change: completion is the existing
-`taskRepository.markDone`.
+Make horizontal swipe the **only** complete/revert affordance in the task list,
+**removing the row checkbox**. The deck (feature 004) already owns the gesture
+decision in the pure `domain/deck.ts#swipeOutcome`; this feature reuses it. A
+`useSwipeAction` hook encapsulates the pointer plumbing (drag tracking,
+scroll-vs-swipe direction detection, gradual tint, fly-out + reduced-motion
+fallback) and takes a per-row `SwipeAction` (direction + callback + tint colour).
+`TaskItem` builds that action from row state: **pending → swipe right = done**
+(green tint, `markDone`); **completed → swipe left = revert** (grey tint,
+`revert`); editing → no action. The gesture works with any pointer (mouse and
+touch), so desktop loses its checkbox too. No backend, domain-model or data
+change: it reuses `taskRepository.markDone`/`revert`.
 
 ## Technical Context
 
@@ -36,7 +38,7 @@ backend, domain-model or data change: completion is the existing
 - **VI. Single Deployable Environment** — PASS. No migration; static app only.
 - **VII. Simplicity Over Framework Magic** — PASS. One small hook reusing existing pure logic; deliberately does not refactor the working `TaskCard` (its needs — flip, defer, imperative fly — differ), keeping risk low.
 - **VIII. Tenant-Ready Data Model** — PASS. No data-model or visibility change.
-- **IX. Mobile-First UI** — PASS. Gesture is enabled only on coarse pointers and verified at a mobile viewport; the checkbox remains the accessible, gesture-free path.
+- **IX. Mobile-First UI** — PASS. The swipe gesture is mobile-first and verified at a mobile viewport (and with a mouse). Per the explicit "swipe replaces it" decision the checkbox is removed; the accessibility trade-off is recorded in the Accessibility note below.
 
 **Result**: PASS — no violations.
 
@@ -46,21 +48,29 @@ backend, domain-model or data change: completion is the existing
 apps/web/
 ├── src/
 │   ├── components/
-│   │   ├── useSwipeComplete.ts   # NEW hook: pointer plumbing, scroll-vs-swipe, fly-out; reuses swipeOutcome
-│   │   ├── TaskItem.tsx          # wire swipe onto the <li> for pending rows on coarse pointer
-│   │   └── useCoarsePointer.ts   # reused: gates swipe to touch
+│   │   ├── useSwipeAction.ts     # NEW hook: takes a SwipeAction (direction/callback/tint); pointer plumbing, scroll-vs-swipe, gradual tint, fly-out; reuses swipeOutcome
+│   │   └── TaskItem.tsx          # checkbox removed; builds the per-row SwipeAction (pending→right done, done→left revert) and wires it onto the <li>
 │   ├── domain/
-│   │   └── deck.ts               # reused unchanged: swipeOutcome (only 'done' acts here)
-│   └── index.css                 # row swipe styles (transform/settle/fly, touch-action: pan-y)
+│   │   └── deck.ts               # reused unchanged: swipeOutcome ('done'=right, 'defer'=left)
+│   └── index.css                 # row swipe styles (transform/settle/fly + background-color, touch-action: pan-y); .task-toggle removed
 └── tests/
-    └── e2e/
-        └── swipe-list.spec.ts    # NEW: right-swipe completes; short/left no-op; pronto row; desktop unaffected
+    ├── e2e/
+    │   ├── ui.ts                 # NEW helpers: swipeRow / completeTask / revertTask / taskRow (replace checkbox clicks)
+    │   ├── swipe-list.spec.ts    # NEW: right-completes, left-reverts, wrong-direction/short no-op, pronto row, mouse + touch parity
+    │   └── *.spec.ts             # migrated: complete-and-revert, home-groups, recurring-tasks, edit-tasks, nucleus-tasks now swipe instead of clicking a checkbox
 ```
 
 **Structure Decision**: Existing single-package web app. The gesture lives in a
 reusable hook rather than being duplicated from `TaskCard`; `TaskCard` is left
-untouched to avoid regressing the deck. Completion reuses
-`taskRepository.markDone`.
+untouched to avoid regressing the deck. Complete/revert reuse
+`taskRepository.markDone`/`revert`.
+
+## Accessibility note
+
+Removing the checkbox makes the gesture the only complete/revert path, so there
+is no longer a keyboard- or AT-operable control for those actions in the list
+(per the explicit "swipe replaces it" decision). If that regression matters
+later, the additive fix is a visually-hidden button per row — out of scope here.
 
 ## Complexity Tracking
 

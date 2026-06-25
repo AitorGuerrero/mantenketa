@@ -13,7 +13,7 @@ import {
 } from '../integration/helpers'
 
 import { injectSession, supabaseConfigured } from './session'
-import { createTask, isoDay } from './ui'
+import { completeTask, createTask, isoDay } from './ui'
 
 // T024 — US3: una tarea del núcleo creada por A aparece en B ≤ 5 s sin
 // recargar (Realtime, SC-003); B la completa y A ve quién la hizo (FR-016);
@@ -97,7 +97,7 @@ test('una tarea del núcleo creada por A aparece en B sin recargar (SC-003) y la
 })
 
 test('B la marca hecha y A ve quién la completó sin recargar (FR-016)', async () => {
-  await pageB.getByRole('checkbox', { name: 'Comprar bombillas' }).click()
+  await completeTask(pageB, 'Comprar bombillas')
   await expect(pageB.getByText(`Completada por ${userB.email}`)).toBeVisible()
 
   // A recibe el cambio por Realtime: completada y con autor

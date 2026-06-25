@@ -10,7 +10,7 @@ import {
 
 import { swipeOutcome } from '../domain/deck'
 
-// px para confirmar "hecha": el mismo umbral que la baraja (feature 004)
+// px para confirmar la acción: el mismo umbral que la baraja (feature 004)
 const SWIPE_THRESHOLD = 80
 // px de margen antes de decidir si el gesto es deslizamiento (horizontal) o
 // scroll (vertical); evita capturar el desplazamiento de la lista
@@ -20,16 +20,27 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-export interface SwipeComplete {
+export interface SwipeAction {
+  /** Dirección que dispara la acción: 'right' = hecha, 'left' = devolver. */
+  direction: 'left' | 'right'
+  /** Acción a ejecutar al cruzar el umbral en esa dirección. */
+  onAction: () => void
+  /** Color hacia el que se tiñe la fila al arrastrar en la dirección activa. */
+  tint: string
+}
+
+export interface Swipe {
   /** Desplazamiento horizontal actual de la fila (px). */
   dx: number
-  /** Progreso hacia "hecha" (0..1): fracción del umbral arrastrada a la derecha.
-   *  Sirve para teñir la fila de verde gradualmente. La izquierda da 0. */
+  /** Progreso hacia la acción (0..1): fracción del umbral arrastrada en la
+   *  dirección activa; sirve para teñir la fila gradualmente. */
   progress: number
   /** El usuario está arrastrando la fila ahora mismo. */
   dragging: boolean
-  /** La fila vuela hacia fuera tras cruzar el umbral; al terminar se completa. */
+  /** La fila vuela hacia fuera tras cruzar el umbral; al terminar actúa. */
   flying: boolean
+  /** Color objetivo del tinte (el de la acción activa). */
+  tint: string
   handlers: {
     onPointerDown: (e: ReactPointerEvent<HTMLElement>) => void
     onPointerMove: (e: ReactPointerEvent<HTMLElement>) => void
@@ -40,14 +51,15 @@ export interface SwipeComplete {
 }
 
 /**
- * Lleva el gesto de la baraja («deslizar a la derecha = hecha») a una fila de
- * lista. Reutiliza la decisión pura `swipeOutcome`: solo el resultado `done`
- * (derecha más allá del umbral) actúa; izquierda o arrastre corto vuelven a su
- * sitio. Distingue scroll vertical de deslizamiento horizontal para no
- * secuestrar el desplazamiento de la lista. Cuando `enabled` es falso (puntero
- * fino o fila no pendiente) los gestos no hacen nada.
+ * Lleva el gesto de la baraja a una fila de lista: arrastrar en la dirección de
+ * la acción más allá del umbral la dispara (derecha = hecha, izquierda =
+ * devolver a pendiente), tiñendo la fila gradualmente hacia su color. Reutiliza
+ * la decisión pura `swipeOutcome`. Distingue scroll vertical de deslizamiento
+ * horizontal para no secuestrar el desplazamiento de la lista. Con `action`
+ * nulo (p. ej. mientras se edita la fila) los gestos no hacen nada.
  */
-export function useSwipeComplete(onComplete: () => void, enabled: boolean): SwipeComplete {
+export function useSwipeAction(action: SwipeAction | null): Swipe {
+  const enabled = action !== null
   const [dx, setDx] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [flying, setFlying] = useState(false)
@@ -55,22 +67,22 @@ export function useSwipeComplete(onComplete: () => void, enabled: boolean): Swip
   const start = useRef<{ x: number; y: number; decided: boolean } | null>(null)
 
   function fly() {
-    if (flying) return
+    if (flying || action === null) return
     if (prefersReducedMotion()) {
-      onComplete()
+      action.onAction()
       return
     }
     setDragging(false)
     setFlying(true)
-    // Vuela desde la posición actual hasta fuera de pantalla (la transición
-    // interpola desde el dx actual).
-    setDx(window.innerWidth)
+    // Vuela desde la posición actual hasta fuera de pantalla, en la dirección
+    // de la acción (la transición interpola desde el dx actual).
+    setDx(action.direction === 'right' ? window.innerWidth : -window.innerWidth)
   }
 
   function handlePointerDown(e: ReactPointerEvent<HTMLElement>) {
     if (!enabled || flying) return
-    // No iniciar arrastre al tocar un control: checkbox, "Editar", enlaces de
-    // recurrencia. Así el deslizamiento no compite con pulsarlos.
+    // No iniciar arrastre al tocar un control ("Editar", enlaces de recurrencia),
+    // para no competir con pulsarlos.
     if ((e.target as HTMLElement).closest('button, input, a, label, textarea, select')) {
       return
     }
@@ -100,26 +112,33 @@ export function useSwipeComplete(onComplete: () => void, enabled: boolean): Swip
     const s = start.current
     start.current = null
     setDragging(false)
-    if (!s?.decided) return
-    // Solo la derecha confirma; izquierda ('defer') o corto ('cancel') vuelven.
-    if (swipeOutcome(dx, SWIPE_THRESHOLD) === 'done') fly()
+    if (!s?.decided || action === null) return
+    const outcome = swipeOutcome(dx, SWIPE_THRESHOLD)
+    // Solo la dirección de la acción dispara; lo demás vuelve a su sitio.
+    const crossed =
+      (action.direction === 'right' && outcome === 'done') ||
+      (action.direction === 'left' && outcome === 'defer')
+    if (crossed) fly()
     else setDx(0)
   }
 
   function handleTransitionEnd(e: ReactTransitionEvent<HTMLElement>) {
     // La salida transiciona transform y opacity a la vez: actúa una sola vez.
     if (e.propertyName !== 'transform') return
-    if (flying) onComplete()
+    if (flying && action !== null) action.onAction()
   }
 
-  // Al cruzar el umbral (o volando) llega a 1 → verde pleno; la izquierda da 0.
-  const progress = enabled ? Math.max(0, Math.min(1, dx / SWIPE_THRESHOLD)) : 0
+  // El progreso solo cuenta el arrastre en la dirección activa; al cruzar el
+  // umbral (o volando) llega a 1 → tinte pleno.
+  const signed = action === null ? 0 : action.direction === 'right' ? dx : -dx
+  const progress = Math.max(0, Math.min(1, signed / SWIPE_THRESHOLD))
 
   return {
     dx: enabled ? dx : 0,
-    progress,
+    progress: enabled ? progress : 0,
     dragging: enabled && dragging,
     flying: enabled && flying,
+    tint: action?.tint ?? '',
     handlers: {
       onPointerDown: handlePointerDown,
       onPointerMove: handlePointerMove,

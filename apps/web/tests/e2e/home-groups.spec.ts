@@ -3,7 +3,7 @@
 
 import { expect, test } from '@playwright/test'
 
-import { createTask, hechasList, isoDay, prontoList, yaList } from './ui'
+import { completeTask, createTask, hechasList, isoDay, prontoList, revertTask, yaList } from './ui'
 
 test('cada tarea cae en su grupo: ya (sin fecha/pasada/hoy), pronto (futura), hechas', async ({
   page,
@@ -50,7 +50,12 @@ test('"Hechas recientemente" muestra solo las 5 más recientes', async ({ page }
   }
   // marcarlas todas hechas, en orden 1..6 (6 es la más reciente)
   for (let i = 1; i <= 6; i++) {
-    await page.getByRole('checkbox', { name: `Completar ${String(i)}` }).click()
+    await completeTask(page, `Completar ${String(i)}`)
+    // Esperar a que salga de "ya" antes de la siguiente (la animación de salida
+    // confirma al terminar), para que el orden de completado sea determinista
+    await expect(
+      yaList(page).getByRole('listitem').filter({ hasText: `Completar ${String(i)}` }),
+    ).toHaveCount(0)
   }
 
   const hechas = hechasList(page).getByRole('listitem')
@@ -68,10 +73,10 @@ test('marcar hecha mueve de "ya" a "hechas" y revertir vuelve (FR-012)', async (
 
   await expect(yaList(page).getByRole('listitem')).toContainText('Tarea movible')
 
-  await page.getByRole('checkbox', { name: 'Tarea movible' }).click()
+  await completeTask(page, 'Tarea movible')
   await expect(hechasList(page).getByRole('listitem')).toContainText('Tarea movible')
   await expect(yaList(page).getByRole('listitem')).toHaveCount(0)
 
-  await page.getByRole('checkbox', { name: 'Tarea movible' }).click()
+  await revertTask(page, 'Tarea movible')
   await expect(yaList(page).getByRole('listitem')).toContainText('Tarea movible')
 })

@@ -1,118 +1,112 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Aitor Guerrero
 
-import { devices, expect, test, type BrowserContext, type Locator, type Page } from '@playwright/test'
+import { devices, expect, test, type BrowserContext, type Page } from '@playwright/test'
 
-import { createTask, hechasList, isoDay, prontoList, yaList } from './ui'
+import {
+  completeTask,
+  createTask,
+  hechasList,
+  isoDay,
+  prontoList,
+  revertTask,
+  swipeRow,
+  taskRow,
+  yaList,
+} from './ui'
 
-// El deslizamiento en la lista solo actúa con puntero grueso (táctil), igual que
-// la baraja. Emulamos un móvil (Pixel 5) en su propio contexto.
+// El deslizamiento sustituye al checkbox: es la única forma de completar/
+// devolver en la lista. Funciona con ratón (escritorio) y con el dedo (táctil).
+// El proyecto por defecto usa puntero fino (escritorio), donde "ya" y "pronto"
+// son listas.
 
-// Arrastra una fila `row` horizontalmente `deltaX` px (derecha = +).
-async function swipeRow(page: Page, row: Locator, deltaX: number) {
-  const box = await row.boundingBox()
-  if (!box) throw new Error('sin fila')
-  const x = box.x + box.width / 2
-  const y = box.y + box.height / 2
-  await page.mouse.move(x, y)
-  await page.mouse.down()
-  await page.mouse.move(x + deltaX, y, { steps: 8 })
-  await page.mouse.up()
-}
-
-test.describe('deslizar para completar en la lista (puntero grueso)', () => {
-  let ctx: BrowserContext
-  let page: Page
-
-  test.beforeEach(async ({ browser }) => {
-    ctx = await browser.newContext({ ...devices['Pixel 5'] })
-    page = await ctx.newPage()
+test.describe('deslizar para completar/devolver en la lista (ratón)', () => {
+  test.beforeEach(async ({ page }) => {
     await page.goto('/')
   })
 
-  test.afterEach(async () => {
-    await ctx.close()
-  })
-
-  test('deslizar una fila pendiente a la derecha la marca hecha (FR-001)', async () => {
+  test('deslizar una fila pendiente a la derecha la marca hecha (FR-001)', async ({ page }) => {
     await createTask(page, 'Deslizable en lista')
     await createTask(page, 'La otra')
-    // "Para hacer ya" es baraja por defecto en táctil; forzamos la vista de lista
-    await page.getByRole('button', { name: 'Ver como lista' }).click()
 
-    const row = yaList(page).getByRole('listitem').filter({ hasText: 'Deslizable en lista' })
-    await expect(row).toBeVisible()
+    await completeTask(page, 'Deslizable en lista')
 
-    await swipeRow(page, row, 220)
-
-    // Pasa a "Hechas" y sale de "ya" (la otra sigue en "ya")
     await expect(hechasList(page).getByRole('listitem')).toContainText('Deslizable en lista')
-    await expect(
-      yaList(page).getByRole('listitem').filter({ hasText: 'Deslizable en lista' }),
-    ).toHaveCount(0)
+    await expect(taskRow(yaList(page), 'Deslizable en lista')).toHaveCount(0)
     await expect(yaList(page).getByRole('listitem')).toContainText('La otra')
   })
 
-  test('un arrastre corto a la derecha no completa (FR-002)', async () => {
-    await createTask(page, 'No cruza el umbral')
-    await page.getByRole('button', { name: 'Ver como lista' }).click()
+  test('un arrastre corto no cruza el umbral, no completa (FR-002)', async ({ page }) => {
+    await createTask(page, 'Corto')
+    const row = taskRow(yaList(page), 'Corto')
+    const box = await row.boundingBox()
+    if (!box) throw new Error('sin fila')
+    const y = box.y + box.height / 2
+    await page.mouse.move(box.x + box.width / 2, y)
+    await page.mouse.down()
+    await page.mouse.move(box.x + box.width / 2 + 40, y, { steps: 8 })
+    await page.mouse.up()
 
-    const row = yaList(page).getByRole('listitem').filter({ hasText: 'No cruza el umbral' })
-    await swipeRow(page, row, 40)
-
-    await expect(yaList(page).getByRole('listitem')).toContainText('No cruza el umbral')
+    await expect(yaList(page).getByRole('listitem')).toContainText('Corto')
     await expect(hechasList(page).getByRole('listitem')).toHaveCount(0)
   })
 
-  test('deslizar a la izquierda no hace nada (FR-002)', async () => {
+  test('deslizar una pendiente a la izquierda no hace nada (FR-002)', async ({ page }) => {
     await createTask(page, 'Izquierda inocua')
-    await page.getByRole('button', { name: 'Ver como lista' }).click()
 
-    const row = yaList(page).getByRole('listitem').filter({ hasText: 'Izquierda inocua' })
-    await swipeRow(page, row, -220)
+    await swipeRow(page, taskRow(yaList(page), 'Izquierda inocua'), 'left')
 
     await expect(yaList(page).getByRole('listitem')).toContainText('Izquierda inocua')
     await expect(hechasList(page).getByRole('listitem')).toHaveCount(0)
   })
 
-  test('una fila de "Para hacer pronto" también se completa al deslizar (FR-003)', async () => {
+  test('una fila de "Para hacer pronto" también se completa al deslizar (FR-003)', async ({
+    page,
+  }) => {
     await createTask(page, 'Tarea futura', { date: isoDay(7) })
 
-    const row = prontoList(page).getByRole('listitem').filter({ hasText: 'Tarea futura' })
-    await expect(row).toBeVisible()
-
-    await swipeRow(page, row, 220)
+    await completeTask(page, 'Tarea futura')
 
     await expect(hechasList(page).getByRole('listitem')).toContainText('Tarea futura')
-    await expect(
-      prontoList(page).getByRole('listitem').filter({ hasText: 'Tarea futura' }),
-    ).toHaveCount(0)
+    await expect(taskRow(prontoList(page), 'Tarea futura')).toHaveCount(0)
   })
 
-  test('una tarea hecha no se puede completar deslizando (FR-003)', async () => {
-    await createTask(page, 'Ya hecha', { date: isoDay(7) })
-    // Completar desde "pronto" con el checkbox para que pase a "Hechas"
-    await page.getByRole('checkbox', { name: 'Ya hecha' }).click()
+  test('deslizar una fila hecha a la izquierda la devuelve a pendiente (FR-004)', async ({
+    page,
+  }) => {
+    await createTask(page, 'Devolver esta')
+    await completeTask(page, 'Devolver esta')
+    await expect(hechasList(page).getByRole('listitem')).toContainText('Devolver esta')
 
-    const row = hechasList(page).getByRole('listitem').filter({ hasText: 'Ya hecha' })
-    await expect(row).toBeVisible()
-    // Deslizar a la derecha no debe revertir ni mover la fila hecha
-    await swipeRow(page, row, 220)
-    await expect(hechasList(page).getByRole('listitem')).toContainText('Ya hecha')
-    await expect(page.getByRole('checkbox', { name: 'Ya hecha' })).toBeChecked()
+    await revertTask(page, 'Devolver esta')
+
+    await expect(yaList(page).getByRole('listitem')).toContainText('Devolver esta')
+    await expect(hechasList(page).getByRole('listitem')).toHaveCount(0)
+  })
+
+  test('deslizar una fila hecha a la derecha no la devuelve (FR-004)', async ({ page }) => {
+    await createTask(page, 'Sigue hecha')
+    await completeTask(page, 'Sigue hecha')
+    await expect(hechasList(page).getByRole('listitem')).toContainText('Sigue hecha')
+
+    await swipeRow(page, taskRow(hechasList(page), 'Sigue hecha'), 'right')
+
+    await expect(hechasList(page).getByRole('listitem')).toContainText('Sigue hecha')
+    await expect(yaList(page).getByRole('listitem')).toHaveCount(0)
   })
 })
 
-test('en escritorio (puntero fino) la lista no es deslizable (FR-007)', async ({ page }) => {
+test('en táctil, deslizar también completa una fila de lista (paridad)', async ({ browser }) => {
+  // En táctil "ya" es baraja; forzamos la lista para deslizar la fila
+  const ctx: BrowserContext = await browser.newContext({ ...devices['Pixel 5'] })
+  const page: Page = await ctx.newPage()
   await page.goto('/')
-  await createTask(page, 'En escritorio')
 
-  const row = yaList(page).getByRole('listitem').filter({ hasText: 'En escritorio' })
-  await expect(row).toBeVisible()
+  await createTask(page, 'Táctil lista')
+  await page.getByRole('button', { name: 'Ver como lista' }).click()
 
-  await swipeRow(page, row, 220)
+  await swipeRow(page, taskRow(yaList(page), 'Táctil lista'), 'right')
 
-  // Sigue en "ya": el gesto no completa en escritorio
-  await expect(yaList(page).getByRole('listitem')).toContainText('En escritorio')
-  await expect(hechasList(page).getByRole('listitem')).toHaveCount(0)
+  await expect(hechasList(page).getByRole('listitem')).toContainText('Táctil lista')
+  await ctx.close()
 })

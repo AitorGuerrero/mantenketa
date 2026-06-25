@@ -10,8 +10,7 @@ import { isDone, type NewTaskInput, type Task } from '../domain/task'
 
 import { TaskForm } from './TaskForm'
 import { taskToFormInitial } from './taskFormInitial'
-import { useCoarsePointer } from './useCoarsePointer'
-import { useSwipeComplete } from './useSwipeComplete'
+import { useSwipeAction, type SwipeAction } from './useSwipeAction'
 
 function formatDate(isoDate: string): string {
   const [year, month, day] = isoDate.split('-').map(Number)
@@ -109,19 +108,30 @@ interface TaskItemProps {
 export function TaskItem({ task, memberName, scopeLabel, overdue = false }: TaskItemProps) {
   const done = isDone(task)
   const [editing, setEditing] = useState(false)
-  const touch = useCoarsePointer()
 
-  function handleToggle() {
-    void (done ? taskRepository.revert(task.id) : taskRepository.markDone(task.id))
-  }
-
-  // Deslizar a la derecha = hecha, igual que la baraja (feature 011). Solo en
-  // táctil y solo en filas pendientes; la izquierda no actúa. El checkbox sigue
-  // siendo el camino sin gesto. Mientras se edita, la fila es el formulario.
-  const swipeEnabled = touch && !done && !editing
-  const swipe = useSwipeComplete(() => {
-    void taskRepository.markDone(task.id)
-  }, swipeEnabled)
+  // El deslizamiento es la única forma de completar/devolver en la lista
+  // (feature 011, sustituye al checkbox): pendiente → derecha = hecha (verde);
+  // hecha → izquierda = devolver a pendiente (gris). Mientras se edita la fila
+  // es el formulario, así que no hay acción. Funciona con ratón y con el dedo.
+  const action: SwipeAction | null = editing
+    ? null
+    : done
+      ? {
+          direction: 'left',
+          onAction: () => {
+            void taskRepository.revert(task.id)
+          },
+          tint: 'var(--color-text-muted)',
+        }
+      : {
+          direction: 'right',
+          onAction: () => {
+            void taskRepository.markDone(task.id)
+          },
+          tint: 'var(--color-primary)',
+        }
+  const swipe = useSwipeAction(action)
+  const swipeEnabled = action !== null
 
   if (editing) {
     return (
@@ -163,25 +173,17 @@ export function TaskItem({ task, memberName, scopeLabel, overdue = false }: Task
           ? {
               transform: `translateX(${String(swipe.dx)}px)`,
               opacity: swipe.flying ? 0 : 1,
-              // Al deslizar a la derecha la fila se tiñe de verde (color de
-              // marca/"hecha") de forma gradual, hasta pleno al cruzar el umbral.
+              // Al arrastrar en la dirección de la acción la fila se tiñe hacia
+              // su color (verde = hecha, gris = devolver), pleno al cruzar.
               background:
                 swipe.progress > 0
-                  ? `color-mix(in srgb, var(--color-primary) ${String(Math.round(swipe.progress * 85))}%, var(--color-surface))`
+                  ? `color-mix(in srgb, ${swipe.tint} ${String(Math.round(swipe.progress * 85))}%, var(--color-surface))`
                   : undefined,
             }
           : undefined
       }
       {...(swipeEnabled ? swipe.handlers : {})}
     >
-      <input
-        type="checkbox"
-        className="task-toggle"
-        checked={done}
-        aria-label={task.name}
-        title={done ? 'Devolver a pendiente' : 'Marcar como hecha'}
-        onChange={handleToggle}
-      />
       <TaskBody
         task={task}
         memberName={memberName}

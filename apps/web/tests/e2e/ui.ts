@@ -55,6 +55,40 @@ export async function createTask(
   await expect(page.getByRole('button', { name: 'Nueva tarea' })).toBeVisible()
 }
 
+/** Fila (listitem) que contiene `name`, en toda la página o dentro de una lista. */
+export function taskRow(scope: Page | Locator, name: string): Locator {
+  return scope.getByRole('listitem').filter({ hasText: name })
+}
+
+/** Arrastra una fila horizontalmente para disparar su acción de deslizamiento
+ *  (derecha = hecha, izquierda = devolver a pendiente). Sustituye al antiguo
+ *  checkbox; funciona con ratón y con táctil. */
+export async function swipeRow(
+  page: Page,
+  row: Locator,
+  dir: 'right' | 'left' = 'right',
+): Promise<void> {
+  const box = await row.boundingBox()
+  if (!box) throw new Error('sin fila para deslizar')
+  const x = box.x + box.width / 2
+  const y = box.y + box.height / 2
+  const delta = dir === 'right' ? 240 : -240
+  await page.mouse.move(x, y)
+  await page.mouse.down()
+  await page.mouse.move(x + delta, y, { steps: 8 })
+  await page.mouse.up()
+}
+
+/** Completa la tarea pendiente `name` deslizando su fila a la derecha. */
+export async function completeTask(page: Page, name: string): Promise<void> {
+  await swipeRow(page, taskRow(page, name).first(), 'right')
+}
+
+/** Devuelve a pendiente la tarea hecha `name` deslizando su fila a la izquierda. */
+export async function revertTask(page: Page, name: string): Promise<void> {
+  await swipeRow(page, taskRow(page, name).first(), 'left')
+}
+
 export function yaList(page: Page): Locator {
   return page.getByRole('list', { name: 'Tareas para hacer ya' })
 }

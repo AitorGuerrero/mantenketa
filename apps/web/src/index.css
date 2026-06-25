@@ -471,13 +471,6 @@ body {
   font-weight: 600;
 }
 
-.task-toggle {
-  width: 1.15rem;
-  height: 1.15rem;
-  accent-color: var(--color-primary);
-  cursor: pointer;
-}
-
 .task-name {
   flex: 1;
   font-weight: 500;
