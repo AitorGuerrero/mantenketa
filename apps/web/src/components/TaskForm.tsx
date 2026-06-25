@@ -27,6 +27,8 @@ const EMPTY: TaskFormInitial = {
   description: '',
   urgent: false,
   recurrence: null,
+  nucleusId: null,
+  assigneeId: '',
 }
 
 export function TaskForm({
@@ -45,6 +47,8 @@ export function TaskForm({
   const [urgent, setUrgent] = useState(init.urgent)
   // '' ⇒ personal; en otro caso, id del grupo elegido (solo modo crear)
   const [groupId, setGroupId] = useState('')
+  // Asignado (feature 012): '' ⇒ sin asignar; en otro caso, userId del miembro
+  const [assignee, setAssignee] = useState(init.assigneeId)
   // Recurrencia (feature 009/010): prellenada en edición
   const [recurring, setRecurring] = useState(init.recurrence !== null)
   const [freq, setFreq] = useState<Recurrence['freq']>(init.recurrence?.freq ?? 'weekly')
@@ -59,6 +63,15 @@ export function TaskForm({
   const effectiveGroupId = myGroups.some((g) => g.id === groupId) ? groupId : ''
   const showScope = mode === 'create' && myGroups.length > 0
 
+  // Asignación (feature 012): solo en tareas de grupo. Al crear, el grupo es el
+  // elegido; al editar, el de la propia tarea (ámbito fijo). El selector ofrece
+  // a los miembros de ese grupo; el asignado debe seguir siendo miembro.
+  const scopeGroupId = mode === 'create' ? effectiveGroupId : (init.nucleusId ?? '')
+  const activeGroup = myGroups.find((g) => g.id === scopeGroupId)
+  const effectiveAssignee = activeGroup?.members.some((m) => m.userId === assignee)
+    ? assignee
+    : ''
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
@@ -69,6 +82,8 @@ export function TaskForm({
         taskDate,
         // En edición el ámbito es inmutable; editTask ignora nucleusId
         nucleusId: showScope && effectiveGroupId !== '' ? effectiveGroupId : null,
+        // Asignado solo si la tarea es de grupo; '' ⇒ sin asignar (feature 012)
+        assigneeId: activeGroup && effectiveAssignee !== '' ? effectiveAssignee : null,
         description,
         urgent,
         recurrence,
@@ -79,6 +94,7 @@ export function TaskForm({
         setDescription('')
         setUrgent(false)
         setGroupId('')
+        setAssignee('')
         setRecurring(false)
         setFreq('weekly')
         setInterval(1)
@@ -220,6 +236,25 @@ export function TaskForm({
             {myGroups.map((group) => (
               <option key={group.id} value={group.id}>
                 {group.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {activeGroup && (
+        <div className="form-field">
+          <label htmlFor="task-assignee">Asignar a</label>
+          <select
+            id="task-assignee"
+            value={effectiveAssignee}
+            onChange={(event) => {
+              setAssignee(event.target.value)
+            }}
+          >
+            <option value="">Sin asignar</option>
+            {activeGroup.members.map((member) => (
+              <option key={member.userId} value={member.userId}>
+                {member.displayName}
               </option>
             ))}
           </select>

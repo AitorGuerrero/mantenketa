@@ -21,13 +21,13 @@ describe('parseNewTask — validación de creación', () => {
   it('acepta la falta de fecha: la tarea es "para hacer ya" (FR-003)', () => {
     const parsed = parseNewTask({ name: 'Cambiar filtro' })
 
-    expect(parsed).toEqual({ name: 'Cambiar filtro', taskDate: null, nucleusId: null, description: null, urgent: false, recurrence: null })
+    expect(parsed).toEqual({ name: 'Cambiar filtro', taskDate: null, nucleusId: null, assigneeId: null, description: null, urgent: false, recurrence: null })
   })
 
   it('normaliza una fecha vacía a null (FR-003)', () => {
     const parsed = parseNewTask({ name: 'Cambiar filtro', taskDate: '' })
 
-    expect(parsed).toEqual({ name: 'Cambiar filtro', taskDate: null, nucleusId: null, description: null, urgent: false, recurrence: null })
+    expect(parsed).toEqual({ name: 'Cambiar filtro', taskDate: null, nucleusId: null, assigneeId: null, description: null, urgent: false, recurrence: null })
   })
 
   it('rechaza una fecha con formato no válido', () => {
@@ -39,7 +39,7 @@ describe('parseNewTask — validación de creación', () => {
   it('acepta una entrada válida y recorta el nombre', () => {
     const parsed = parseNewTask({ name: '  Cambiar filtro  ', taskDate: '2026-06-15' })
 
-    expect(parsed).toEqual({ name: 'Cambiar filtro', taskDate: '2026-06-15', nucleusId: null, description: null, urgent: false, recurrence: null })
+    expect(parsed).toEqual({ name: 'Cambiar filtro', taskDate: '2026-06-15', nucleusId: null, assigneeId: null, description: null, urgent: false, recurrence: null })
   })
 
   it('sin descripción (ausente) → null', () => {

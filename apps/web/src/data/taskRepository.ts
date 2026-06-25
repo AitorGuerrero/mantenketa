@@ -4,6 +4,7 @@
 import { liveQuery, type Observable } from 'dexie'
 
 import { getCurrentUserId } from '../auth/sessionStore'
+import { normalizeAssignee } from '../domain/assignment'
 import { markDone as toDone, revert as toOutstanding } from '../domain/completion'
 import { todayIsoDate } from '../domain/date'
 import { applyEdit } from '../domain/edit'
@@ -83,6 +84,8 @@ export class DexieTaskRepository implements TaskRepository {
       // En anónimo ownerId queda null (modo local puro, FR-002)
       ownerId: getCurrentUserId(),
       nucleusId: parsed.nucleusId,
+      // Asignado (feature 012): solo en tareas de grupo; null en personales
+      assigneeId: normalizeAssignee(parsed.nucleusId, parsed.assigneeId),
       description: parsed.description,
       urgent: parsed.urgent,
       // Recurrencia (feature 009): la raíz estrena su propia serie

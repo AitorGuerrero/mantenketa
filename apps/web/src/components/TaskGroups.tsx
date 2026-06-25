@@ -6,6 +6,7 @@ import { useState } from 'react'
 
 import { observeGroups } from '../data/nucleusService'
 import { taskRepository } from '../data/taskRepository'
+import { filterMine } from '../domain/assignment'
 import { todayIsoDate } from '../domain/date'
 import { groupTasks, type TaskInGroup } from '../domain/grouping'
 import type { Task } from '../domain/task'
@@ -13,6 +14,7 @@ import type { Task } from '../domain/task'
 import { TaskDeck } from './TaskDeck'
 import { TaskItem } from './TaskItem'
 import { useCoarsePointer } from './useCoarsePointer'
+import { useCurrentUserId } from './useCurrentUserId'
 
 interface GroupSectionProps {
   title: string
@@ -21,6 +23,7 @@ interface GroupSectionProps {
   memberName: (userId: string) => string
   scopeLabel: (task: Task) => string | null
   label: string
+  currentUserId: string | null
 }
 
 function GroupSection({
@@ -30,6 +33,7 @@ function GroupSection({
   memberName,
   scopeLabel,
   label,
+  currentUserId,
 }: GroupSectionProps) {
   return (
     <section className="task-group">
@@ -45,6 +49,7 @@ function GroupSection({
               memberName={memberName}
               scopeLabel={scopeLabel}
               overdue={isOverdue}
+              currentUserId={currentUserId}
             />
           ))}
         </ul>
@@ -57,16 +62,22 @@ export function TaskGroups() {
   const tasks = useObservable(() => taskRepository.observeTasks(), [])
   const groups = useObservable(() => observeGroups(), [])
   const touch = useCoarsePointer()
+  const currentUserId = useCurrentUserId()
   // El usuario puede forzar la vista de lista en táctil (como en escritorio)
   const [forceList, setForceList] = useState(false)
+  // Filtro "Solo mías" (feature 012): personales + de grupo asignadas a mí
+  const [onlyMine, setOnlyMine] = useState(false)
 
   if (tasks === undefined) {
     return null
   }
 
-  const { ya, pronto, hechas } = groupTasks(tasks, todayIsoDate())
-
   const myGroups = groups ?? []
+  // Solo tiene sentido filtrar/asignar si perteneces a algún grupo
+  const canFilterMine = myGroups.length > 0
+  const visibleTasks = onlyMine && canFilterMine ? filterMine(tasks, currentUserId) : tasks
+
+  const { ya, pronto, hechas } = groupTasks(visibleTasks, todayIsoDate())
 
   const memberName = (userId: string): string => {
     for (const group of myGroups) {
@@ -87,11 +98,24 @@ export function TaskGroups() {
 
   return (
     <div className="task-groups">
+      {canFilterMine && (
+        <label className="toggle-field only-mine-toggle">
+          <input
+            type="checkbox"
+            checked={onlyMine}
+            onChange={(event) => {
+              setOnlyMine(event.target.checked)
+            }}
+          />
+          <span>Mis tareas</span>
+        </label>
+      )}
       {touch && !forceList ? (
         <TaskDeck
           ya={ya}
           memberName={memberName}
           scopeLabel={scopeLabel}
+          currentUserId={currentUserId}
           onViewAsList={() => {
             setForceList(true)
           }}
@@ -105,6 +129,7 @@ export function TaskGroups() {
             memberName={memberName}
             scopeLabel={scopeLabel}
             label="Tareas para hacer ya"
+            currentUserId={currentUserId}
           />
           {/* En táctil, ofrecer volver a la baraja (en escritorio no hay tarjetas) */}
           {touch && forceList && (
@@ -127,6 +152,7 @@ export function TaskGroups() {
         memberName={memberName}
         scopeLabel={scopeLabel}
         label="Tareas para hacer pronto"
+        currentUserId={currentUserId}
       />
       <GroupSection
         title="Hechas recientemente"
@@ -135,6 +161,7 @@ export function TaskGroups() {
         memberName={memberName}
         scopeLabel={scopeLabel}
         label="Tareas hechas recientemente"
+        currentUserId={currentUserId}
       />
     </div>
   )

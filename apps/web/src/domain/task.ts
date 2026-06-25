@@ -34,6 +34,9 @@ export const TaskSchema = z.object({
   completedBy: z.string().nullable(),
   ownerId: z.string().nullable(),
   nucleusId: z.string().nullable(),
+  // Asignado (feature 012): id del miembro responsable. Solo en tareas de grupo;
+  // null ⇒ sin asignar (lo hace cualquiera) o tarea personal.
+  assigneeId: z.string().nullable(),
   // Descripción opcional (texto libre multilínea); null ⇒ sin descripción
   description: z.string().nullable(),
   // Urgente (feature 007): adelanta en "Para hacer ya" y se marca claramente
@@ -59,6 +62,12 @@ export const NewTaskInputSchema = z.object({
   // el id del grupo elegido. La UI solo ofrece grupos a los que perteneces y
   // RLS lo refuerza en el backend.
   nucleusId: z.preprocess(
+    (value) => (value === undefined ? null : value),
+    z.string().nullable(),
+  ),
+  // Asignado (feature 012): ausente ⇒ sin asignar. La normalización "solo en
+  // grupo" la aplica la capa de datos (normalizeAssignee), que conoce el ámbito.
+  assigneeId: z.preprocess(
     (value) => (value === undefined ? null : value),
     z.string().nullable(),
   ),
@@ -93,6 +102,8 @@ export interface NewTaskInput {
   taskDate?: string | null
   // null o ausente ⇒ personal; en otro caso, id del grupo elegido (feature 008)
   nucleusId?: string | null
+  // null o ausente ⇒ sin asignar; en otro caso, id del miembro responsable (feature 012)
+  assigneeId?: string | null
   description?: string | null
   urgent?: boolean
   // null o ausente ⇒ tarea única; en otro caso, patrón de recurrencia (feature 009)

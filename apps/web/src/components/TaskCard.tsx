@@ -10,6 +10,7 @@ import {
   type TransitionEvent as ReactTransitionEvent,
 } from 'react'
 
+import { assignedToMe } from '../domain/assignment'
 import { swipeOutcome } from '../domain/deck'
 import type { Task } from '../domain/task'
 
@@ -30,6 +31,7 @@ interface TaskCardProps {
   task: Task
   memberName: (userId: string) => string
   scopeLabel?: (task: Task) => string | null
+  currentUserId?: string | null
   overdue: boolean
   onDone: () => void
   onDefer: () => void
@@ -38,7 +40,7 @@ interface TaskCardProps {
 }
 
 export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskCard(
-  { task, memberName, scopeLabel, overdue, onDone, onDefer, onEdit },
+  { task, memberName, scopeLabel, currentUserId = null, overdue, onDone, onDefer, onEdit },
   ref,
 ) {
   const [dx, setDx] = useState(0)
@@ -133,6 +135,7 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
                   scopeLabel={scopeLabel}
                   overdue={overdue}
                   showDescription={false}
+                  currentUserId={currentUserId}
                 />
               </li>
             </ul>
@@ -153,6 +156,12 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
             )}
             {task.nucleusId !== null && task.ownerId !== null && (
               <span className="task-creator">Creada por {memberName(task.ownerId)}</span>
+            )}
+            {task.nucleusId !== null && task.assigneeId !== null && (
+              <span className="task-creator task-assignee">
+                Asignada a{' '}
+                {assignedToMe(task, currentUserId) ? 'ti' : memberName(task.assigneeId)}
+              </span>
             )}
             {/* Editar va en el dorso; detiene los gestos de la tarjeta para no
                 voltear/deslizar al pulsar (aria-hidden cuando está de cara). */}
