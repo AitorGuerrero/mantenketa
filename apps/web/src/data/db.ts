@@ -130,3 +130,20 @@ db.version(7)
         row.assigneeId ??= null
       })
   })
+
+// Feature 013: proyecto de la tarea (sin índice; backfill a null)
+db.version(8)
+  .stores({
+    tasks: 'id, taskDate, completedAt, createdAt, updatedAt, nucleusId',
+    outbox: '++seq, taskId',
+    meta: 'key',
+  })
+  .upgrade(async (tx) => {
+    await tx
+      .table<Task, string>('tasks')
+      .toCollection()
+      .modify((task) => {
+        const row = task as Partial<Task>
+        row.projectId ??= null
+      })
+  })

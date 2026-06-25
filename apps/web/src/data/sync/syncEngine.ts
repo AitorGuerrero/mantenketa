@@ -98,6 +98,8 @@ async function flushOutbox(): Promise<void> {
             // Asignado (feature 012): mutable, debe viajar en el UPDATE (no solo
             // en el INSERT) para que reasignar al editar se propague
             assignee_id: task.assigneeId,
+            // Proyecto (feature 013): mutable, también viaja en el UPDATE
+            project_id: task.projectId,
             updated_at: task.updatedAt,
           })
           .eq('id', task.id)

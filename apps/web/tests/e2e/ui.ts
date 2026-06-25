@@ -22,6 +22,8 @@ export async function createTask(
     group?: string
     // Etiqueta del miembro a elegir en "Asignar a" (feature 012); requiere group
     assignee?: string
+    // Nombre del proyecto a elegir en "Proyecto" (feature 013); del ámbito elegido
+    project?: string
     description?: string
     urgent?: boolean
     // Recurrencia (feature 009); ausente ⇒ tarea única
@@ -44,11 +46,15 @@ export async function createTask(
     await page.getByRole('checkbox', { name: 'Urgente', exact: true }).check()
   }
   if (opts.group !== undefined) {
-    await page.getByLabel('Ámbito').selectOption({ label: opts.group })
+    await page.getByLabel('Ámbito', { exact: true }).selectOption({ label: opts.group })
   }
   if (opts.assignee !== undefined) {
     // El selector "Asignar a" solo aparece tras elegir un grupo (feature 012)
     await page.getByLabel('Asignar a').selectOption({ label: opts.assignee })
+  }
+  if (opts.project !== undefined) {
+    // El selector "Proyecto" aparece si hay proyectos en el ámbito (feature 013)
+    await page.getByLabel('Proyecto', { exact: true }).selectOption({ label: opts.project })
   }
   if (opts.recurrence !== undefined) {
     await page.getByRole('checkbox', { name: 'Repetir', exact: true }).check()

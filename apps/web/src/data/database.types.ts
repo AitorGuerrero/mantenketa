@@ -163,6 +163,45 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          nucleus_id: string | null
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          name: string
+          nucleus_id?: string | null
+          owner_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          nucleus_id?: string | null
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_nucleus_id_fkey"
+            columns: ["nucleus_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assignee_id: string | null
@@ -174,6 +213,7 @@ export type Database = {
           name: string
           nucleus_id: string | null
           owner_id: string
+          project_id: string | null
           recurrence: Json | null
           series_id: string | null
           task_date: string | null
@@ -190,6 +230,7 @@ export type Database = {
           name: string
           nucleus_id?: string | null
           owner_id: string
+          project_id?: string | null
           recurrence?: Json | null
           series_id?: string | null
           task_date?: string | null
@@ -206,6 +247,7 @@ export type Database = {
           name?: string
           nucleus_id?: string | null
           owner_id?: string
+          project_id?: string | null
           recurrence?: Json | null
           series_id?: string | null
           task_date?: string | null
@@ -239,6 +281,13 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]

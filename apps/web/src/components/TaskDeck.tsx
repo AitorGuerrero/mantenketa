@@ -17,6 +17,7 @@ interface TaskDeckProps {
   ya: TaskInGroup[]
   memberName: (userId: string) => string
   scopeLabel: (task: Task) => string | null
+  projectName: (task: Task) => string | null
   currentUserId: string | null
   onViewAsList: () => void
 }
@@ -30,6 +31,7 @@ export function TaskDeck({
   ya,
   memberName,
   scopeLabel,
+  projectName,
   currentUserId,
   onViewAsList,
 }: TaskDeckProps) {
@@ -126,6 +128,7 @@ export function TaskDeck({
                       task={task}
                       memberName={memberName}
                       scopeLabel={scopeLabel}
+                      projectName={projectName}
                       overdue={peekOverdue}
                       showDescription={false}
                       currentUserId={currentUserId}
@@ -142,6 +145,7 @@ export function TaskDeck({
           task={top}
           memberName={memberName}
           scopeLabel={scopeLabel}
+          projectName={projectName}
           currentUserId={currentUserId}
           overdue={overdueById.get(top.id) ?? false}
           onDone={() => {

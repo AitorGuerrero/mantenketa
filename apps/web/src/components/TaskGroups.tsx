@@ -5,10 +5,12 @@ import { useObservable } from 'dexie-react-hooks'
 import { useState } from 'react'
 
 import { observeGroups } from '../data/nucleusService'
+import { observeProjects } from '../data/projectService'
 import { taskRepository } from '../data/taskRepository'
 import { filterMine } from '../domain/assignment'
 import { todayIsoDate } from '../domain/date'
 import { groupTasks, type TaskInGroup } from '../domain/grouping'
+import { filterByProject } from '../domain/project'
 import type { Task } from '../domain/task'
 
 import { TaskDeck } from './TaskDeck'
@@ -22,6 +24,7 @@ interface GroupSectionProps {
   emptyHint: string
   memberName: (userId: string) => string
   scopeLabel: (task: Task) => string | null
+  projectName: (task: Task) => string | null
   label: string
   currentUserId: string | null
 }
@@ -32,6 +35,7 @@ function GroupSection({
   emptyHint,
   memberName,
   scopeLabel,
+  projectName,
   label,
   currentUserId,
 }: GroupSectionProps) {
@@ -48,6 +52,7 @@ function GroupSection({
               task={task}
               memberName={memberName}
               scopeLabel={scopeLabel}
+              projectName={projectName}
               overdue={isOverdue}
               currentUserId={currentUserId}
             />
@@ -61,21 +66,35 @@ function GroupSection({
 export function TaskGroups() {
   const tasks = useObservable(() => taskRepository.observeTasks(), [])
   const groups = useObservable(() => observeGroups(), [])
+  const projects = useObservable(() => observeProjects(), [])
   const touch = useCoarsePointer()
   const currentUserId = useCurrentUserId()
   // El usuario puede forzar la vista de lista en táctil (como en escritorio)
   const [forceList, setForceList] = useState(false)
-  // Filtro "Solo mías" (feature 012): personales + de grupo asignadas a mí
+  // Filtro "Mis tareas" (feature 012): personales + de grupo asignadas a mí
   const [onlyMine, setOnlyMine] = useState(false)
+  // Filtro por proyecto (feature 013): '' ⇒ todos
+  const [projectFilter, setProjectFilter] = useState('')
 
   if (tasks === undefined) {
     return null
   }
 
   const myGroups = groups ?? []
+  const myProjects = projects ?? []
+  // El proyecto del filtro debe seguir existiendo (p. ej. tras borrarlo)
+  const activeProjectId = myProjects.some((p) => p.id === projectFilter) ? projectFilter : ''
   // Solo tiene sentido filtrar/asignar si perteneces a algún grupo
   const canFilterMine = myGroups.length > 0
-  const visibleTasks = onlyMine && canFilterMine ? filterMine(tasks, currentUserId) : tasks
+
+  const projectName = (task: Task): string | null =>
+    myProjects.find((p) => p.id === task.projectId)?.name ?? null
+
+  const mineFiltered = onlyMine && canFilterMine ? filterMine(tasks, currentUserId) : tasks
+  const visibleTasks = filterByProject(
+    mineFiltered,
+    activeProjectId === '' ? null : activeProjectId,
+  )
 
   const { ya, pronto, hechas } = groupTasks(visibleTasks, todayIsoDate())
 
@@ -98,23 +117,45 @@ export function TaskGroups() {
 
   return (
     <div className="task-groups">
-      {canFilterMine && (
-        <label className="toggle-field only-mine-toggle">
-          <input
-            type="checkbox"
-            checked={onlyMine}
-            onChange={(event) => {
-              setOnlyMine(event.target.checked)
-            }}
-          />
-          <span>Mis tareas</span>
-        </label>
-      )}
+      <div className="task-filters">
+        {canFilterMine && (
+          <label className="toggle-field only-mine-toggle">
+            <input
+              type="checkbox"
+              checked={onlyMine}
+              onChange={(event) => {
+                setOnlyMine(event.target.checked)
+              }}
+            />
+            <span>Mis tareas</span>
+          </label>
+        )}
+        {myProjects.length > 0 && (
+          <label className="project-filter">
+            <span className="visually-hidden">Proyecto</span>
+            <select
+              aria-label="Filtrar por proyecto"
+              value={activeProjectId}
+              onChange={(event) => {
+                setProjectFilter(event.target.value)
+              }}
+            >
+              <option value="">Todos los proyectos</option>
+              {myProjects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
       {touch && !forceList ? (
         <TaskDeck
           ya={ya}
           memberName={memberName}
           scopeLabel={scopeLabel}
+          projectName={projectName}
           currentUserId={currentUserId}
           onViewAsList={() => {
             setForceList(true)
@@ -128,6 +169,7 @@ export function TaskGroups() {
             emptyHint="Nada urgente ahora mismo"
             memberName={memberName}
             scopeLabel={scopeLabel}
+            projectName={projectName}
             label="Tareas para hacer ya"
             currentUserId={currentUserId}
           />
@@ -151,6 +193,7 @@ export function TaskGroups() {
         emptyHint="No hay tareas programadas"
         memberName={memberName}
         scopeLabel={scopeLabel}
+        projectName={projectName}
         label="Tareas para hacer pronto"
         currentUserId={currentUserId}
       />
@@ -160,6 +203,7 @@ export function TaskGroups() {
         emptyHint="Todavía no has completado tareas"
         memberName={memberName}
         scopeLabel={scopeLabel}
+        projectName={projectName}
         label="Tareas hechas recientemente"
         currentUserId={currentUserId}
       />

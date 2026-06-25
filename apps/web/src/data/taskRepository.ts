@@ -9,6 +9,7 @@ import { markDone as toDone, revert as toOutstanding } from '../domain/completio
 import { todayIsoDate } from '../domain/date'
 import { applyEdit } from '../domain/edit'
 import { sortTasks } from '../domain/ordering'
+import { normalizeProject } from '../domain/project'
 import { nextOccurrenceDate, successorId } from '../domain/recurrence'
 import { isDone, parseNewTask, type NewTaskInput, type Task } from '../domain/task'
 
@@ -86,6 +87,8 @@ export class DexieTaskRepository implements TaskRepository {
       nucleusId: parsed.nucleusId,
       // Asignado (feature 012): solo en tareas de grupo; null en personales
       assigneeId: normalizeAssignee(parsed.nucleusId, parsed.assigneeId),
+      // Proyecto (feature 013): contenedor opcional; null ⇒ sin proyecto
+      projectId: normalizeProject(parsed.projectId),
       description: parsed.description,
       urgent: parsed.urgent,
       // Recurrencia (feature 009): la raíz estrena su propia serie

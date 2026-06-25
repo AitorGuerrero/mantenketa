@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Aitor Guerrero
 
 import { normalizeAssignee } from './assignment'
+import { normalizeProject } from './project'
 import type { ParsedNewTask, Task } from './task'
 
 /**
@@ -33,6 +34,8 @@ export function applyEdit(
     seriesId,
     // El ámbito no cambia; el asignado se reescribe pero solo aplica a grupos
     assigneeId: normalizeAssignee(task.nucleusId, parsed.assigneeId),
+    // El proyecto se puede cambiar/limpiar al editar (feature 013)
+    projectId: normalizeProject(parsed.projectId),
     updatedAt: now,
   }
 }
