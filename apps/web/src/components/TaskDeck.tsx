@@ -42,6 +42,8 @@ export function TaskDeck({
   const cardRef = useRef<TaskCardHandle>(null)
 
   const overdueById = new Map(ya.map((g) => [g.task.id, g.isOverdue]))
+  // Urgencia calculada por groupTasks (feature 015), por id de tarea
+  const urgentById = new Map(ya.map((g) => [g.task.id, g.isUrgent]))
   const ordered = orderDeck(
     ya.map((g) => g.task),
     deferredIds,
@@ -109,9 +111,10 @@ export function TaskDeck({
           .map((task, i) => {
             const depth = i + 1
             const peekOverdue = overdueById.get(task.id) ?? false
+            const peekUrgent = urgentById.get(task.id) ?? false
             const peekClasses = ['task-card-peek']
             if (peekOverdue) peekClasses.push('task-card--overdue')
-            if (task.urgent) peekClasses.push('task-card-peek--urgent')
+            if (peekUrgent) peekClasses.push('task-card-peek--urgent')
             return (
               <div
                 key={task.id}
@@ -135,6 +138,7 @@ export function TaskDeck({
                       scopeLabel={scopeLabel}
                       projectName={projectName}
                       overdue={peekOverdue}
+                      urgent={peekUrgent}
                       showDescription={false}
                       currentUserId={currentUserId}
                     />
@@ -153,6 +157,7 @@ export function TaskDeck({
           projectName={projectName}
           currentUserId={currentUserId}
           overdue={overdueById.get(top.id) ?? false}
+          urgent={urgentById.get(top.id) ?? false}
           actionable={topActionable}
           onDone={() => {
             handleDone(top.id)

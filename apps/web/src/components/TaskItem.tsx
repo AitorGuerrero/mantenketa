@@ -37,6 +37,7 @@ export function TaskBody({
   memberName,
   scopeLabel,
   overdue = false,
+  urgent = false,
   showDescription = true,
   showCreator = false,
   currentUserId = null,
@@ -50,6 +51,8 @@ export function TaskBody({
   // Nombre del proyecto de la tarea (feature 013); null ⇒ sin proyecto
   projectName?: ((task: Task) => string | null) | undefined
   overdue?: boolean
+  // Urgencia calculada (feature 015): la decide groupTasks relativa a hoy
+  urgent?: boolean
   // En la baraja la descripción va en el dorso (volteo), no en la cara frontal
   showDescription?: boolean
   // Quién creó la tarea: solo en tareas de grupo (no personales). En la baraja
@@ -82,7 +85,7 @@ export function TaskBody({
   return (
     <>
       <span className="task-name">
-        {task.urgent && <span className="task-badge task-badge--urgent">Urgente</span>}
+        {urgent && <span className="task-badge task-badge--urgent">Urgente</span>}
         {mine && <span className="task-badge task-badge--mine">Para mí</span>}
         {task.name}
         {scope !== null && <span className="task-badge">{scope}</span>}
@@ -128,6 +131,8 @@ interface TaskItemProps {
   scopeLabel?: (task: Task) => string | null
   projectName?: (task: Task) => string | null
   overdue?: boolean
+  // Urgencia calculada (feature 015)
+  urgent?: boolean
   currentUserId?: string | null
 }
 
@@ -137,6 +142,7 @@ export function TaskItem({
   scopeLabel,
   projectName,
   overdue = false,
+  urgent = false,
   currentUserId = null,
 }: TaskItemProps) {
   const done = isDone(task)
@@ -194,7 +200,7 @@ export function TaskItem({
   const classes = ['task-item']
   if (done) classes.push('task-item--done')
   if (overdue) classes.push('task-item--overdue')
-  if (task.urgent) classes.push('task-item--urgent')
+  if (urgent) classes.push('task-item--urgent')
   if (assignedToMe(task, currentUserId)) classes.push('task-item--mine')
   if (others) classes.push('task-item--others')
   if (swipeEnabled) {
@@ -229,6 +235,7 @@ export function TaskItem({
         scopeLabel={scopeLabel}
         projectName={projectName}
         overdue={overdue}
+        urgent={urgent}
         showCreator
         currentUserId={currentUserId}
       />

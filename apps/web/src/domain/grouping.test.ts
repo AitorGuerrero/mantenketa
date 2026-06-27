@@ -23,7 +23,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     assigneeId: null,
     projectId: null,
     description: null,
-    urgent: false,
+    urgencyMargin: null,
     recurrence: null,
     seriesId: null,
     createdAt: stamp,
@@ -90,9 +90,10 @@ describe('groupTasks (FR-001..FR-006)', () => {
     ])
   })
 
-  it('"ya": las urgentes van primero (incluidas sin fecha), conservando el suborden (FR-003)', () => {
-    const urgenteSinFecha = makeTask({ name: 'urg sin fecha', taskDate: null, urgent: true })
-    const urgenteVencida = makeTask({ name: 'urg vencida', taskDate: '2026-06-10', urgent: true })
+  it('"ya": las urgentes (margen ya cumplido) van primero, conservando el suborden (FR-003, FR-005)', () => {
+    // createdAt de makeTask es 2026-06-01; TODAY 2026-06-14 ⇒ margen 0 ya urgente
+    const urgenteSinFecha = makeTask({ name: 'urg sin fecha', taskDate: null, urgencyMargin: 0 })
+    const urgenteVencida = makeTask({ name: 'urg vencida', taskDate: '2026-06-10', urgencyMargin: 0 })
     const normalVencida = makeTask({ name: 'normal vencida', taskDate: '2026-06-05' })
     const normalSinFecha = makeTask({ name: 'normal sin fecha', taskDate: null })
 
@@ -107,6 +108,21 @@ describe('groupTasks (FR-001..FR-006)', () => {
       'normal vencida',
       'normal sin fecha',
     ])
+    // el grupo marca la urgencia calculada
+    expect(ya.find((g) => g.task.name === 'urg vencida')?.isUrgent).toBe(true)
+    expect(ya.find((g) => g.task.name === 'normal vencida')?.isUrgent).toBe(false)
+  })
+
+  it('"ya": una vencida dentro de su margen de gracia NO es urgente ni se adelanta (FR-003)', () => {
+    // vencida el 2026-06-10 con margen 7 ⇒ urgente el 2026-06-17; hoy (14) aún no
+    const enGracia = makeTask({ name: 'en gracia', taskDate: '2026-06-10', urgencyMargin: 7 })
+    const normalVencida = makeTask({ name: 'normal vencida', taskDate: '2026-06-05' })
+
+    const { ya } = groupTasks([enGracia, normalVencida], TODAY)
+
+    expect(ya.find((g) => g.task.name === 'en gracia')?.isUrgent).toBe(false)
+    // sin urgencia, el orden es por fecha (la más antigua primero)
+    expect(ya.map((g) => g.task.name)).toEqual(['normal vencida', 'en gracia'])
   })
 
   it('"ya" desempata por orden de creación dentro de cada grupo', () => {

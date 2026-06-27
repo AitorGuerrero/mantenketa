@@ -18,7 +18,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     assigneeId: null,
     projectId: null,
     description: 'desc',
-    urgent: false,
+    urgencyMargin: null,
     recurrence: null,
     seriesId: null,
     createdAt: '2026-06-01T10:00:00.000Z',
@@ -37,7 +37,7 @@ describe('applyEdit — edición pura de una tarea (feature 010)', () => {
       name: '  Comprar pan  ',
       taskDate: '2026-07-01',
       description: 'nueva',
-      urgent: true,
+      urgencyMargin: 3,
     })
 
     const edited = applyEdit(task, parsed, NOW, NEW_SERIES)
@@ -45,8 +45,15 @@ describe('applyEdit — edición pura de una tarea (feature 010)', () => {
     expect(edited.name).toBe('Comprar pan')
     expect(edited.taskDate).toBe('2026-07-01')
     expect(edited.description).toBe('nueva')
-    expect(edited.urgent).toBe(true)
+    expect(edited.urgencyMargin).toBe(3)
     expect(edited.updatedAt).toBe(NOW)
+  })
+
+  it('limpia el margen de urgencia al editar sin él (feature 015)', () => {
+    const task = makeTask({ urgencyMargin: 0 })
+    const parsed = parseNewTask({ name: 'Sigue' })
+
+    expect(applyEdit(task, parsed, NOW, NEW_SERIES).urgencyMargin).toBeNull()
   })
 
   it('preserva identidad, dueño, ámbito, completado y createdAt', () => {

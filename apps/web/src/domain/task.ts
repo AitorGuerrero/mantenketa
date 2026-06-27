@@ -41,8 +41,11 @@ export const TaskSchema = z.object({
   projectId: z.string().nullable(),
   // Descripción opcional (texto libre multilínea); null ⇒ sin descripción
   description: z.string().nullable(),
-  // Urgente (feature 007): adelanta en "Para hacer ya" y se marca claramente
-  urgent: z.boolean(),
+  // Margen de urgencia (feature 015): días que deben pasar desde la fecha de
+  // referencia (taskDate o, si no hay, el día de creación) hasta que la tarea
+  // empieza a ser urgente. null ⇒ nunca urgente; 0 ⇒ urgente al llegar la
+  // referencia. La urgencia se DERIVA (domain/urgency.ts), no se almacena.
+  urgencyMargin: z.number().int().min(0).nullable(),
   // Recurrencia (feature 009): null ⇒ tarea única
   recurrence: RecurrenceSchema.nullable(),
   // Serie a la que pertenece la instancia (feature 009); null ⇒ no recurrente
@@ -85,8 +88,13 @@ export const NewTaskInputSchema = z.object({
     const trimmed = value.trim()
     return trimmed === '' ? null : trimmed
   }, z.string().nullable()),
-  // Urgente (FR-001): ausente ⇒ false
-  urgent: z.boolean().default(false),
+  // Margen de urgencia (feature 015): días ≥ 0; ausente / '' / no numérico ⇒
+  // null (sin urgencia). 0 ⇒ "urgente ya mismo" (sin fecha) o al vencer (fechada).
+  urgencyMargin: z.preprocess((value) => {
+    if (value === '' || value === undefined || value === null) return null
+    const n = typeof value === 'string' ? Number(value) : value
+    return typeof n === 'number' && Number.isFinite(n) ? n : null
+  }, z.number().int().min(0).nullable()),
   // Recurrencia (feature 009): ausente ⇒ null (tarea única)
   recurrence: z.preprocess(
     (value) => (value === undefined ? null : value),
@@ -114,7 +122,8 @@ export interface NewTaskInput {
   // null o ausente ⇒ sin proyecto; en otro caso, id del proyecto (feature 013)
   projectId?: string | null
   description?: string | null
-  urgent?: boolean
+  // null o ausente ⇒ sin urgencia; en otro caso, días tras la referencia (feature 015)
+  urgencyMargin?: number | null
   // null o ausente ⇒ tarea única; en otro caso, patrón de recurrencia (feature 009)
   recurrence?: Recurrence | null
 }

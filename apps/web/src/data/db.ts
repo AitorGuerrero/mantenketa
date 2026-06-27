@@ -78,7 +78,9 @@ db.version(4)
       .table<Task, string>('tasks')
       .toCollection()
       .modify((task) => {
-        const row = task as Partial<Task>
+        // urgent ya no existe en el dominio (feature 015 lo migra en v9), pero
+        // este upgrade histórico aún lo siembra para filas v3→v4.
+        const row = task as Partial<Task> & { urgent?: boolean }
         row.urgent ??= false
       })
   })
@@ -145,5 +147,25 @@ db.version(8)
       .modify((task) => {
         const row = task as Partial<Task>
         row.projectId ??= null
+      })
+  })
+
+// Feature 015: urgencia basada en tiempo. El booleano urgent (007) se sustituye
+// por urgencyMargin (días tras la fecha de referencia; null ⇒ nunca urgente).
+// urgent=true ⇒ 0 (preserva la urgencia), false ⇒ null. Sin índice nuevo.
+db.version(9)
+  .stores({
+    tasks: 'id, taskDate, completedAt, createdAt, updatedAt, nucleusId',
+    outbox: '++seq, taskId',
+    meta: 'key',
+  })
+  .upgrade(async (tx) => {
+    await tx
+      .table<Task, string>('tasks')
+      .toCollection()
+      .modify((task) => {
+        const row = task as Partial<Task> & { urgent?: boolean }
+        row.urgencyMargin = row.urgent === true ? 0 : null
+        delete row.urgent
       })
   })

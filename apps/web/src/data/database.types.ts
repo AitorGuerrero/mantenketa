@@ -218,7 +218,7 @@ export type Database = {
           series_id: string | null
           task_date: string | null
           updated_at: string
-          urgent: boolean
+          urgency_margin: number | null
         }
         Insert: {
           assignee_id?: string | null
@@ -235,7 +235,7 @@ export type Database = {
           series_id?: string | null
           task_date?: string | null
           updated_at: string
-          urgent?: boolean
+          urgency_margin?: number | null
         }
         Update: {
           assignee_id?: string | null
@@ -252,7 +252,7 @@ export type Database = {
           series_id?: string | null
           task_date?: string | null
           updated_at?: string
-          urgent?: boolean
+          urgency_margin?: number | null
         }
         Relationships: [
           {

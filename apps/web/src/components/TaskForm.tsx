@@ -26,7 +26,7 @@ const EMPTY: TaskFormInitial = {
   name: '',
   taskDate: '',
   description: '',
-  urgent: false,
+  urgencyMargin: null,
   recurrence: null,
   nucleusId: null,
   assigneeId: '',
@@ -47,7 +47,10 @@ export function TaskForm({
   const [name, setName] = useState(init.name)
   const [taskDate, setTaskDate] = useState(init.taskDate)
   const [description, setDescription] = useState(init.description)
-  const [urgent, setUrgent] = useState(init.urgent)
+  // Urgencia (feature 015): interruptor + días de margen. init.urgencyMargin
+  // null ⇒ sin urgencia; en otro caso el toggle va activo con esos días (0 ⇒ ya).
+  const [urgent, setUrgent] = useState(init.urgencyMargin !== null)
+  const [marginDays, setMarginDays] = useState(init.urgencyMargin ?? 0)
   // '' ⇒ personal; en otro caso, id del grupo elegido (solo modo crear)
   const [groupId, setGroupId] = useState('')
   // Asignado (feature 012): '' ⇒ sin asignar; en otro caso, userId del miembro
@@ -99,7 +102,8 @@ export function TaskForm({
         // Proyecto del ámbito activo; '' ⇒ sin proyecto (feature 013)
         projectId: effectiveProject !== '' ? effectiveProject : null,
         description,
-        urgent,
+        // Margen de urgencia (feature 015): off ⇒ null; on ⇒ los días (0 = ya)
+        urgencyMargin: urgent ? marginDays : null,
         recurrence,
       })
       if (mode === 'create') {
@@ -107,6 +111,7 @@ export function TaskForm({
         setTaskDate('')
         setDescription('')
         setUrgent(false)
+        setMarginDays(0)
         setGroupId('')
         setAssignee('')
         setProject('')
@@ -190,6 +195,30 @@ export function TaskForm({
           <span>Repetir</span>
         </label>
       </div>
+      {urgent && (
+        <div className="urgency-panel">
+          <label htmlFor="urgency-margin">Se vuelve urgente al cabo de</label>
+          <div className="urgency-fields">
+            <input
+              id="urgency-margin"
+              type="number"
+              min={0}
+              step={1}
+              value={marginDays}
+              onChange={(event) => {
+                const n = Number(event.target.value)
+                setMarginDays(Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0)
+              }}
+            />
+            <span className="form-suffix">
+              {/* La referencia es la fecha de la tarea o, si no tiene, su creación */}
+              {taskDate === ''
+                ? 'días tras crearla (0 = ya mismo)'
+                : 'días tras la fecha (0 = al vencer)'}
+            </span>
+          </div>
+        </div>
+      )}
       {recurring && (
         <div className="recurrence-panel">
           <div className="recurrence-fields">

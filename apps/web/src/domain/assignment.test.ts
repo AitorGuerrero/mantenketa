@@ -27,7 +27,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     assigneeId: null,
     projectId: null,
     description: null,
-    urgent: false,
+    urgencyMargin: null,
     recurrence: null,
     seriesId: null,
     createdAt: stamp,

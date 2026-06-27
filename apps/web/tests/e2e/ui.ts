@@ -25,7 +25,10 @@ export async function createTask(
     // Nombre del proyecto a elegir en "Proyecto" (feature 013); del ámbito elegido
     project?: string
     description?: string
+    // Urgencia (feature 015): urgent ⇒ activa el interruptor con margen 0; o
+    // bien fija un margen en días (días tras la fecha o, sin fecha, la creación)
     urgent?: boolean
+    urgencyMargin?: number
     // Recurrencia (feature 009); ausente ⇒ tarea única
     recurrence?: {
       interval: number
@@ -42,8 +45,13 @@ export async function createTask(
   if (opts.description !== undefined) {
     await page.getByLabel('Descripción (opcional)').fill(opts.description)
   }
-  if (opts.urgent === true) {
+  if (opts.urgent === true || opts.urgencyMargin !== undefined) {
     await page.getByRole('checkbox', { name: 'Urgente', exact: true }).check()
+    if (opts.urgencyMargin !== undefined) {
+      await page
+        .getByLabel('Se vuelve urgente al cabo de')
+        .fill(String(opts.urgencyMargin))
+    }
   }
   if (opts.group !== undefined) {
     await page.getByLabel('Ámbito', { exact: true }).selectOption({ label: opts.group })
