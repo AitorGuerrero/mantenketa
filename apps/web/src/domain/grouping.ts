@@ -3,10 +3,13 @@
 
 import { sortTasks } from './ordering'
 import { isDone, type Task } from './task'
+import { isUrgent } from './urgency'
 
 export interface TaskInGroup {
   task: Task
   isOverdue: boolean
+  // Urgencia calculada relativa a `today` (feature 015), no almacenada
+  isUrgent: boolean
 }
 
 export interface GroupedTasks {
@@ -39,19 +42,21 @@ export function groupTasks(tasks: readonly Task[], today: string): GroupedTasks 
   const yaTasks = outstanding.filter((t) => t.taskDate === null || t.taskDate <= today)
   const prontoTasks = outstanding.filter((t) => t.taskDate !== null && t.taskDate > today)
 
-  const ya: TaskInGroup[] = orderYa(yaTasks).map((task) => ({
+  const ya: TaskInGroup[] = orderYa(yaTasks, today).map((task) => ({
     task,
     isOverdue: task.taskDate !== null && task.taskDate < today,
+    isUrgent: isUrgent(task, today),
   }))
 
   const pronto: TaskInGroup[] = sortTasks(prontoTasks).map((task) => ({
     task,
     isOverdue: false,
+    isUrgent: isUrgent(task, today),
   }))
 
   const hechas: TaskInGroup[] = sortByCompletionDesc(completed)
     .slice(0, RECENT_DONE_LIMIT)
-    .map((task) => ({ task, isOverdue: false }))
+    .map((task) => ({ task, isOverdue: false, isUrgent: isUrgent(task, today) }))
 
   return { ya, pronto, hechas }
 }
@@ -61,10 +66,13 @@ export function groupTasks(tasks: readonly Task[], today: string): GroupedTasks 
  * venció antes, arriba; hoy al final de las fechadas), luego las sin fecha;
  * dentro de cada caso, por createdAt ascendente (la más antigua primero).
  */
-function orderYa(tasks: readonly Task[]): Task[] {
+function orderYa(tasks: readonly Task[], today: string): Task[] {
   return [...tasks].sort((a, b) => {
-    // Urgentes primero (FR-003); el resto conserva el orden habitual
-    if (a.urgent !== b.urgent) return a.urgent ? -1 : 1
+    // Urgentes primero (FR-003): urgencia calculada relativa a hoy (feature 015);
+    // el resto conserva el orden habitual
+    const aUrgent = isUrgent(a, today)
+    const bUrgent = isUrgent(b, today)
+    if (aUrgent !== bUrgent) return aUrgent ? -1 : 1
     const aDateless = a.taskDate === null
     const bDateless = b.taskDate === null
     if (aDateless !== bDateless) return aDateless ? 1 : -1 // sin fecha al final

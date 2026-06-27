@@ -8,7 +8,9 @@ export interface TaskFormInitial {
   name: string
   taskDate: string
   description: string
-  urgent: boolean
+  // Margen de urgencia actual (feature 015): null ⇒ sin urgencia; en otro caso
+  // los días tras la referencia. El formulario lo desglosa en interruptor + días.
+  urgencyMargin: number | null
   recurrence: Recurrence | null
   // Ámbito de la tarea editada (feature 012): null ⇒ personal. Aunque es
   // inmutable, el formulario lo necesita para mostrar el selector de asignado
@@ -26,7 +28,7 @@ export function taskToFormInitial(task: Task): TaskFormInitial {
     name: task.name,
     taskDate: task.taskDate ?? '',
     description: task.description ?? '',
-    urgent: task.urgent,
+    urgencyMargin: task.urgencyMargin,
     recurrence: task.recurrence,
     nucleusId: task.nucleusId,
     assigneeId: task.assigneeId ?? '',

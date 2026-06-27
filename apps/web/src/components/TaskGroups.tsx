@@ -46,7 +46,7 @@ function GroupSection({
         <p className="empty-state">{emptyHint}</p>
       ) : (
         <ul className="task-list" aria-label={label}>
-          {items.map(({ task, isOverdue }) => (
+          {items.map(({ task, isOverdue, isUrgent }) => (
             <TaskItem
               key={task.id}
               task={task}
@@ -54,6 +54,7 @@ function GroupSection({
               scopeLabel={scopeLabel}
               projectName={projectName}
               overdue={isOverdue}
+              urgent={isUrgent}
               currentUserId={currentUserId}
             />
           ))}

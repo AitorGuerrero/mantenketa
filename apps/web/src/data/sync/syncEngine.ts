@@ -92,7 +92,7 @@ async function flushOutbox(): Promise<void> {
             completed_at: task.completedAt,
             completed_by: task.completedBy,
             description: task.description,
-            urgent: task.urgent,
+            urgency_margin: task.urgencyMargin,
             recurrence: task.recurrence,
             series_id: task.seriesId,
             // Asignado (feature 012): mutable, debe viajar en el UPDATE (no solo

@@ -7,7 +7,7 @@ import type { ParsedNewTask, Task } from './task'
 
 /**
  * Edición de una tarea (feature 010). Transición pura: aplica los campos
- * editables (nombre, fecha, descripción, urgente, recurrencia y asignado) y
+ * editables (nombre, fecha, descripción, margen de urgencia, recurrencia y asignado) y
  * sella el reloj LWW, PRESERVANDO identidad, dueño, ámbito, estado de
  * completado y createdAt. El ámbito (nucleusId) es inmutable, así que se ignora
  * parsed.nucleusId; el asignado solo cambia en tareas de grupo (feature 012).
@@ -29,7 +29,7 @@ export function applyEdit(
     name: parsed.name,
     taskDate: parsed.taskDate,
     description: parsed.description,
-    urgent: parsed.urgent,
+    urgencyMargin: parsed.urgencyMargin,
     recurrence: parsed.recurrence,
     seriesId,
     // El ámbito no cambia; el asignado se reescribe pero solo aplica a grupos

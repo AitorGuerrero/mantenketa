@@ -23,7 +23,7 @@ export function taskToRow(task: Task, ownerId: string): TaskRowInsert {
     completed_at: task.completedAt,
     completed_by: task.completedBy,
     description: task.description,
-    urgent: task.urgent,
+    urgency_margin: task.urgencyMargin,
     recurrence: task.recurrence,
     series_id: task.seriesId,
     created_at: task.createdAt,
@@ -50,7 +50,7 @@ export function rowToTask(row: TaskRow): Task {
     assigneeId: row.assignee_id,
     projectId: row.project_id,
     description: row.description,
-    urgent: row.urgent,
+    urgencyMargin: row.urgency_margin,
     recurrence: parseRecurrence(row.recurrence),
     seriesId: row.series_id,
     // Postgres devuelve timestamptz como '...+00:00' y con microsegundos;

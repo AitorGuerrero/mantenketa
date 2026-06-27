@@ -90,7 +90,7 @@ export class DexieTaskRepository implements TaskRepository {
       // Proyecto (feature 013): contenedor opcional; null ⇒ sin proyecto
       projectId: normalizeProject(parsed.projectId),
       description: parsed.description,
-      urgent: parsed.urgent,
+      urgencyMargin: parsed.urgencyMargin,
       // Recurrencia (feature 009): la raíz estrena su propia serie
       recurrence: parsed.recurrence,
       seriesId: parsed.recurrence !== null ? crypto.randomUUID() : null,

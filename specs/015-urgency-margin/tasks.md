@@ -21,10 +21,10 @@ is a state transition, so both get **failing-first** unit tests. UI/sync via e2e
 end-to-end through persistence and pure data passthroughs. The build stays red
 until US1 wires the engine/UI; commit this phase as one logical group.
 
-- [ ] T001 Migration `supabase/migrations/20260627120000_task_urgency_margin.sql`: `add column urgency_margin int check (urgency_margin is null or urgency_margin >= 0)`, `update … set urgency_margin = case when urgent then 0 else null end`, `drop column urgent`; apply with `supabase db push`
-- [ ] T002 [P] Regenerate `apps/web/src/data/database.types.ts` (tasks has `urgency_margin: number | null`, `urgent` gone)
-- [ ] T003 [P] Dexie v9 in `apps/web/src/data/db.ts`: `db.version(9)` upgrade — `row.urgencyMargin = row.urgent ? 0 : null` then `delete row.urgent` (no new index)
-- [ ] T004 Replace the field across the domain type and pure passthroughs: `apps/web/src/domain/task.ts` (`Task.urgencyMargin` = `z.number().int().min(0).nullable()`; `NewTaskInput.urgencyMargin?` + preprocess `''`/`undefined`/`NaN` ⇒ `null`; remove `urgent`), `apps/web/src/data/sync/mapping.ts` (`urgency_margin ↔ urgencyMargin`), `apps/web/src/data/sync/syncEngine.ts` (outbox UPDATE payload), `apps/web/src/data/taskRepository.ts` (`createTask` stores `urgencyMargin`), `apps/web/src/domain/edit.ts` (`applyEdit` maps `urgencyMargin`), `apps/web/src/components/taskFormInitial.ts` (`urgencyMargin: number | null`); update `makeTask`/fixtures in unit tests to `urgencyMargin`
+- [X] T001 Migration `supabase/migrations/20260627120000_task_urgency_margin.sql`: `add column urgency_margin int check (urgency_margin is null or urgency_margin >= 0)`, `update … set urgency_margin = case when urgent then 0 else null end`, `drop column urgent`; apply with `supabase db push`
+- [X] T002 [P] Regenerate `apps/web/src/data/database.types.ts` (tasks has `urgency_margin: number | null`, `urgent` gone)
+- [X] T003 [P] Dexie v9 in `apps/web/src/data/db.ts`: `db.version(9)` upgrade — `row.urgencyMargin = row.urgent ? 0 : null` then `delete row.urgent` (no new index)
+- [X] T004 Replace the field across the domain type and pure passthroughs: `apps/web/src/domain/task.ts` (`Task.urgencyMargin` = `z.number().int().min(0).nullable()`; `NewTaskInput.urgencyMargin?` + preprocess `''`/`undefined`/`NaN` ⇒ `null`; remove `urgent`), `apps/web/src/data/sync/mapping.ts` (`urgency_margin ↔ urgencyMargin`), `apps/web/src/data/sync/syncEngine.ts` (outbox UPDATE payload), `apps/web/src/data/taskRepository.ts` (`createTask` stores `urgencyMargin`), `apps/web/src/domain/edit.ts` (`applyEdit` maps `urgencyMargin`), `apps/web/src/components/taskFormInitial.ts` (`urgencyMargin: number | null`); update `makeTask`/fixtures in unit tests to `urgencyMargin`
 
 **Checkpoint**: data round-trips the margin; urgency behaviour not yet derived.
 
@@ -38,13 +38,13 @@ due date; urgent tasks float to the top of "Para hacer ya" and are marked.
 **Independent Test**: dated task with `due+margin` in the past ⇒ urgent & top of
 "ya"; overdue-but-within-grace ⇒ present, not urgent; no margin ⇒ never urgent.
 
-- [ ] T005 [P] [US1] Failing-first unit tests for dated `isUrgent` per contracts truth table (margin 0 at/after due, margin N boundary `=`/`<`, `null` never, future due not urgent) in `apps/web/src/domain/urgency.test.ts`
-- [ ] T006 [P] [US1] Failing-first unit tests: `orderYa` urgent-first via urgency computed against `today` (sub-order preserved); overdue-within-grace not urgent in `apps/web/src/domain/grouping.test.ts`
-- [ ] T007 [US1] Add `localDay(iso)` to `apps/web/src/domain/date.ts`; implement pure `isUrgent(task, today)` in new `apps/web/src/domain/urgency.ts` (`reference = taskDate ?? localDay(createdAt)`; `daysBetween(reference, today) >= margin`) — makes T005 pass
-- [ ] T008 [US1] `apps/web/src/domain/grouping.ts`: add `isUrgent` to `TaskInGroup`, compute it in `groupTasks` for ya/pronto/hechas, and float urgent-first in `orderYa` using the computed value (replace `a.urgent`) — makes T006 pass
-- [ ] T009 [US1] Components read computed urgency from `group.isUrgent` (not `task.urgent`): badge + `task-item--urgent` in `apps/web/src/components/TaskItem.tsx`; `task-card--urgent` + back badge in `TaskCard.tsx`; `task-card-peek--urgent` in `TaskDeck.tsx` (marker styles reused from 007)
-- [ ] T010 [US1] `apps/web/src/components/TaskForm.tsx`: "Urgente" toggle reveals a numeric "días tras la fecha" field (default 0) → `urgencyMargin` when a date is set; toggle off ⇒ `null`; minor styling in `apps/web/src/index.css`
-- [ ] T011 [US1] Playwright `apps/web/tests/e2e/urgency-margin.spec.ts` (replaces `urgent-tasks.spec.ts`): elapsed margin ⇒ urgent + top of "ya"; overdue within grace ⇒ not urgent; no margin ⇒ never urgent; a pre-existing 007 urgent task still urgent
+- [X] T005 [P] [US1] Failing-first unit tests for dated `isUrgent` per contracts truth table (margin 0 at/after due, margin N boundary `=`/`<`, `null` never, future due not urgent) in `apps/web/src/domain/urgency.test.ts`
+- [X] T006 [P] [US1] Failing-first unit tests: `orderYa` urgent-first via urgency computed against `today` (sub-order preserved); overdue-within-grace not urgent in `apps/web/src/domain/grouping.test.ts`
+- [X] T007 [US1] Add `localDay(iso)` to `apps/web/src/domain/date.ts`; implement pure `isUrgent(task, today)` in new `apps/web/src/domain/urgency.ts` (`reference = taskDate ?? localDay(createdAt)`; `daysBetween(reference, today) >= margin`) — makes T005 pass
+- [X] T008 [US1] `apps/web/src/domain/grouping.ts`: add `isUrgent` to `TaskInGroup`, compute it in `groupTasks` for ya/pronto/hechas, and float urgent-first in `orderYa` using the computed value (replace `a.urgent`) — makes T006 pass
+- [X] T009 [US1] Components read computed urgency from `group.isUrgent` (not `task.urgent`): badge + `task-item--urgent` in `apps/web/src/components/TaskItem.tsx`; `task-card--urgent` + back badge in `TaskCard.tsx`; `task-card-peek--urgent` in `TaskDeck.tsx` (marker styles reused from 007)
+- [X] T010 [US1] `apps/web/src/components/TaskForm.tsx`: "Urgente" toggle reveals a numeric "días tras la fecha" field (default 0) → `urgencyMargin` when a date is set; toggle off ⇒ `null`; minor styling in `apps/web/src/index.css`
+- [X] T011 [US1] Playwright `apps/web/tests/e2e/urgency-margin.spec.ts` (replaces `urgent-tasks.spec.ts`): elapsed margin ⇒ urgent + top of "ya"; overdue within grace ⇒ not urgent; no margin ⇒ never urgent; a pre-existing 007 urgent task still urgent
 
 **Checkpoint**: dated time-based urgency fully functional and testable.
 
@@ -59,9 +59,9 @@ the creation day), independently testable.
 **Independent Test**: dateless + margin 0 ⇒ urgent now; dateless + margin 1 ⇒ not
 urgent today, urgent after a day; dateless + no margin ⇒ never.
 
-- [ ] T012 [P] [US2] Failing-first unit tests for dateless `isUrgent` (reference = `localDay(createdAt)`: margin 0 now, margin 1 next day, `null` never) in `apps/web/src/domain/urgency.test.ts`
-- [ ] T013 [US2] `apps/web/src/components/TaskForm.tsx`: when no date, label the field "tras crearla (0 = ya mismo)" and ensure toggle-on + days produces `urgencyMargin` with `taskDate = null` — makes T012 covered end-to-end
-- [ ] T014 [US2] Extend `apps/web/tests/e2e/urgency-margin.spec.ts`: dateless "ya mismo" urgent immediately; dateless 1-day margin not urgent on creation day
+- [X] T012 [P] [US2] Failing-first unit tests for dateless `isUrgent` (reference = `localDay(createdAt)`: margin 0 now, margin 1 next day, `null` never) in `apps/web/src/domain/urgency.test.ts`
+- [X] T013 [US2] `apps/web/src/components/TaskForm.tsx`: when no date, label the field "tras crearla (0 = ya mismo)" and ensure toggle-on + days produces `urgencyMargin` with `taskDate = null` — makes T012 covered end-to-end
+- [X] T014 [US2] Extend `apps/web/tests/e2e/urgency-margin.spec.ts`: dateless "ya mismo" urgent immediately; dateless 1-day margin not urgent on creation day
 
 **Checkpoint**: dateless urgency works; US1 + US2 both independently testable.
 
@@ -75,9 +75,9 @@ form); urgency recomputes from the new values.
 **Independent Test**: edit a task to add an already-elapsed margin ⇒ becomes
 urgent; edit to clear it ⇒ stops being urgent.
 
-- [ ] T015 [P] [US3] Failing-first unit tests in `apps/web/src/domain/edit.test.ts`: `applyEdit` sets and clears `urgencyMargin`, preserves id/owner/scope/completion/createdAt, stamps `updatedAt`
-- [ ] T016 [US3] Confirm the reused edit form prefilled state maps `urgencyMargin` → toggle + days in `apps/web/src/components/taskFormInitial.ts` / `TaskForm.tsx` (edit mode) — makes T015 pass end-to-end
-- [ ] T017 [US3] Extend `apps/web/tests/e2e/urgency-margin.spec.ts`: add a small elapsed margin to an existing task ⇒ urgent; clear it ⇒ no longer urgent
+- [X] T015 [P] [US3] Failing-first unit tests in `apps/web/src/domain/edit.test.ts`: `applyEdit` sets and clears `urgencyMargin`, preserves id/owner/scope/completion/createdAt, stamps `updatedAt`
+- [X] T016 [US3] Confirm the reused edit form prefilled state maps `urgencyMargin` → toggle + days in `apps/web/src/components/taskFormInitial.ts` / `TaskForm.tsx` (edit mode) — makes T015 pass end-to-end
+- [X] T017 [US3] Extend `apps/web/tests/e2e/urgency-margin.spec.ts`: add a small elapsed margin to an existing task ⇒ urgent; clear it ⇒ no longer urgent
 
 **Checkpoint**: all three stories independently functional.
 
@@ -85,8 +85,8 @@ urgent; edit to clear it ⇒ stops being urgent.
 
 ## Phase 5: Polish & validation
 
-- [ ] T018 Confirm no `urgent` symbol remains outside git history: `grep -rni "\burgent\b" apps/web/src` returns only `urgencyMargin`/`--urgent` CSS/marker names; tidy stale comments in `apps/web/src/index.css` and `db.ts`
-- [ ] T019 Full validation: `pnpm --filter web test`, lint, build, `pnpm --filter web test:e2e`, RLS suite — all green; regression-check grouping/ordering (003/007), edit (010), assignee/projects (012/013), dim-others (014) unaffected
+- [X] T018 Confirm no `urgent` symbol remains outside git history: `grep -rni "\burgent\b" apps/web/src` returns only `urgencyMargin`/`--urgent` CSS/marker names; tidy stale comments in `apps/web/src/index.css` and `db.ts`
+- [~] T019 Full validation: tsc, `pnpm test` (135 unit ✅), lint ✅, build ✅, local e2e (urgency-margin 7/7 ✅) — green. **Pending**: apply the migration to Supabase (`supabase db push`); until then the 4 multi-user/Realtime e2e (assign/adoption/nucleus/projects) fail because the synced row carries `urgency_margin` and the DB still has `urgent` (verified passing on baseline). Re-run `pnpm test:e2e` + RLS suite after the push.
 
 ---
 

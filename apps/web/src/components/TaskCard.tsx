@@ -34,6 +34,8 @@ interface TaskCardProps {
   projectName?: (task: Task) => string | null
   currentUserId?: string | null
   overdue: boolean
+  /** Urgencia calculada (feature 015): la decide groupTasks relativa a hoy. */
+  urgent?: boolean
   /** Si false, la tarjeta se atenúa y no se puede completar (feature 014). */
   actionable?: boolean
   onDone: () => void
@@ -50,6 +52,7 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
     projectName,
     currentUserId = null,
     overdue,
+    urgent = false,
     actionable = true,
     onDone,
     onDefer,
@@ -122,7 +125,7 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
 
   const classes = ['task-card']
   if (overdue) classes.push('task-card--overdue')
-  if (task.urgent) classes.push('task-card--urgent')
+  if (urgent) classes.push('task-card--urgent')
   if (flying !== null) classes.push('task-card--flying')
   else if (!dragging) classes.push('task-card--settling')
 
@@ -158,6 +161,7 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
                   scopeLabel={scopeLabel}
                   projectName={projectName}
                   overdue={overdue}
+                  urgent={urgent}
                   showDescription={false}
                   currentUserId={currentUserId}
                 />
@@ -170,7 +174,7 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
             aria-label="Descripción de la tarea"
             aria-hidden={!flipped}
           >
-            {task.urgent && <span className="task-badge task-badge--urgent">Urgente</span>}
+            {urgent && <span className="task-badge task-badge--urgent">Urgente</span>}
             {task.description !== null && task.description !== '' ? (
               <p className="task-card-back-text">{task.description}</p>
             ) : (

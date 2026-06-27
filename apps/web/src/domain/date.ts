@@ -13,6 +13,18 @@ export function todayIsoDate(): string {
   return `${String(now.getFullYear())}-${month}-${day}`
 }
 
+/**
+ * Día natural local (YYYY-MM-DD) de una marca de tiempo ISO. Mismo criterio
+ * que todayIsoDate pero para un instante cualquiera (feature 015): se usa para
+ * derivar la fecha de referencia de las tareas sin fecha (su día de creación).
+ */
+export function localDay(iso: string): string {
+  const d = new Date(iso)
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${String(d.getFullYear())}-${month}-${day}`
+}
+
 function toUTC(date: string): number {
   const [y, m, d] = date.split('-')
   return Date.UTC(Number(y), Number(m) - 1, Number(d))
