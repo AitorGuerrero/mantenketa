@@ -86,7 +86,7 @@ urgent; edit to clear it ⇒ stops being urgent.
 ## Phase 5: Polish & validation
 
 - [X] T018 Confirm no `urgent` symbol remains outside git history: `grep -rni "\burgent\b" apps/web/src` returns only `urgencyMargin`/`--urgent` CSS/marker names; tidy stale comments in `apps/web/src/index.css` and `db.ts`
-- [~] T019 Full validation: tsc, `pnpm test` (135 unit ✅), lint ✅, build ✅, local e2e (urgency-margin 7/7 ✅) — green. **Pending**: apply the migration to Supabase (`supabase db push`); until then the 4 multi-user/Realtime e2e (assign/adoption/nucleus/projects) fail because the synced row carries `urgency_margin` and the DB still has `urgent` (verified passing on baseline). Re-run `pnpm test:e2e` + RLS suite after the push.
+- [X] T019 Full validation: tsc ✅, `pnpm test` (135 unit ✅), lint ✅, build ✅, e2e (urgency-margin 7/7, assign-tasks 4/4) ✅, RLS suite (24) ✅. Migration applied to Supabase via `supabase db push` (20260627120000). Multi-user/Realtime e2e pass; one occasional timing flake under full parallel load (passes in isolation) — pre-existing Realtime behaviour, unrelated to this feature.
 
 ---
 
