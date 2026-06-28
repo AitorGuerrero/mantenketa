@@ -4,6 +4,7 @@
 import {
   useRef,
   useState,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type TransitionEvent as ReactTransitionEvent,
 } from 'react'
@@ -47,6 +48,7 @@ export interface Swipe {
     onPointerUp: (e: ReactPointerEvent<HTMLElement>) => void
     onPointerCancel: (e: ReactPointerEvent<HTMLElement>) => void
     onTransitionEnd: (e: ReactTransitionEvent<HTMLElement>) => void
+    onClick: (e: ReactMouseEvent<HTMLElement>) => void
   }
 }
 
@@ -58,13 +60,16 @@ export interface Swipe {
  * horizontal para no secuestrar el desplazamiento de la lista. Con `action`
  * nulo (p. ej. mientras se edita la fila) los gestos no hacen nada.
  */
-export function useSwipeAction(action: SwipeAction | null): Swipe {
+export function useSwipeAction(action: SwipeAction | null, onTap?: () => void): Swipe {
   const enabled = action !== null
   const [dx, setDx] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [flying, setFlying] = useState(false)
   // Origen del gesto; `decided` marca que ya se determinó que es horizontal
   const start = useRef<{ x: number; y: number; decided: boolean } | null>(null)
+  // Un arrastre genera un `click` al soltar (navegador): se traga para que no
+  // cuente como toque (feature 017: toque = expandir, arrastre = acción).
+  const dragged = useRef(false)
 
   function fly() {
     if (flying || action === null) return
@@ -80,6 +85,7 @@ export function useSwipeAction(action: SwipeAction | null): Swipe {
   }
 
   function handlePointerDown(e: ReactPointerEvent<HTMLElement>) {
+    dragged.current = false
     if (!enabled || flying) return
     // No iniciar arrastre al tocar un control ("Editar", enlaces de recurrencia),
     // para no competir con pulsarlos.
@@ -102,10 +108,24 @@ export function useSwipeAction(action: SwipeAction | null): Swipe {
         return
       }
       s.decided = true
+      dragged.current = true
       setDragging(true)
       e.currentTarget.setPointerCapture(e.pointerId)
     }
     setDx(e.clientX - s.x)
+  }
+
+  // Toque (no arrastre) sobre la fila: expande/colapsa. Ignora el click que
+  // sigue a un arrastre y los clicks sobre controles internos.
+  function handleClick(e: ReactMouseEvent<HTMLElement>) {
+    if (dragged.current) {
+      dragged.current = false
+      return
+    }
+    if ((e.target as HTMLElement).closest('button, input, a, label, textarea, select')) {
+      return
+    }
+    onTap?.()
   }
 
   function handlePointerUp() {
@@ -145,6 +165,7 @@ export function useSwipeAction(action: SwipeAction | null): Swipe {
       onPointerUp: handlePointerUp,
       onPointerCancel: handlePointerUp,
       onTransitionEnd: handleTransitionEnd,
+      onClick: handleClick,
     },
   }
 }

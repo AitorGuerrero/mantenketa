@@ -3,7 +3,16 @@
 
 import { devices, expect, test, type BrowserContext, type Page } from '@playwright/test'
 
-import { completeTask, createTask, hechasList, isoDay, prontoList, revertTask, yaList } from './ui'
+import {
+  completeTask,
+  createTask,
+  expandTask,
+  hechasList,
+  isoDay,
+  prontoList,
+  revertTask,
+  yaList,
+} from './ui'
 
 // Feature 010 — editar tareas. Funciona en local/anónimo (no requiere sesión).
 
@@ -17,6 +26,7 @@ test('US1: editar nombre y urgente se refleja en la misma tarea (sin duplicar)',
   await page.goto('/')
   await createTask(page, 'Compra')
 
+  await expandTask(page, 'Compra')
   await row(page, 'Compra').getByRole('button', { name: 'Editar' }).click()
   await page.getByLabel('Nombre', { exact: true }).fill('Comprar pan')
   await page.getByRole('checkbox', { name: 'Urgente', exact: true }).check()
@@ -33,6 +43,7 @@ test('US1: quitar la fecha mueve la tarea a "Para hacer ya"', async ({ page }) =
   await createTask(page, 'Con fecha', { date: isoDay(5) })
   await expect(prontoList(page).getByRole('listitem').filter({ hasText: 'Con fecha' })).toHaveCount(1)
 
+  await expandTask(page, 'Con fecha')
   await prontoList(page)
     .getByRole('listitem')
     .filter({ hasText: 'Con fecha' })
@@ -48,6 +59,7 @@ test('US1: cancelar descarta los cambios', async ({ page }) => {
   await page.goto('/')
   await createTask(page, 'Intacta')
 
+  await expandTask(page, 'Intacta')
   await row(page, 'Intacta').getByRole('button', { name: 'Editar' }).click()
   await page.getByLabel('Nombre', { exact: true }).fill('Cambiada')
   await page.getByRole('button', { name: 'Cancelar' }).click()
@@ -60,6 +72,7 @@ test('US1: nombre en blanco se rechaza con el mensaje de validación', async ({ 
   await page.goto('/')
   await createTask(page, 'Borrable')
 
+  await expandTask(page, 'Borrable')
   await row(page, 'Borrable').getByRole('button', { name: 'Editar' }).click()
   await page.getByLabel('Nombre', { exact: true }).fill('')
   await page.getByRole('button', { name: 'Guardar' }).click()
@@ -76,6 +89,7 @@ test('US2: activar recurrencia al editar; al completar nace la sucesora', async 
   await page.goto('/')
   await createTask(page, 'Regar')
 
+  await expandTask(page, 'Regar')
   await row(page, 'Regar').getByRole('button', { name: 'Editar' }).click()
   await page.getByRole('checkbox', { name: 'Repetir', exact: true }).check()
   await page.getByLabel('Cada', { exact: true }).fill('2')
@@ -96,6 +110,7 @@ test('US2: desactivar recurrencia; al completar no nace sucesora', async ({ page
     recurrence: { interval: 1, freq: 'weekly', anchor: 'completion' },
   })
 
+  await expandTask(page, 'Riego')
   await row(page, 'Riego').getByRole('button', { name: 'Editar' }).click()
   await page.getByRole('checkbox', { name: 'Repetir', exact: true }).uncheck()
   await page.getByRole('button', { name: 'Guardar' }).click()
@@ -110,6 +125,7 @@ test('US2: ancla "en la fecha prevista" sin fecha se rechaza', async ({ page }) 
   await page.goto('/')
   await createTask(page, 'Sin fecha')
 
+  await expandTask(page, 'Sin fecha')
   await row(page, 'Sin fecha').getByRole('button', { name: 'Editar' }).click()
   await page.getByRole('checkbox', { name: 'Repetir', exact: true }).check()
   await page.getByLabel('Contar la próxima fecha').selectOption('dueDate')
@@ -127,10 +143,14 @@ test('US3: una tarea completada no ofrece "Editar"; al revertir reaparece', asyn
   await completeTask(page, 'Acabada')
   const done = hechasList(page).getByRole('listitem').filter({ hasText: 'Acabada' })
   await expect(done).toBeVisible()
+  // Una tarea hecha, aun expandida, no ofrece "Editar" (acciones gated en !done)
+  await done.click()
   await expect(done.getByRole('button', { name: 'Editar' })).toHaveCount(0)
+  await done.click() // colapsar para que el swipe de revertir no caiga en comentarios
 
   // Devolver (deslizar a la izquierda) → vuelve a pendiente y reaparece "Editar"
   await revertTask(page, 'Acabada')
+  await expandTask(page, 'Acabada')
   await expect(row(page, 'Acabada').getByRole('button', { name: 'Editar' })).toBeVisible()
 })
 

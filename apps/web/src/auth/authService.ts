@@ -67,7 +67,7 @@ async function adoptAndEnqueue(userId: string): Promise<void> {
       const after = adopted[i]
       if (after !== undefined && after !== tasks[i]) {
         await db.tasks.put(after)
-        await db.outbox.add({ taskId: after.id, enqueuedAt })
+        await db.outbox.add({ kind: 'task', entityId: after.id, enqueuedAt })
       }
     }
   })

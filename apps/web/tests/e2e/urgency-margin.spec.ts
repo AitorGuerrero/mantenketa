@@ -81,6 +81,7 @@ test('US3: añadir un margen ya cumplido vuelve urgente una tarea existente', as
   await createTask(page, 'Revisar', { date: isoDay(-2) })
   await expect(yaRow(page, 'Revisar')).not.toContainText('Urgente')
 
+  await yaRow(page, 'Revisar').click()
   await yaRow(page, 'Revisar').getByRole('button', { name: 'Editar' }).click()
   await page.getByRole('checkbox', { name: 'Urgente', exact: true }).check()
   await page.getByLabel('Se vuelve urgente al cabo de').fill('0')
@@ -95,6 +96,7 @@ test('US3: quitar la urgencia deja de marcar la tarea', async ({ page }) => {
   await createTask(page, 'Quitar urg', { date: isoDay(-2), urgencyMargin: 0 })
   await expect(yaRow(page, 'Quitar urg')).toContainText('Urgente')
 
+  await yaRow(page, 'Quitar urg').click()
   await yaRow(page, 'Quitar urg').getByRole('button', { name: 'Editar' }).click()
   await page.getByRole('checkbox', { name: 'Urgente', exact: true }).uncheck()
   await page.getByRole('button', { name: 'Guardar' }).click()

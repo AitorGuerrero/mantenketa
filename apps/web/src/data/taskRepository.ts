@@ -268,7 +268,7 @@ export class DexieTaskRepository implements TaskRepository {
   /** Encola el push si la tarea tiene dueño (con sesión); anónimo no sube. */
   private async enqueuePush(task: Task): Promise<void> {
     if (task.ownerId === null) return
-    await db.outbox.add({ taskId: task.id, enqueuedAt: new Date().toISOString() })
+    await db.outbox.add({ kind: 'task', entityId: task.id, enqueuedAt: new Date().toISOString() })
   }
 }
 

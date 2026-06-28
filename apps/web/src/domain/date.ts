@@ -25,6 +25,16 @@ export function localDay(iso: string): string {
   return `${String(d.getFullYear())}-${month}-${day}`
 }
 
+/** Formatea una fecha YYYY-MM-DD como texto largo en español (día mes año). */
+export function formatDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split('-').map(Number)
+  return new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1).toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
 function toUTC(date: string): number {
   const [y, m, d] = date.split('-')
   return Date.UTC(Number(y), Number(m) - 1, Number(d))

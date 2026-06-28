@@ -14,6 +14,7 @@ import { assignedToMe } from '../domain/assignment'
 import { swipeOutcome } from '../domain/deck'
 import type { Task } from '../domain/task'
 
+import { CommentThread } from './CommentThread'
 import { TaskBody } from './TaskItem'
 
 const SWIPE_THRESHOLD = 80 // px para confirmar la acción
@@ -191,6 +192,22 @@ export const TaskCard = forwardRef<TaskCardHandle, TaskCardProps>(function TaskC
                 {assignedToMe(task, currentUserId) ? 'ti' : memberName(task.assigneeId)}
               </span>
             )}
+            {/* Comentarios tras la descripción (feature 017); el contenedor
+                detiene los gestos de la tarjeta para poder escribir/scrollear
+                sin voltear ni deslizar. El dorso entero permite scroll (CSS). */}
+            <div
+              className="task-card-comments"
+              onPointerDown={(e) => {
+                e.stopPropagation()
+              }}
+            >
+              <CommentThread
+                taskId={task.id}
+                seriesId={task.seriesId}
+                memberName={memberName}
+                currentUserId={currentUserId}
+              />
+            </div>
             {/* Editar va en el dorso; detiene los gestos de la tarjeta para no
                 voltear/deslizar al pulsar (aria-hidden cuando está de cara). */}
             <button

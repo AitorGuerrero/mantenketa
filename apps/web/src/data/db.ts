@@ -3,12 +3,19 @@
 
 import Dexie, { type EntityTable } from 'dexie'
 
+import type { Comment } from '../domain/comment'
 import type { Task } from '../domain/task'
+
+/** Tipo de entidad que viaja por el outbox (feature 017: tareas y comentarios). */
+export type OutboxKind = 'task' | 'comment'
 
 /** Entrada pendiente de subir al backend (push FIFO del outbox). */
 export interface OutboxEntry {
   seq?: number // autoincremental (clave primaria)
-  taskId: string
+  kind: OutboxKind
+  entityId: string
+  // 'delete' ⇒ borrar la fila en el servidor; ausente ⇒ upsert (feature 017)
+  op?: 'delete'
   enqueuedAt: string
 }
 
@@ -22,6 +29,7 @@ export const db = new Dexie('mantenketa') as Dexie & {
   tasks: EntityTable<Task, 'id'>
   outbox: EntityTable<OutboxEntry, 'seq'>
   meta: EntityTable<MetaEntry, 'key'>
+  comments: EntityTable<Comment, 'id'>
 }
 
 db.version(1).stores({
@@ -167,5 +175,28 @@ db.version(9)
         const row = task as Partial<Task> & { urgent?: boolean }
         row.urgencyMargin = row.urgent === true ? 0 : null
         delete row.urgent
+      })
+  })
+
+// Feature 017: comentarios. Nueva tabla `comments` y outbox generalizado
+// ({kind, entityId, op}); las entradas antiguas {taskId} se migran a tareas.
+db.version(10)
+  .stores({
+    tasks: 'id, taskDate, completedAt, createdAt, updatedAt, nucleusId',
+    outbox: '++seq, entityId',
+    meta: 'key',
+    comments: 'id, taskId, seriesId, nucleusId, updatedAt',
+  })
+  .upgrade(async (tx) => {
+    await tx
+      .table<OutboxEntry & { taskId?: string }, number>('outbox')
+      .toCollection()
+      .modify((entry) => {
+        const legacy = entry as { taskId?: string; kind?: OutboxKind; entityId?: string }
+        if (legacy.entityId === undefined) {
+          legacy.kind = 'task'
+          legacy.entityId = legacy.taskId ?? ''
+          delete legacy.taskId
+        }
       })
   })
