@@ -9,9 +9,14 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // SW propio (feature 016): necesitamos un handler periodicsync para el
+      // aviso diario, así que pasamos de generateSW a injectManifest. El precache
+      // del app shell y el autoUpdate se conservan dentro de src/sw.ts.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
-      // Solo precache del app shell: no hay API que cachear (app local-only)
-      workbox: {
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
       },
       manifest: {

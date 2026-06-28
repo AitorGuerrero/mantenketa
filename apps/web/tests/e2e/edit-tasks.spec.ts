@@ -78,7 +78,7 @@ test('US2: activar recurrencia al editar; al completar nace la sucesora', async 
 
   await row(page, 'Regar').getByRole('button', { name: 'Editar' }).click()
   await page.getByRole('checkbox', { name: 'Repetir', exact: true }).check()
-  await page.getByLabel('Cada').fill('2')
+  await page.getByLabel('Cada', { exact: true }).fill('2')
   await page.getByLabel('Frecuencia').selectOption('weekly')
   await page.getByRole('button', { name: 'Guardar' }).click()
 

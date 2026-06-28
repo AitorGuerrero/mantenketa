@@ -15,6 +15,10 @@ export default tseslint.config(
       'test-results',
       // generado por `supabase gen types` — no se edita ni se linta
       'src/data/database.types.ts',
+      // service worker (feature 016): entra por su propia lib WebWorker
+      // (tsconfig.worker.json) que el projectService de eslint no descubre;
+      // se type-checkea estricto en el build con `tsc -p tsconfig.worker.json`.
+      'src/sw.ts',
     ],
   },
   {
