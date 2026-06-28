@@ -66,7 +66,8 @@ export async function createTask(
   }
   if (opts.recurrence !== undefined) {
     await page.getByRole('checkbox', { name: 'Repetir', exact: true }).check()
-    await page.getByLabel('Cada').fill(String(opts.recurrence.interval))
+    // exact: el panel de aviso diario tiene "Avísame cada día", que casaría con "Cada"
+    await page.getByLabel('Cada', { exact: true }).fill(String(opts.recurrence.interval))
     await page.getByLabel('Frecuencia').selectOption(opts.recurrence.freq)
     await page.getByLabel('Contar').selectOption(opts.recurrence.anchor)
   }

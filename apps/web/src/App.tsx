@@ -4,6 +4,7 @@
 import { AuthMenu } from './components/AuthMenu'
 import { Footer } from './components/Footer'
 import { GroupsPanel } from './components/GroupsPanel'
+import { NotificationsPanel } from './components/NotificationsPanel'
 import { ProjectsPanel } from './components/ProjectsPanel'
 import { InvitationPage } from './pages/InvitationPage'
 import { TasksPage } from './pages/TasksPage'
@@ -33,6 +34,7 @@ export default function App() {
           <TasksPage />
           <ProjectsPanel />
           <GroupsPanel />
+          <NotificationsPanel />
         </>
       )}
       <Footer />
