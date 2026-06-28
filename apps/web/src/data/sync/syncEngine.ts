@@ -5,10 +5,18 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 
 import { getCurrentSession, subscribeSession } from '../../auth/sessionStore'
 import { reconcile } from '../../domain/reconcile'
-import { db } from '../db'
+import { db, type OutboxEntry } from '../db'
 import { supabase } from '../supabaseClient'
 
-import { rowToTask, taskToRow, type TaskRow } from './mapping'
+import { reconcileComment } from './commentReconcile'
+import {
+  commentToRow,
+  rowToComment,
+  rowToTask,
+  taskToRow,
+  type CommentRow,
+  type TaskRow,
+} from './mapping'
 
 /**
  * Motor de sincronización (contracts/client-services.md):
@@ -17,7 +25,11 @@ import { rowToTask, taskToRow, type TaskRow } from './mapping'
  * - pull: trae todo lo visible por RLS y lo reconcilia con la copia local;
  * - realtime: aplica en vivo los cambios de otros miembros (SC-003).
  * La UI nunca espera a la red: lee y escribe Dexie; esto converge después.
+ * El outbox es genérico (feature 017): {kind, entityId, op} para tareas y
+ * comentarios; 'done' borra la entrada, 'retry' detiene y reintenta luego.
  */
+
+type FlushOutcome = 'done' | 'retry'
 
 let channel: RealtimeChannel | null = null
 let flushing = false
@@ -59,6 +71,7 @@ export function requestSync(): void {
 async function syncNow(): Promise<void> {
   await flushOutbox()
   await pullAll()
+  await pullComments()
 }
 
 async function flushOutbox(): Promise<void> {
@@ -70,63 +83,79 @@ async function flushOutbox(): Promise<void> {
       if (entries.length === 0) return
       for (const entry of entries) {
         if (entry.seq === undefined) continue
-        const task = await db.tasks.get(entry.taskId)
-        if (!task) {
-          await db.outbox.delete(entry.seq)
-          continue
-        }
-        if (task.ownerId === null) {
-          await db.outbox.delete(entry.seq)
-          continue
-        }
-        const row = taskToRow(task, task.ownerId)
-        // UPDATE primero: un miembro puede actualizar tareas del núcleo de
-        // otro dueño, pero la política de INSERT (owner_id = auth.uid())
-        // rechazaría un upsert sobre ellas. Solo columnas mutables — la
-        // propiedad es inmutable (trigger immutable_ownership).
-        const updated = await supabase
-          .from('tasks')
-          .update({
-            name: task.name,
-            task_date: task.taskDate,
-            completed_at: task.completedAt,
-            completed_by: task.completedBy,
-            description: task.description,
-            urgency_margin: task.urgencyMargin,
-            recurrence: task.recurrence,
-            series_id: task.seriesId,
-            // Asignado (feature 012): mutable, debe viajar en el UPDATE (no solo
-            // en el INSERT) para que reasignar al editar se propague
-            assignee_id: task.assigneeId,
-            // Proyecto (feature 013): mutable, también viaja en el UPDATE
-            project_id: task.projectId,
-            updated_at: task.updatedAt,
-          })
-          .eq('id', task.id)
-          .select('id')
-        if (updated.error) {
-          // Sin red o rechazo transitorio: se reintenta en el próximo disparo
-          return
-        }
-        if (updated.data.length === 0) {
-          // No existe aún (tarea propia recién creada): INSERT completo
-          const inserted = await supabase.from('tasks').insert(row)
-          if (inserted.error) {
-            if (inserted.error.code === '42501') {
-              // Fila ajena que ya no es visible (p. ej. núcleo disuelto):
-              // descartar para no bloquear la cola
-              await db.outbox.delete(entry.seq)
-              continue
-            }
-            return
-          }
-        }
+        const outcome = entry.kind === 'comment' ? await pushComment(entry) : await pushTask(entry)
+        if (outcome === 'retry') return
         await db.outbox.delete(entry.seq)
       }
     }
   } finally {
     flushing = false
   }
+}
+
+async function pushTask(entry: OutboxEntry): Promise<FlushOutcome> {
+  if (!supabase) return 'retry'
+  const task = await db.tasks.get(entry.entityId)
+  if (!task) return 'done'
+  if (task.ownerId === null) return 'done'
+  const row = taskToRow(task, task.ownerId)
+  // UPDATE primero: un miembro puede actualizar tareas del núcleo de otro dueño,
+  // pero la política de INSERT (owner_id = auth.uid()) rechazaría un upsert sobre
+  // ellas. Solo columnas mutables — la propiedad es inmutable (trigger).
+  const updated = await supabase
+    .from('tasks')
+    .update({
+      name: task.name,
+      task_date: task.taskDate,
+      completed_at: task.completedAt,
+      completed_by: task.completedBy,
+      description: task.description,
+      urgency_margin: task.urgencyMargin,
+      recurrence: task.recurrence,
+      series_id: task.seriesId,
+      assignee_id: task.assigneeId,
+      project_id: task.projectId,
+      updated_at: task.updatedAt,
+    })
+    .eq('id', task.id)
+    .select('id')
+  if (updated.error) return 'retry'
+  if (updated.data.length === 0) {
+    const inserted = await supabase.from('tasks').insert(row)
+    if (inserted.error) {
+      // Fila ajena que ya no es visible (p. ej. núcleo disuelto): descartar
+      return inserted.error.code === '42501' ? 'done' : 'retry'
+    }
+  }
+  return 'done'
+}
+
+async function pushComment(entry: OutboxEntry): Promise<FlushOutcome> {
+  if (!supabase) return 'retry'
+  if (entry.op === 'delete') {
+    const del = await supabase.from('comments').delete().eq('id', entry.entityId)
+    if (del.error) return del.error.code === '42501' ? 'done' : 'retry'
+    return 'done'
+  }
+  const comment = await db.comments.get(entry.entityId)
+  if (!comment) return 'done'
+  if (comment.authorId === null) return 'done'
+  const row = commentToRow(comment, comment.authorId)
+  // Solo el cuerpo es mutable (autor/tarea inmutables por trigger); editar viaja
+  // en el UPDATE.
+  const updated = await supabase
+    .from('comments')
+    .update({ body: comment.body, updated_at: comment.updatedAt })
+    .eq('id', comment.id)
+    .select('id')
+  if (updated.error) return 'retry'
+  if (updated.data.length === 0) {
+    const inserted = await supabase.from('comments').insert(row)
+    if (inserted.error) {
+      return inserted.error.code === '42501' ? 'done' : 'retry'
+    }
+  }
+  return 'done'
 }
 
 async function pullAll(): Promise<void> {
@@ -142,11 +171,37 @@ async function pullAll(): Promise<void> {
 
   // Tareas con dueño que ya no existen en el servidor (p. ej. disolución del
   // núcleo mientras estábamos offline) — salvo las pendientes de subir.
-  const pendingIds = new Set((await db.outbox.toArray()).map((e) => e.taskId))
+  const pendingIds = new Set(
+    (await db.outbox.toArray()).filter((e) => e.kind === 'task').map((e) => e.entityId),
+  )
   const locals = await db.tasks.toArray()
   for (const local of locals) {
     if (local.ownerId !== null && !remoteIds.has(local.id) && !pendingIds.has(local.id)) {
       await db.tasks.delete(local.id)
+    }
+  }
+}
+
+async function pullComments(): Promise<void> {
+  if (!supabase || !getCurrentSession() || !navigator.onLine) return
+  const { data, error } = await supabase.from('comments').select('*')
+  if (error) return
+
+  const remoteIds = new Set<string>()
+  for (const row of data) {
+    remoteIds.add(row.id)
+    await applyRemoteComment(row)
+  }
+
+  // Comentarios sincronizados (con autor) que ya no existen en el servidor
+  // (borrados por su autor en otro dispositivo), salvo los pendientes de subir.
+  const pendingIds = new Set(
+    (await db.outbox.toArray()).filter((e) => e.kind === 'comment').map((e) => e.entityId),
+  )
+  const locals = await db.comments.toArray()
+  for (const local of locals) {
+    if (local.authorId !== null && !remoteIds.has(local.id) && !pendingIds.has(local.id)) {
+      await db.comments.delete(local.id)
     }
   }
 }
@@ -158,6 +213,17 @@ async function applyRemote(row: TaskRow): Promise<void> {
     const winner = reconcile(local, remote)
     if (winner !== local) {
       await db.tasks.put(winner)
+    }
+  })
+}
+
+async function applyRemoteComment(row: CommentRow): Promise<void> {
+  const remote = rowToComment(row)
+  await db.transaction('rw', db.comments, async () => {
+    const local = await db.comments.get(remote.id)
+    const winner = reconcileComment(local, remote)
+    if (winner !== local) {
+      await db.comments.put(winner)
     }
   })
 }
@@ -178,7 +244,7 @@ async function subscribeRealtime(): Promise<void> {
     subscribing = false
   }
   channel = supabase
-    .channel('tasks-sync')
+    .channel('mantenketa-sync')
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'tasks' },
@@ -189,6 +255,18 @@ async function subscribeRealtime(): Promise<void> {
           return
         }
         void applyRemote(payload.new as TaskRow)
+      },
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'comments' },
+      (payload) => {
+        if (payload.eventType === 'DELETE') {
+          const old = payload.old as Partial<CommentRow>
+          if (old.id) void db.comments.delete(old.id)
+          return
+        }
+        void applyRemoteComment(payload.new as CommentRow)
       },
     )
     .subscribe()

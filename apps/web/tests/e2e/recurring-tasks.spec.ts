@@ -3,7 +3,15 @@
 
 import { expect, test } from '@playwright/test'
 
-import { completeTask, createTask, hechasList, isoDay, prontoList, yaList } from './ui'
+import {
+  completeTask,
+  createTask,
+  expandTask,
+  hechasList,
+  isoDay,
+  prontoList,
+  yaList,
+} from './ui'
 
 // Feature 009 — recurrencia. Funciona en local/anónimo (no requiere sesión):
 // US1 materializar al completar, US2 ancla fecha prevista (validación),
@@ -70,6 +78,7 @@ test('US3: "Saltar" adelanta la fecha sin completar', async ({ page }) => {
     recurrence: { interval: 1, freq: 'weekly', anchor: 'completion' },
   })
 
+  await expandTask(page, 'Limpiar filtro')
   await yaList(page)
     .getByRole('listitem')
     .filter({ hasText: 'Limpiar filtro' })
@@ -93,6 +102,7 @@ test('US3: "No repetir más" convierte la tarea en única (sin sucesora)', async
   })
 
   const row = yaList(page).getByRole('listitem').filter({ hasText: 'Tarea fija' })
+  await row.click()
   await row.getByRole('button', { name: 'No repetir más' }).click()
   // Desaparece la insignia de cadencia
   await expect(row).not.toContainText('cada semana')

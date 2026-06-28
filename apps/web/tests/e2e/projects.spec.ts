@@ -107,6 +107,7 @@ test('un proyecto personal agrupa tareas y se filtra por él (FR-001/005/006)', 
 
 test('quitar el proyecto al editar elimina el badge (FR-004)', async () => {
   const row = taskRow(pageA, 'Hablar con el arquitecto')
+  await row.click()
   await row.getByRole('button', { name: 'Editar' }).click()
   await pageA.getByLabel('Proyecto', { exact: true }).selectOption({ label: 'Sin proyecto' })
   await pageA.getByRole('button', { name: 'Guardar' }).click()

@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Aitor Guerrero
 
+import type { Comment } from '../../domain/comment'
 import { RecurrenceSchema, type Recurrence, type Task } from '../../domain/task'
 import type { Database } from '../database.types'
 
 export type TaskRow = Database['public']['Tables']['tasks']['Row']
 export type TaskRowInsert = Database['public']['Tables']['tasks']['Insert']
+
+export type CommentRow = Database['public']['Tables']['comments']['Row']
+export type CommentRowInsert = Database['public']['Tables']['comments']['Insert']
 
 /**
  * Frontera única entre los tipos generados de Postgres y el dominio
@@ -63,4 +67,31 @@ export function rowToTask(row: TaskRow): Task {
 
 function normalizeTimestamp(value: string): string {
   return new Date(value).toISOString()
+}
+
+/** Frontera comentarios (feature 017); owner_id = autor. */
+export function commentToRow(comment: Comment, ownerId: string): CommentRowInsert {
+  return {
+    id: comment.id,
+    task_id: comment.taskId,
+    series_id: comment.seriesId,
+    owner_id: ownerId,
+    nucleus_id: comment.nucleusId,
+    body: comment.body,
+    created_at: comment.createdAt,
+    updated_at: comment.updatedAt,
+  }
+}
+
+export function rowToComment(row: CommentRow): Comment {
+  return {
+    id: row.id,
+    taskId: row.task_id,
+    seriesId: row.series_id,
+    authorId: row.owner_id,
+    nucleusId: row.nucleus_id,
+    body: row.body,
+    createdAt: normalizeTimestamp(row.created_at),
+    updatedAt: normalizeTimestamp(row.updated_at),
+  }
 }

@@ -39,6 +39,61 @@ export type Database = {
   }
   public: {
     Tables: {
+      comments: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          nucleus_id: string | null
+          owner_id: string
+          series_id: string | null
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at: string
+          id: string
+          nucleus_id?: string | null
+          owner_id: string
+          series_id?: string | null
+          task_id: string
+          updated_at: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          nucleus_id?: string | null
+          owner_id?: string
+          series_id?: string | null
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_nucleus_id_fkey"
+            columns: ["nucleus_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_by: string | null

@@ -81,6 +81,16 @@ export function taskRow(scope: Page | Locator, name: string): Locator {
   return scope.getByRole('listitem').filter({ hasText: name })
 }
 
+/** Expande una fila de la lista (acordeón, feature 017) para ver descripción,
+ *  acciones y comentarios. Un toque sin arrastre la abre. */
+export async function expandTask(page: Page, name: string): Promise<void> {
+  const row = taskRow(page, name).first()
+  await row.click()
+  // Espera a que el contenido expandido (compositor de comentarios) monte, para
+  // que el layout esté asentado antes de pulsar acciones reveladas.
+  await row.getByLabel('Nuevo comentario').waitFor({ state: 'visible' })
+}
+
 /** Arrastra una fila horizontalmente para disparar su acción de deslizamiento
  *  (derecha = hecha, izquierda = devolver a pendiente). Sustituye al antiguo
  *  checkbox; funciona con ratón y con táctil. */
@@ -92,7 +102,9 @@ export async function swipeRow(
   const box = await row.boundingBox()
   if (!box) throw new Error('sin fila para deslizar')
   const x = box.x + box.width / 2
-  const y = box.y + box.height / 2
+  // Cerca del borde superior (sobre el nombre): una fila expandida (feature 017)
+  // tiene comentarios debajo; deslizar arriba evita caer sobre el compositor.
+  const y = box.y + Math.min(16, box.height / 2)
   const delta = dir === 'right' ? 240 : -240
   await page.mouse.move(x, y)
   await page.mouse.down()

@@ -106,6 +106,7 @@ test('"Mis tareas" oculta a A la tarea asignada a B, pero la conserva a B (FR-00
 
 test('A reasigna la tarea a sí mismo al editar; deja de ser de B (FR-004)', async () => {
   const onA = taskRow(pageA, 'Pintar valla')
+  await onA.click()
   await onA.getByRole('button', { name: 'Editar' }).click()
   await pageA.getByLabel('Asignar a').selectOption({ label: userA.email })
   await pageA.getByRole('button', { name: 'Guardar' }).click()

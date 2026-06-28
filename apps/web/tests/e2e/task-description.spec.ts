@@ -3,7 +3,7 @@
 
 import { devices, expect, test } from '@playwright/test'
 
-import { createTask, yaList } from './ui'
+import { createTask, expandTask, yaList } from './ui'
 
 test('crea una tarea con descripción multilínea y se muestra en la lista (FR-004, FR-006)', async ({
   page,
@@ -14,11 +14,14 @@ test('crea una tarea con descripción multilínea y se muestra en la lista (FR-0
     description: 'Filtro HEPA\nel del armario de la cocina',
   })
 
+  // La descripción aparece al expandir la fila (feature 017: acordeón)
+  await expandTask(page, 'Cambiar filtro')
   const item = yaList(page).getByRole('listitem').filter({ hasText: 'Cambiar filtro' })
   await expect(item).toContainText('Filtro HEPA')
   await expect(item).toContainText('el del armario de la cocina')
   // sobrevive a una recarga
   await page.reload()
+  await expandTask(page, 'Cambiar filtro')
   await expect(
     yaList(page).getByRole('listitem').filter({ hasText: 'Cambiar filtro' }),
   ).toContainText('Filtro HEPA')

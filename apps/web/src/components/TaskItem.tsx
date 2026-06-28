@@ -1,26 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Aitor Guerrero
 
+import { liveQuery } from 'dexie'
+import { useObservable } from 'dexie-react-hooks'
 import { useState } from 'react'
 
+import { db } from '../data/db'
 import { taskRepository } from '../data/taskRepository'
 import { assignedToMe, assignedToOther } from '../domain/assignment'
-import { overdueText, todayIsoDate } from '../domain/date'
+import { formatDate, overdueText, todayIsoDate } from '../domain/date'
 import { cadenceLabel } from '../domain/recurrence'
 import { isDone, type NewTaskInput, type Task } from '../domain/task'
 
+import { CommentThread } from './CommentThread'
 import { TaskForm } from './TaskForm'
 import { taskToFormInitial } from './taskFormInitial'
 import { useSwipeAction, type SwipeAction } from './useSwipeAction'
-
-function formatDate(isoDate: string): string {
-  const [year, month, day] = isoDate.split('-').map(Number)
-  return new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1).toLocaleDateString('es-ES', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-}
 
 // null para tareas pendientes: el grupo ("ya"/"pronto") ya indica que lo están,
 // así que "Pendiente" no aporta información. Quién la completó se muestra en su
@@ -134,6 +129,10 @@ interface TaskItemProps {
   // Urgencia calculada (feature 015)
   urgent?: boolean
   currentUserId?: string | null
+  // Acordeón (feature 017): la fila expandida muestra descripción + acciones +
+  // comentarios; solo una abierta a la vez (estado en TaskGroups).
+  expanded?: boolean
+  onToggleExpand?: () => void
 }
 
 export function TaskItem({
@@ -144,9 +143,16 @@ export function TaskItem({
   overdue = false,
   urgent = false,
   currentUserId = null,
+  expanded = false,
+  onToggleExpand,
 }: TaskItemProps) {
   const done = isDone(task)
   const [editing, setEditing] = useState(false)
+  // Nº de comentarios para el indicador cuando la fila está colapsada (feature 017)
+  const commentCount = useObservable(
+    () => liveQuery(() => db.comments.where('taskId').equals(task.id).count()),
+    [task.id],
+  )
   // Asignada a otra persona (feature 014): se atenúa y no se puede completar
   const others = assignedToOther(task, currentUserId)
 
@@ -173,7 +179,7 @@ export function TaskItem({
           },
           tint: 'var(--color-primary)',
         }
-  const swipe = useSwipeAction(action)
+  const swipe = useSwipeAction(action, onToggleExpand)
   const swipeEnabled = action !== null
 
   if (editing) {
@@ -203,6 +209,8 @@ export function TaskItem({
   if (urgent) classes.push('task-item--urgent')
   if (assignedToMe(task, currentUserId)) classes.push('task-item--mine')
   if (others) classes.push('task-item--others')
+  if (expanded) classes.push('task-item--expanded')
+  if (onToggleExpand) classes.push('task-item--expandable')
   if (swipeEnabled) {
     classes.push('task-item--swipable')
     classes.push(swipe.flying ? 'task-item--flying' : 'task-item--settling')
@@ -227,7 +235,7 @@ export function TaskItem({
             }
           : undefined
       }
-      {...(swipeEnabled ? swipe.handlers : {})}
+      {...swipe.handlers}
     >
       <TaskBody
         task={task}
@@ -236,39 +244,55 @@ export function TaskItem({
         projectName={projectName}
         overdue={overdue}
         urgent={urgent}
+        showDescription={expanded}
         showCreator
         currentUserId={currentUserId}
       />
-      {!done && (
-        <div className="task-recurrence-actions">
-          <button
-            type="button"
-            className="link-button"
-            onClick={() => {
-              setEditing(true)
-            }}
-          >
-            Editar
-          </button>
-          {showRecurrenceActions && (
-            <>
+      {!expanded && commentCount !== undefined && commentCount > 0 && (
+        <span className="task-comment-count" aria-label={`${String(commentCount)} comentarios`}>
+          💬 {commentCount}
+        </span>
+      )}
+      {expanded && (
+        <>
+          {!done && (
+            <div className="task-recurrence-actions">
               <button
                 type="button"
                 className="link-button"
-                onClick={() => void taskRepository.skipOccurrence(task.id)}
+                onClick={() => {
+                  setEditing(true)
+                }}
               >
-                Saltar
+                Editar
               </button>
-              <button
-                type="button"
-                className="link-button"
-                onClick={() => void taskRepository.stopRecurrence(task.id)}
-              >
-                No repetir más
-              </button>
-            </>
+              {showRecurrenceActions && (
+                <>
+                  <button
+                    type="button"
+                    className="link-button"
+                    onClick={() => void taskRepository.skipOccurrence(task.id)}
+                  >
+                    Saltar
+                  </button>
+                  <button
+                    type="button"
+                    className="link-button"
+                    onClick={() => void taskRepository.stopRecurrence(task.id)}
+                  >
+                    No repetir más
+                  </button>
+                </>
+              )}
+            </div>
           )}
-        </div>
+          <CommentThread
+            taskId={task.id}
+            seriesId={task.seriesId}
+            memberName={memberName}
+            currentUserId={currentUserId}
+          />
+        </>
       )}
     </li>
   )

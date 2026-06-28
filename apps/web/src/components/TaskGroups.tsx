@@ -27,6 +27,9 @@ interface GroupSectionProps {
   projectName: (task: Task) => string | null
   label: string
   currentUserId: string | null
+  // Acordeón (feature 017): id de la fila expandida y su conmutador
+  expandedId: string | null
+  onToggle: (id: string) => void
 }
 
 function GroupSection({
@@ -38,6 +41,8 @@ function GroupSection({
   projectName,
   label,
   currentUserId,
+  expandedId,
+  onToggle,
 }: GroupSectionProps) {
   return (
     <section className="task-group">
@@ -56,6 +61,10 @@ function GroupSection({
               overdue={isOverdue}
               urgent={isUrgent}
               currentUserId={currentUserId}
+              expanded={expandedId === task.id}
+              onToggleExpand={() => {
+                onToggle(task.id)
+              }}
             />
           ))}
         </ul>
@@ -76,6 +85,11 @@ export function TaskGroups() {
   const [onlyMine, setOnlyMine] = useState(false)
   // Filtro por proyecto (feature 013): '' ⇒ todos
   const [projectFilter, setProjectFilter] = useState('')
+  // Acordeón de la lista (feature 017): solo una fila expandida a la vez
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const toggleExpand = (id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id))
+  }
 
   if (tasks === undefined) {
     return null
@@ -173,6 +187,8 @@ export function TaskGroups() {
             projectName={projectName}
             label="Tareas para hacer ya"
             currentUserId={currentUserId}
+            expandedId={expandedId}
+            onToggle={toggleExpand}
           />
           {/* En táctil, ofrecer volver a la baraja (en escritorio no hay tarjetas) */}
           {touch && forceList && (
@@ -197,6 +213,8 @@ export function TaskGroups() {
         projectName={projectName}
         label="Tareas para hacer pronto"
         currentUserId={currentUserId}
+        expandedId={expandedId}
+        onToggle={toggleExpand}
       />
       <GroupSection
         title="Hechas recientemente"
@@ -207,6 +225,8 @@ export function TaskGroups() {
         projectName={projectName}
         label="Tareas hechas recientemente"
         currentUserId={currentUserId}
+        expandedId={expandedId}
+        onToggle={toggleExpand}
       />
     </div>
   )
